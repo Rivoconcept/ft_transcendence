@@ -6,7 +6,7 @@
 #    By: rhanitra <rhanitra@student.42antananari    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/08/07 18:21:32 by rhanitra          #+#    #+#              #
-#    Updated: 2025/12/30 14:43:29 by rhanitra         ###   ########.fr        #
+#    Updated: 2026/01/05 18:16:19 by rhanitra         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,10 +14,18 @@
 NAME = ft_stranscendance
 
 COMPOSE = docker compose
-COMPOSE_FILE = -f ./srcs/docker-compose.yml
+
+MODE ?= dev  # valeur par défaut = dev
+
+ifeq ($(MODE),prod)
+  COMPOSE_FILE := -f ./srcs/docker-compose-prod.yml
+else
+  COMPOSE_FILE := -f ./srcs/docker-compose-dev.yml
+endif
+
 ENV_FILE = --env-file ./srcs/.env
 
-DOMAIN = rhanitra.42.fr
+DOMAIN = localhost
 
 export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0

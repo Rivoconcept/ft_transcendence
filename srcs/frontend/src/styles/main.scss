@@ -1,7 +1,10 @@
-/* src/styles/main.scss */
-$primary: #646cff;
+/* Variables Bootstrap (before bootstrap) */
+@import "./variables";
+
+@import "bootstrap/scss/bootstrap";
+
 
 body {
-  background: #111;
-  color: $primary;
+  background-color: #0d1117;
+  color: #e6edf3;
 }
