@@ -1,0 +1,66 @@
+# ================================
+# Node / TypeScript
+# ================================
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ================================
+# Vite / React
+# ================================
+/frontend/node_modules
+/frontend/dist
+/frontend/.vite
+/frontend/.env.local
+/frontend/.env.*.local
+/frontend/.cache
+
+# ================================
+# Backend / TypeORM
+# ================================
+/backend/node_modules
+/backend/dist
+/backend/.env.local
+/backend/.env.*.local
+/backend/.cache
+
+# ================================
+# Docker
+# ================================
+# **/Dockerfile
+**/docker-compose.override.yml
+**/docker-compose.local.yml
+
+# ================================
+# Secrets
+# ================================
+# secrets/
+# srcs/secrets/
+# srcs/.env
+
+# ================================
+# OS / IDE / Editor
+# ================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# ================================
+# Logs
+# ================================
+logs/
+*.log
+*.err
+*.out
