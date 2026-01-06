@@ -1,0 +1,15 @@
+# Dockerfile.dev (frontend)
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+
+# Monter le code local
+VOLUME ["/app"]
+
+EXPOSE 5173
+
+# Lancer Vite en dev mode, accessible depuis l'extérieur
+CMD ["pnpm", "dev", "--host", "0.0.0.0"]
