@@ -44,8 +44,6 @@ services:
       - ${DATA_PATH}/db_data:/var/lib/postgresql/data
     secrets:
       - POSTGRES_PASSWORD
-    ports:
-      - "5432:5432"
     networks:
       - transcendence-network
 
