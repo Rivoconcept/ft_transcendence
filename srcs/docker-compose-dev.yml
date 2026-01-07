@@ -18,7 +18,6 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
-      - backend_node_modules:/app/node_modules
     ports:
       - "3000:3000"
     env_file:
@@ -49,9 +48,6 @@ services:
 secrets:
   POSTGRES_PASSWORD:
     file: ../secrets/POSTGRES_PASSWORD.txt
-
-volumes:
-  backend_node_modules:
 
 networks:
   transcendence-network:
