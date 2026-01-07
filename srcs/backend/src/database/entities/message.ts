@@ -1,7 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from "typeorm";
-import { User } from "./user.js";
-import { Chat } from "./chat.js";
-import { UserReaction } from "./user-reaction.js";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, type Relation } from "typeorm";
+import type { User } from "./user.js";
+import type { Chat } from "./chat.js";
+import type { UserReaction } from "./user-reaction.js";
 
 export enum MessageType {
   TEXT = "text",
@@ -26,20 +26,20 @@ export class Message {
   @Column()
   author_id!: number;
 
-  @ManyToOne(() => User, (user) => user.messages)
+  @ManyToOne("User", "messages")
   @JoinColumn({ name: "author_id" })
-  author!: User;
+  author!: Relation<User>;
 
   @Column()
   chat_id!: number;
 
-  @ManyToOne(() => Chat, (chat) => chat.messages)
+  @ManyToOne("Chat", "messages")
   @JoinColumn({ name: "chat_id" })
-  chat!: Chat;
+  chat!: Relation<Chat>;
 
   @CreateDateColumn()
   created_at!: Date;
 
-  @OneToMany(() => UserReaction, (userReaction) => userReaction.message)
-  reactions!: UserReaction[];
+  @OneToMany("UserReaction", "message")
+  reactions!: Relation<UserReaction>[];
 }

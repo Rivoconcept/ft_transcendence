@@ -1,6 +1,6 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, OneToMany, BeforeInsert, JoinColumn, CreateDateColumn } from "typeorm";
-import { User } from "./user.js";
-import { Participation } from "./participation.js";
+import { Entity, PrimaryColumn, Column, ManyToOne, OneToMany, BeforeInsert, JoinColumn, CreateDateColumn, type Relation } from "typeorm";
+import type { User } from "./user.js";
+import type { Participation } from "./participation.js";
 
 @Entity()
 export class Game {
@@ -13,9 +13,9 @@ export class Game {
   @Column()
   author_id!: number;
 
-  @ManyToOne(() => User, (user) => user.created_games)
+  @ManyToOne("User", "created_games")
   @JoinColumn({ name: "author_id" })
-  author!: User;
+  author!: Relation<User>;
 
   @Column({ default: true })
   is_open!: boolean;
@@ -23,8 +23,8 @@ export class Game {
   @CreateDateColumn()
   created_at!: Date;
 
-  @OneToMany(() => Participation, (participation) => participation.game)
-  participations!: Participation[];
+  @OneToMany("Participation", "game")
+  participations!: Relation<Participation>[];
 
   @BeforeInsert()
   generateId() {

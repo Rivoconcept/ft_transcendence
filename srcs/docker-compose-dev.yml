@@ -6,7 +6,6 @@ services:
     container_name: frontend-dev
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     ports:
       - "5173:5173"
     networks:
@@ -19,9 +18,11 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
-      - /app/node_modules
+      - backend_node_modules:/app/node_modules
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: development
       DB_HOST: postgres
@@ -48,6 +49,9 @@ services:
 secrets:
   POSTGRES_PASSWORD:
     file: ../secrets/POSTGRES_PASSWORD.txt
+
+volumes:
+  backend_node_modules:
 
 networks:
   transcendence-network:

@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
-import { User } from "./user.js";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, type Relation } from "typeorm";
+import type { User } from "./user.js";
 
 export enum InvitationStatus {
   PENDING = "pending",
@@ -15,16 +15,16 @@ export class Invitation {
   @Column()
   sender_id!: number;
 
-  @ManyToOne(() => User, (user) => user.sent_invitations)
+  @ManyToOne("User", "sent_invitations")
   @JoinColumn({ name: "sender_id" })
-  sender!: User;
+  sender!: Relation<User>;
 
   @Column()
   receiver_id!: number;
 
-  @ManyToOne(() => User, (user) => user.received_invitations)
+  @ManyToOne("User", "received_invitations")
   @JoinColumn({ name: "receiver_id" })
-  receiver!: User;
+  receiver!: Relation<User>;
 
   @Column({
     type: "enum",

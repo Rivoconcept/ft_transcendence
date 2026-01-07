@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { ChatMember } from "./chat-member.js";
-import { Message } from "./message.js";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, type Relation } from "typeorm";
+import type { ChatMember } from "./chat-member.js";
+import type { Message } from "./message.js";
 
 @Entity()
 export class Chat {
@@ -13,9 +13,9 @@ export class Chat {
   @Column({ unique: true })
   channel_id!: string;
 
-  @OneToMany(() => ChatMember, (chatMember) => chatMember.chat)
-  members!: ChatMember[];
+  @OneToMany("ChatMember", "chat")
+  members!: Relation<ChatMember>[];
 
-  @OneToMany(() => Message, (message) => message.chat)
-  messages!: Message[];
+  @OneToMany("Message", "chat")
+  messages!: Relation<Message>[];
 }

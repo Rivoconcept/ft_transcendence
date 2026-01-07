@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
-import { User } from "./user.js";
-import { Chat } from "./chat.js";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, type Relation } from "typeorm";
+import type { User } from "./user.js";
+import type { Chat } from "./chat.js";
 
 @Entity()
 export class ChatMember {
@@ -10,14 +10,14 @@ export class ChatMember {
   @Column()
   user_id!: number;
 
-  @ManyToOne(() => User, (user) => user.chat_memberships)
+  @ManyToOne("User", "chat_memberships")
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: Relation<User>;
 
   @Column()
   chat_id!: number;
 
-  @ManyToOne(() => Chat, (chat) => chat.members)
+  @ManyToOne("Chat", "members")
   @JoinColumn({ name: "chat_id" })
-  chat!: Chat;
+  chat!: Relation<Chat>;
 }

@@ -1,18 +1,23 @@
 import "reflect-metadata";
-import express from "express";
 import { createServer } from "http";
+import { AppDataSource } from "./database/data-source.js";
 import { socketService } from "./websocket.js";
+import app from "./app.js";
 
-const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
-socketService.init(httpServer);
+AppDataSource.initialize()
+  .then(() => {
+    console.log("Database connected");
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+    socketService.init(httpServer);
 
-httpServer.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
-});
+    httpServer.listen(PORT, () => {
+      console.log(`Backend running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error);
+    process.exit(1);
+  });

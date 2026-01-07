@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Invitation } from "./invitation.js";
-import { Participation } from "./participation.js";
-import { ChatMember } from "./chat-member.js";
-import { Message } from "./message.js";
-import { UserReaction } from "./user-reaction.js";
-import { Game } from "./game.js";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, type Relation } from "typeorm";
+import type { Invitation } from "./invitation.js";
+import type { Participation } from "./participation.js";
+import type { ChatMember } from "./chat-member.js";
+import type { Message } from "./message.js";
+import type { UserReaction } from "./user-reaction.js";
+import type { Game } from "./game.js";
 
 @Entity()
 export class User {
@@ -26,24 +26,24 @@ export class User {
   @Column({ default: false })
   is_online!: boolean;
 
-  @OneToMany(() => Invitation, (invitation) => invitation.sender)
-  sent_invitations!: Invitation[];
+  @OneToMany("Invitation", "sender")
+  sent_invitations!: Relation<Invitation>[];
 
-  @OneToMany(() => Invitation, (invitation) => invitation.receiver)
-  received_invitations!: Invitation[];
+  @OneToMany("Invitation", "receiver")
+  received_invitations!: Relation<Invitation>[];
 
-  @OneToMany(() => Game, (game) => game.author)
-  created_games!: Game[];
+  @OneToMany("Game", "author")
+  created_games!: Relation<Game>[];
 
-  @OneToMany(() => Participation, (participation) => participation.user)
-  participations!: Participation[];
+  @OneToMany("Participation", "user")
+  participations!: Relation<Participation>[];
 
-  @OneToMany(() => ChatMember, (chatMember) => chatMember.user)
-  chat_memberships!: ChatMember[];
+  @OneToMany("ChatMember", "user")
+  chat_memberships!: Relation<ChatMember>[];
 
-  @OneToMany(() => Message, (message) => message.author)
-  messages!: Message[];
+  @OneToMany("Message", "author")
+  messages!: Relation<Message>[];
 
-  @OneToMany(() => UserReaction, (userReaction) => userReaction.user)
-  reactions!: UserReaction[];
+  @OneToMany("UserReaction", "user")
+  reactions!: Relation<UserReaction>[];
 }

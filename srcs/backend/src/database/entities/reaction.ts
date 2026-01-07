@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { UserReaction } from "./user-reaction.js";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, type Relation } from "typeorm";
+import type { UserReaction } from "./user-reaction.js";
 
 @Entity()
 export class Reaction {
@@ -9,6 +9,6 @@ export class Reaction {
   @Column({ unique: true })
   code!: string;
 
-  @OneToMany(() => UserReaction, (userReaction) => userReaction.reaction)
-  user_reactions!: UserReaction[];
+  @OneToMany("UserReaction", "reaction")
+  user_reactions!: Relation<UserReaction>[];
 }

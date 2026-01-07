@@ -1,7 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique } from "typeorm";
-import { User } from "./user.js";
-import { Message } from "./message.js";
-import { Reaction } from "./reaction.js";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Unique, type Relation } from "typeorm";
+import type { User } from "./user.js";
+import type { Message } from "./message.js";
+import type { Reaction } from "./reaction.js";
 
 @Entity()
 @Unique(["user_id", "message_id", "reaction_id"])
@@ -12,21 +12,21 @@ export class UserReaction {
   @Column()
   user_id!: number;
 
-  @ManyToOne(() => User, (user) => user.reactions)
+  @ManyToOne("User", "reactions")
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: Relation<User>;
 
   @Column()
   message_id!: number;
 
-  @ManyToOne(() => Message, (message) => message.reactions)
+  @ManyToOne("Message", "reactions")
   @JoinColumn({ name: "message_id" })
-  message!: Message;
+  message!: Relation<Message>;
 
   @Column()
   reaction_id!: number;
 
-  @ManyToOne(() => Reaction, (reaction) => reaction.user_reactions)
+  @ManyToOne("Reaction", "user_reactions")
   @JoinColumn({ name: "reaction_id" })
-  reaction!: Reaction;
+  reaction!: Relation<Reaction>;
 }
