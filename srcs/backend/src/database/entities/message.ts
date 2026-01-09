@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, type Relation } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, type Relation } from "typeorm";
 import type { User } from "./user.js";
 import type { Chat } from "./chat.js";
 import type { UserReaction } from "./user-reaction.js";
@@ -39,6 +39,9 @@ export class Message {
 
   @CreateDateColumn()
   created_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
 
   @OneToMany("UserReaction", "message")
   reactions!: Relation<UserReaction>[];
