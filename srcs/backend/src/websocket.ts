@@ -122,6 +122,20 @@ class SocketService {
     const room = `user.${userId}`;
     this.io.in(room).socketsLeave(`chat.${channelId}`);
   }
+
+  // Faire rejoindre un utilisateur à une room de jeu
+  joinGameRoom(userId: number, gameId: string): void {
+    if (!this.io) return;
+    const room = `user.${userId}`;
+    this.io.in(room).socketsJoin(`game.${gameId}`);
+  }
+
+  // Faire quitter un utilisateur d'une room de jeu
+  leaveGameRoom(userId: number, gameId: string): void {
+    if (!this.io) return;
+    const room = `user.${userId}`;
+    this.io.in(room).socketsLeave(`game.${gameId}`);
+  }
 }
 
 export const socketService = SocketService.getInstance();

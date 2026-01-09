@@ -7,8 +7,11 @@ export class Game {
   @PrimaryColumn({ type: "char", length: 4 })
   id!: string;
 
-  @Column({ type: "int", default: 0 })
+  @Column({ type: "int", default: 1 })
   set!: number;
+
+  @Column({ type: "int", default: 1 })
+  current_set!: number;
 
   @Column()
   author_id!: number;
@@ -19,6 +22,12 @@ export class Game {
 
   @Column({ default: true })
   is_open!: boolean;
+
+  @Column({ default: false })
+  is_private!: boolean;
+
+  @Column({ default: false })
+  game_over!: boolean;
 
   @CreateDateColumn()
   created_at!: Date;
