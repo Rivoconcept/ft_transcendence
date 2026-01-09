@@ -3,6 +3,7 @@ import { Chat, ChatType } from "../database/entities/chat.js";
 import { ChatMember } from "../database/entities/chat-member.js";
 import { Message, MessageType } from "../database/entities/message.js";
 import { User } from "../database/entities/user.js";
+import { Reaction } from "../database/entities/reaction.js";
 import { UserReaction } from "../database/entities/user-reaction.js";
 import { socketService } from "../websocket.js";
 import { randomBytes } from "crypto";
@@ -41,7 +42,7 @@ interface MessageItem {
   updated_at: Date;
   authorId: number;
   chatId: number;
-  reactionCounts: { code: string; count: number; userIds: number[] }[];
+  reactions: { reactionId: number; userIds: number[] }[];
 }
 
 interface PaginatedMessages {
@@ -344,15 +345,13 @@ class ChatService {
     const formattedMessages: MessageItem[] = messages.map((message) => {
       const messageReactions = reactionsByMessage.get(message.id) ?? [];
 
-      // Grouper les réactions par code
-      const reactionGroups = new Map<string, { count: number; userIds: number[] }>();
+      // Grouper les réactions par reactionId
+      const reactionGroups = new Map<number, number[]>();
 
       messageReactions.forEach((r) => {
-        const code = r.reaction.code;
-        const existing = reactionGroups.get(code) ?? { count: 0, userIds: [] };
-        existing.count++;
-        existing.userIds.push(r.user_id);
-        reactionGroups.set(code, existing);
+        const existing = reactionGroups.get(r.reaction_id) ?? [];
+        existing.push(r.user_id);
+        reactionGroups.set(r.reaction_id, existing);
       });
 
       return {
@@ -363,10 +362,9 @@ class ChatService {
         updated_at: message.updated_at,
         authorId: message.author_id,
         chatId: message.chat_id,
-        reactionCounts: Array.from(reactionGroups.entries()).map(([code, data]) => ({
-          code,
-          count: data.count,
-          userIds: data.userIds,
+        reactions: Array.from(reactionGroups.entries()).map(([reactionId, userIds]) => ({
+          reactionId,
+          userIds,
         })),
       };
     });
@@ -418,7 +416,7 @@ class ChatService {
       updated_at: message.updated_at,
       authorId: message.author_id,
       chatId: message.chat_id,
-      reactionCounts: [],
+      reactions: [],
     };
 
     // Notifier tous les membres via la room du chat
@@ -493,19 +491,15 @@ class ChatService {
     }
 
     // Récupérer les réactions
-    const reactions = await this.userReactionRepository
-      .createQueryBuilder("ur")
-      .leftJoinAndSelect("ur.reaction", "reaction")
-      .where("ur.message_id = :messageId", { messageId })
-      .getMany();
+    const userReactions = await this.userReactionRepository.find({
+      where: { message_id: messageId },
+    });
 
-    const reactionGroups = new Map<string, { count: number; userIds: number[] }>();
-    reactions.forEach((r) => {
-      const code = r.reaction.code;
-      const existing = reactionGroups.get(code) ?? { count: 0, userIds: [] };
-      existing.count++;
-      existing.userIds.push(r.user_id);
-      reactionGroups.set(code, existing);
+    const reactionGroups = new Map<number, number[]>();
+    userReactions.forEach((r) => {
+      const existing = reactionGroups.get(r.reaction_id) ?? [];
+      existing.push(r.user_id);
+      reactionGroups.set(r.reaction_id, existing);
     });
 
     return {
@@ -516,12 +510,88 @@ class ChatService {
       updated_at: message.updated_at,
       authorId: message.author_id,
       chatId: message.chat_id,
-      reactionCounts: Array.from(reactionGroups.entries()).map(([code, data]) => ({
-        code,
-        count: data.count,
-        userIds: data.userIds,
+      reactions: Array.from(reactionGroups.entries()).map(([reactionId, userIds]) => ({
+        reactionId,
+        userIds,
       })),
     };
+  }
+
+  async toggleReaction(userId: number, messageId: number, reactionId: number): Promise<{ added: boolean }> {
+    const message = await this.messageRepository.findOne({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    // Vérifier que l'utilisateur est membre du chat
+    const membership = await this.chatMemberRepository.findOne({
+      where: { user_id: userId, chat_id: message.chat_id },
+    });
+
+    if (!membership) {
+      throw new Error("You are not a member of this chat");
+    }
+
+    // Vérifier que la réaction existe
+    const reactionRepo = AppDataSource.getRepository("Reaction");
+    const reaction = await reactionRepo.findOne({ where: { id: reactionId } });
+
+    if (!reaction) {
+      throw new Error("Reaction not found");
+    }
+
+    // Vérifier si la réaction existe déjà
+    const existingReaction = await this.userReactionRepository.findOne({
+      where: { user_id: userId, message_id: messageId, reaction_id: reactionId },
+    });
+
+    const chat = await this.chatRepository.findOne({ where: { id: message.chat_id } });
+
+    if (existingReaction) {
+      // Supprimer la réaction (toggle off)
+      await this.userReactionRepository.remove(existingReaction);
+
+      // Notifier via WebSocket
+      const io = socketService.getIO();
+      if (io && chat) {
+        io.to(`chat.${chat.channel_id}`).emit("reaction:removed", {
+          messageId,
+          reactionId,
+          userId,
+        });
+      }
+
+      return { added: false };
+    } else {
+      // Ajouter la réaction (toggle on)
+      const newReaction = this.userReactionRepository.create({
+        user_id: userId,
+        message_id: messageId,
+        reaction_id: reactionId,
+      });
+      await this.userReactionRepository.save(newReaction);
+
+      // Notifier via WebSocket
+      const io = socketService.getIO();
+      if (io && chat) {
+        io.to(`chat.${chat.channel_id}`).emit("reaction:added", {
+          messageId,
+          reactionId,
+          userId,
+        });
+      }
+
+      return { added: true };
+    }
+  }
+
+  async getReactions(): Promise<{ id: number; code: string }[]> {
+    const reactionRepo = AppDataSource.getRepository(Reaction);
+    const reactions = await reactionRepo.find();
+    return reactions.map((r) => ({ id: r.id, code: r.code }));
   }
 }
 

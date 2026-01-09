@@ -154,6 +154,47 @@ export async function getMessageById(req: AuthRequest, res: Response): Promise<v
   }
 }
 
+export async function toggleReaction(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const messageId = parseInt(req.params.messageId ?? "");
+    const { reactionId } = req.body;
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ error: "Invalid message ID" });
+      return;
+    }
+
+    if (!reactionId || typeof reactionId !== "number") {
+      res.status(400).json({ error: "Reaction ID is required" });
+      return;
+    }
+
+    const result = await chatService.toggleReaction(req.user!.userId, messageId, reactionId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to toggle reaction";
+    if (message === "Message not found" || message === "Reaction not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    if (message === "You are not a member of this chat") {
+      res.status(403).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function getReactions(_req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const reactions = await chatService.getReactions();
+    res.json(reactions);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get reactions";
+    res.status(500).json({ error: message });
+  }
+}
+
 export async function leaveGroupChat(req: AuthRequest, res: Response): Promise<void> {
   try {
     const chatId = parseInt(req.params.id ?? "");
