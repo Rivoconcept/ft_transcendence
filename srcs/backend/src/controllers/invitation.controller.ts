@@ -97,3 +97,27 @@ export async function getSentInvitations(req: AuthRequest, res: Response): Promi
     res.status(500).json({ error: message });
   }
 }
+
+export async function getFriendIds(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const friendIds = await invitationService.getFriendIds(req.user!.userId);
+    res.json(friendIds);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get friends";
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function getNonFriendIds(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string | undefined;
+
+    const result = await invitationService.getNonFriendIds(req.user!.userId, page, limit, search);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get non-friends";
+    res.status(500).json({ error: message });
+  }
+}

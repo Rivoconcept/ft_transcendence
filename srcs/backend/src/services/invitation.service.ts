@@ -116,6 +116,67 @@ class InvitationService {
       relations: ["receiver"],
     });
   }
+
+  async getFriendIds(userId: number): Promise<number[]> {
+    const friendships = await this.invitationRepository.find({
+      where: [
+        { sender_id: userId, status: InvitationStatus.ACCEPTED },
+        { receiver_id: userId, status: InvitationStatus.ACCEPTED },
+      ],
+    });
+
+    return friendships.map((f) =>
+      f.sender_id === userId ? f.receiver_id : f.sender_id
+    );
+  }
+
+  async getNonFriendIds(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+    search?: string
+  ): Promise<{ userIds: number[]; total: number; hasMore: boolean }> {
+    // Récupérer les IDs des amis et des invitations en cours
+    const existingRelations = await this.invitationRepository.find({
+      where: [
+        { sender_id: userId },
+        { receiver_id: userId },
+      ],
+    });
+
+    const excludedIds = new Set<number>([userId]);
+    for (const rel of existingRelations) {
+      excludedIds.add(rel.sender_id);
+      excludedIds.add(rel.receiver_id);
+    }
+
+    // Requête pour les utilisateurs non-amis
+    let query = this.userRepository.createQueryBuilder("user")
+      .select("user.id")
+      .where("user.id NOT IN (:...excludedIds)", { excludedIds: [...excludedIds] });
+
+    if (search) {
+      query = query.andWhere(
+        "(user.username ILIKE :search OR user.realname ILIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    const total = await query.getCount();
+    const offset = (page - 1) * limit;
+
+    const users = await query
+      .orderBy("user.username", "ASC")
+      .skip(offset)
+      .take(limit)
+      .getMany();
+
+    return {
+      userIds: users.map((u) => u.id),
+      total,
+      hasMore: offset + users.length < total,
+    };
+  }
 }
 
 export const invitationService = new InvitationService();
