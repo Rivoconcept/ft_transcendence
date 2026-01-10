@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, type Relation } from "typeorm";
 import type { User } from "./user.js";
-import type { Game } from "./game.js";
+import type { Match } from "./match.js";
 
 @Entity()
 export class Participation {
@@ -15,11 +15,11 @@ export class Participation {
   user!: Relation<User>;
 
   @Column({ type: "char", length: 4 })
-  game_id!: string;
+  match_id!: string;
 
-  @ManyToOne("Game", "participations")
-  @JoinColumn({ name: "game_id" })
-  game!: Relation<Game>;
+  @ManyToOne("Match", "participations")
+  @JoinColumn({ name: "match_id" })
+  match!: Relation<Match>;
 
   @Column({ type: "int", default: 0 })
   score!: number;

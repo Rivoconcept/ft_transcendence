@@ -4,7 +4,7 @@ import type { Participation } from "./participation.js";
 import type { ChatMember } from "./chat-member.js";
 import type { Message } from "./message.js";
 import type { UserReaction } from "./user-reaction.js";
-import type { Game } from "./game.js";
+import type { Match } from "./match.js";
 
 @Entity()
 export class User {
@@ -32,8 +32,8 @@ export class User {
   @OneToMany("Invitation", "receiver")
   received_invitations!: Relation<Invitation>[];
 
-  @OneToMany("Game", "author")
-  created_games!: Relation<Game>[];
+  @OneToMany("Match", "author")
+  created_matches!: Relation<Match>[];
 
   @OneToMany("Participation", "user")
   participations!: Relation<Participation>[];

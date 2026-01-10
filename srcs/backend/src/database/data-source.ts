@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import { DataSourceOptions } from "typeorm/browser";
 import { User } from "./entities/user.js";
 import { Game } from "./entities/game.js";
+import { Match } from "./entities/match.js";
 import { Invitation } from "./entities/invitation.js";
 import { Participation } from "./entities/participation.js";
 import { Chat } from "./entities/chat.js";
@@ -25,6 +26,7 @@ export const AppDataSource = new DataSource({
   entities: [
     User,
     Game,
+    Match,
     Invitation,
     Participation,
     Chat,

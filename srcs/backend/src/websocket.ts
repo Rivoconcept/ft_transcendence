@@ -123,18 +123,18 @@ class SocketService {
     this.io.in(room).socketsLeave(`chat.${channelId}`);
   }
 
-  // Faire rejoindre un utilisateur à une room de jeu
-  joinGameRoom(userId: number, gameId: string): void {
+  // Faire rejoindre un utilisateur à une room de match
+  joinMatchRoom(userId: number, matchId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;
-    this.io.in(room).socketsJoin(`game.${gameId}`);
+    this.io.in(room).socketsJoin(`match.${matchId}`);
   }
 
-  // Faire quitter un utilisateur d'une room de jeu
-  leaveGameRoom(userId: number, gameId: string): void {
+  // Faire quitter un utilisateur d'une room de match
+  leaveMatchRoom(userId: number, matchId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;
-    this.io.in(room).socketsLeave(`game.${gameId}`);
+    this.io.in(room).socketsLeave(`match.${matchId}`);
   }
 }
 
