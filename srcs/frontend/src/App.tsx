@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import { connectWebSocket } from './websocket'
+import { socketStore } from './websocket'
 
 function App() {
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    const ws = connectWebSocket()
-    return () => ws.close()
+    socketStore.connect()
+    return () => socketStore.disconnect()
   }, [])
 
   return (
