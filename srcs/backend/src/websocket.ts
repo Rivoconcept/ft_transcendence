@@ -24,10 +24,20 @@ class SocketService {
   }
 
   init(httpServer: HttpServer): Server {
+    const allowedOrigins = [
+      "http://localhost",
+      "http://localhost:80",
+      "http://localhost:443",
+      "http://localhost:5173",
+      "https://localhost",
+      "https://localhost:443",
+    ];
+
     this.io = new Server(httpServer, {
       cors: {
-        origin: "*",
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
+        credentials: true,
       },
     });
 

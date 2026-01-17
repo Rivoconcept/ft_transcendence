@@ -32,9 +32,7 @@ class InvitationService {
       if (existingInvitation.status === InvitationStatus.ACCEPTED) {
         throw new Error("You are already friends");
       }
-      if (existingInvitation.status === InvitationStatus.PENDING) {
-        throw new Error("Invitation already pending");
-      }
+      throw new Error("Invitation already pending");
     }
 
     const invitation = this.invitationRepository.create({
@@ -91,14 +89,39 @@ class InvitationService {
       throw new Error("Invitation not found");
     }
 
-    invitation.status = InvitationStatus.DECLINED;
-    await this.invitationRepository.save(invitation);
+    const senderId = invitation.sender_id;
+    await this.invitationRepository.remove(invitation);
 
     // Notifier l'expéditeur (si initialisé)
     const io = socketService.getIO();
     if (io) {
-      io.to(`user.${invitation.sender_id}`).emit("invitation:declined", {
-        invitationId: invitation.id,
+      io.to(`user.${senderId}`).emit("invitation:declined", {
+        invitationId,
+      });
+    }
+  }
+
+  async cancelInvitation(invitationId: number, userId: number): Promise<void> {
+    // Permet à l'expéditeur ou au destinataire d'annuler/refuser l'invitation
+    const invitation = await this.invitationRepository.findOne({
+      where: [
+        { id: invitationId, sender_id: userId, status: InvitationStatus.PENDING },
+        { id: invitationId, receiver_id: userId, status: InvitationStatus.PENDING },
+      ],
+    });
+
+    if (!invitation) {
+      throw new Error("Invitation not found");
+    }
+
+    const otherUserId = invitation.sender_id === userId ? invitation.receiver_id : invitation.sender_id;
+    await this.invitationRepository.remove(invitation);
+
+    // Notifier l'autre utilisateur
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`user.${otherUserId}`).emit("invitation:cancelled", {
+        invitationId,
       });
     }
   }
@@ -115,6 +138,67 @@ class InvitationService {
       where: { sender_id: userId, status: InvitationStatus.PENDING },
       relations: ["receiver"],
     });
+  }
+
+  async getFriendIds(userId: number): Promise<number[]> {
+    const friendships = await this.invitationRepository.find({
+      where: [
+        { sender_id: userId, status: InvitationStatus.ACCEPTED },
+        { receiver_id: userId, status: InvitationStatus.ACCEPTED },
+      ],
+    });
+
+    return friendships.map((f) =>
+      f.sender_id === userId ? f.receiver_id : f.sender_id
+    );
+  }
+
+  async getNonFriendIds(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+    search?: string
+  ): Promise<{ userIds: number[]; total: number; hasMore: boolean }> {
+    // Récupérer les IDs des amis et des invitations en cours
+    const existingRelations = await this.invitationRepository.find({
+      where: [
+        { sender_id: userId },
+        { receiver_id: userId },
+      ],
+    });
+
+    const excludedIds = new Set<number>([userId]);
+    for (const rel of existingRelations) {
+      excludedIds.add(rel.sender_id);
+      excludedIds.add(rel.receiver_id);
+    }
+
+    // Requête pour les utilisateurs non-amis
+    let query = this.userRepository.createQueryBuilder("user")
+      .select("user.id")
+      .where("user.id NOT IN (:...excludedIds)", { excludedIds: [...excludedIds] });
+
+    if (search) {
+      query = query.andWhere(
+        "(user.username ILIKE :search OR user.realname ILIKE :search)",
+        { search: `%${search}%` }
+      );
+    }
+
+    const total = await query.getCount();
+    const offset = (page - 1) * limit;
+
+    const users = await query
+      .orderBy("user.username", "ASC")
+      .skip(offset)
+      .take(limit)
+      .getMany();
+
+    return {
+      userIds: users.map((u) => u.id),
+      total,
+      hasMore: offset + users.length < total,
+    };
   }
 }
 

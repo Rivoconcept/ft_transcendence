@@ -15,6 +15,7 @@ describe("Chat API", () => {
   let user1Id: number;
   let user2Id: number;
   let user3Id: number;
+  let testReactionId: number;
 
   const testUser1 = {
     username: "chatuser1",
@@ -63,6 +64,15 @@ describe("Chat API", () => {
     const res3 = await request(app).post("/api/auth/register").send(testUser3);
     user3Token = res3.body.tokens.accessToken;
     user3Id = res3.body.user.id;
+
+    // Créer une réaction de test pour les tests de réactions
+    const reactionRepo = AppDataSource.getRepository(Reaction);
+    let reaction = await reactionRepo.findOne({ where: { code: "👍" } });
+    if (!reaction) {
+      reaction = reactionRepo.create({ code: "👍" });
+      await reactionRepo.save(reaction);
+    }
+    testReactionId = reaction.id;
   });
 
   beforeEach(async () => {
@@ -578,18 +588,6 @@ describe("Chat API", () => {
   describe("POST /api/chats/messages/:messageId/reactions", () => {
     let chatId: number;
     let messageId: number;
-    let reactionId: number;
-
-    beforeAll(async () => {
-      // Créer une réaction de test si elle n'existe pas
-      const reactionRepo = AppDataSource.getRepository(Reaction);
-      let reaction = await reactionRepo.findOne({ where: { code: "👍" } });
-      if (!reaction) {
-        reaction = reactionRepo.create({ code: "👍" });
-        await reactionRepo.save(reaction);
-      }
-      reactionId = reaction.id;
-    });
 
     beforeEach(async () => {
       // Nettoyer les réactions des utilisateurs
@@ -613,7 +611,7 @@ describe("Chat API", () => {
       const res = await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       expect(res.status).toBe(200);
       expect(res.body.added).toBe(true);
@@ -624,13 +622,13 @@ describe("Chat API", () => {
       await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       // Puis la retirer (toggle)
       const res = await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       expect(res.status).toBe(200);
       expect(res.body.added).toBe(false);
@@ -641,7 +639,7 @@ describe("Chat API", () => {
       await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       // Récupérer le message
       const res = await request(app)
@@ -650,7 +648,7 @@ describe("Chat API", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.reactions.length).toBe(1);
-      expect(res.body.reactions[0].reactionId).toBe(reactionId);
+      expect(res.body.reactions[0].reactionId).toBe(testReactionId);
       expect(res.body.reactions[0].userIds).toContain(user1Id);
     });
 
@@ -659,13 +657,13 @@ describe("Chat API", () => {
       await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       // User2 réagit
       await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user2Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       // Récupérer le message
       const res = await request(app)
@@ -681,7 +679,7 @@ describe("Chat API", () => {
       const res = await request(app)
         .post(`/api/chats/messages/${messageId}/reactions`)
         .set("Authorization", `Bearer ${user3Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       expect(res.status).toBe(403);
       expect(res.body.error).toBe("You are not a member of this chat");
@@ -691,7 +689,7 @@ describe("Chat API", () => {
       const res = await request(app)
         .post("/api/chats/messages/99999/reactions")
         .set("Authorization", `Bearer ${user1Token}`)
-        .send({ reactionId });
+        .send({ reactionId: testReactionId });
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe("Message not found");
