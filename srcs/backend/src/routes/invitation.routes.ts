@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import {
   sendInvitation,
   acceptInvitation,
-  declineInvitation,
+  cancelInvitation,
   getPendingInvitations,
   getSentInvitations,
   getFriendIds,
@@ -18,6 +18,6 @@ router.get("/sent", authMiddleware, getSentInvitations);
 router.get("/friends", authMiddleware, getFriendIds);
 router.get("/non-friends", authMiddleware, getNonFriendIds);
 router.post("/:id/accept", authMiddleware, acceptInvitation);
-router.post("/:id/decline", authMiddleware, declineInvitation);
+router.post("/:id/cancel", authMiddleware, cancelInvitation);
 
 export default router;

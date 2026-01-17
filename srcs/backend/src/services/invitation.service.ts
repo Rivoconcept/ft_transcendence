@@ -32,9 +32,7 @@ class InvitationService {
       if (existingInvitation.status === InvitationStatus.ACCEPTED) {
         throw new Error("You are already friends");
       }
-      if (existingInvitation.status === InvitationStatus.PENDING) {
-        throw new Error("Invitation already pending");
-      }
+      throw new Error("Invitation already pending");
     }
 
     const invitation = this.invitationRepository.create({
@@ -91,14 +89,39 @@ class InvitationService {
       throw new Error("Invitation not found");
     }
 
-    invitation.status = InvitationStatus.DECLINED;
-    await this.invitationRepository.save(invitation);
+    const senderId = invitation.sender_id;
+    await this.invitationRepository.remove(invitation);
 
     // Notifier l'expéditeur (si initialisé)
     const io = socketService.getIO();
     if (io) {
-      io.to(`user.${invitation.sender_id}`).emit("invitation:declined", {
-        invitationId: invitation.id,
+      io.to(`user.${senderId}`).emit("invitation:declined", {
+        invitationId,
+      });
+    }
+  }
+
+  async cancelInvitation(invitationId: number, userId: number): Promise<void> {
+    // Permet à l'expéditeur ou au destinataire d'annuler/refuser l'invitation
+    const invitation = await this.invitationRepository.findOne({
+      where: [
+        { id: invitationId, sender_id: userId, status: InvitationStatus.PENDING },
+        { id: invitationId, receiver_id: userId, status: InvitationStatus.PENDING },
+      ],
+    });
+
+    if (!invitation) {
+      throw new Error("Invitation not found");
+    }
+
+    const otherUserId = invitation.sender_id === userId ? invitation.receiver_id : invitation.sender_id;
+    await this.invitationRepository.remove(invitation);
+
+    // Notifier l'autre utilisateur
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`user.${otherUserId}`).emit("invitation:cancelled", {
+        invitationId,
       });
     }
   }

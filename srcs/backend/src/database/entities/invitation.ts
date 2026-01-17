@@ -4,7 +4,6 @@ import type { User } from "./user.js";
 export enum InvitationStatus {
   PENDING = "pending",
   ACCEPTED = "accepted",
-  DECLINED = "declined",
 }
 
 @Entity()

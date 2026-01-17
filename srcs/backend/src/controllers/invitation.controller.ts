@@ -68,6 +68,23 @@ export async function declineInvitation(req: AuthRequest, res: Response): Promis
   }
 }
 
+export async function cancelInvitation(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const invitationId = parseInt(req.params.id ?? "");
+
+    if (isNaN(invitationId)) {
+      res.status(400).json({ error: "Invalid invitation ID" });
+      return;
+    }
+
+    await invitationService.cancelInvitation(invitationId, req.user!.userId);
+    res.json({ message: "Invitation cancelled" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to cancel invitation";
+    res.status(400).json({ error: message });
+  }
+}
+
 export async function getPendingInvitations(req: AuthRequest, res: Response): Promise<void> {
   try {
     if (!req.user) {
