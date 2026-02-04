@@ -65,7 +65,7 @@ export const fetchUserAtom = atom(
 // Action to update user in cache (called when friends/invitations are loaded)
 export const updateUserCacheAtom = atom(
 	null,
-	(get, set, user: User) => {
+	(_get, set, user: User) => {
 		set(userFamilyProvider(user.id), user);
 	}
 );
@@ -73,7 +73,7 @@ export const updateUserCacheAtom = atom(
 // Action to update multiple users in cache
 export const updateUsersCacheAtom = atom(
 	null,
-	(get, set, users: User[]) => {
+	(_get, set, users: User[]) => {
 		users.forEach(user => {
 			set(userFamilyProvider(user.id), user);
 		});
@@ -83,7 +83,7 @@ export const updateUsersCacheAtom = atom(
 // Initialize current user from token
 export const initCurrentUserAtom = atom(
 	null,
-	async (get, set) => {
+	async (_get, set) => {
 		set(currentUserLoadingAtom, true);
 		try {
 			const user = await userService.getMe();
