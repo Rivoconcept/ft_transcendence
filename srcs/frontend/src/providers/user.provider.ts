@@ -2,6 +2,15 @@ import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { userService } from '../services';
 import type { User } from '../models';
+import { friendRelationsAtom, friendsLoadingAtom, friendsErrorAtom } from './friend.provider';
+import {
+	receivedInvitationsAtom,
+	receivedInvitationsLoadingAtom,
+	receivedInvitationsErrorAtom,
+	sentInvitationsAtom,
+	sentInvitationsLoadingAtom,
+	sentInvitationsErrorAtom
+} from './invitation.provider';
 
 // Current authenticated user
 export const currentUserAtom = atom<User | null>(null);
@@ -111,11 +120,30 @@ export const registerAtom = atom(
 	}
 );
 
-// Logout action
+// Logout action - clears all caches
 export const logoutAtom = atom(
 	null,
 	(_get, set) => {
 		userService.logout();
+
+		// Clear user state
 		set(currentUserAtom, null);
+		set(currentUserLoadingAtom, false);
+
+		// Clear friends cache
+		set(friendRelationsAtom, []);
+		set(friendsLoadingAtom, false);
+		set(friendsErrorAtom, null);
+
+		// Clear invitations cache
+		set(receivedInvitationsAtom, []);
+		set(receivedInvitationsLoadingAtom, false);
+		set(receivedInvitationsErrorAtom, null);
+		set(sentInvitationsAtom, []);
+		set(sentInvitationsLoadingAtom, false);
+		set(sentInvitationsErrorAtom, null);
+
+		// Note: atomFamily caches (userFamilyProvider) will be cleared
+		// indirectly since relations are empty, and on next login fresh data loads
 	}
 );
