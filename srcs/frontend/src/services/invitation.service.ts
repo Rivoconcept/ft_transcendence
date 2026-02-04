@@ -41,6 +41,10 @@ class InvitationService {
 	async decline(id: number): Promise<void> {
 		return apiService.post<void>(`invitations/${id}/cancel`);
 	}
+
+	async removeFriend(friendId: number): Promise<void> {
+		return apiService.delete<void>(`invitations/friends/${friendId}`);
+	}
 }
 
 export const invitationService = new InvitationService();

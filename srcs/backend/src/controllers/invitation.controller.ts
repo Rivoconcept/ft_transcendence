@@ -126,6 +126,23 @@ export async function getFriends(req: AuthRequest, res: Response): Promise<void>
   }
 }
 
+export async function removeFriend(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const friendId = parseInt(req.params.friendId ?? "");
+
+    if (isNaN(friendId)) {
+      res.status(400).json({ error: "Invalid friend ID" });
+      return;
+    }
+
+    await invitationService.removeFriend(req.user!.userId, friendId);
+    res.json({ message: "Friend removed" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to remove friend";
+    res.status(400).json({ error: message });
+  }
+}
+
 export async function getNonFriendIds(req: AuthRequest, res: Response): Promise<void> {
   try {
     const page = parseInt(req.query.page as string) || 1;

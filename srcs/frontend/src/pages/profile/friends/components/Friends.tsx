@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { UserMinus, MessageCircle, Search } from 'lucide-react';
+import { UserMinus, MessageCircle, Search, Loader2 } from 'lucide-react';
 import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
 
 export default function Friends(): React.JSX.Element {
 	const [searchQuery, setSearchQuery] = useState<string>('');
+	const [error, setError] = useState<string | null>(null);
+	const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
+
 	const friends = useAtomValue(friendsListAtom);
 	const isLoading = useAtomValue(friendsLoadingAtom);
 	const fetchFriends = useSetAtom(fetchFriendsAtom);
@@ -26,8 +29,22 @@ export default function Friends(): React.JSX.Element {
 		return isOnline ? 'Online' : 'Offline';
 	};
 
-	const handleRemoveFriend = (friendId: number) => {
-		removeFriend(friendId);
+	const handleRemoveFriend = async (friendId: number) => {
+		setError(null);
+		setRemovingIds(prev => new Set(prev).add(friendId));
+
+		try {
+			await removeFriend(friendId);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Failed to remove friend';
+			setError(message);
+		} finally {
+			setRemovingIds(prev => {
+				const next = new Set(prev);
+				next.delete(friendId);
+				return next;
+			});
+		}
 	};
 
 	if (isLoading && friends.length === 0) {
@@ -36,6 +53,19 @@ export default function Friends(): React.JSX.Element {
 
 	return (
 		<>
+			{error && (
+				<div style={{
+					color: '#ef4444',
+					marginBottom: '1rem',
+					padding: '0.5rem 0.75rem',
+					background: '#fef2f2',
+					borderRadius: '6px',
+					fontSize: '0.85rem'
+				}}>
+					{error}
+				</div>
+			)}
+
 			<div className="form-group" style={{ marginBottom: '1.5rem' }}>
 				<div style={{ position: 'relative' }}>
 					<Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
@@ -83,13 +113,24 @@ export default function Friends(): React.JSX.Element {
 								className="btn-secondary"
 								style={{ padding: '0.35rem', color: '#ef4444' }}
 								onClick={() => handleRemoveFriend(friend.id)}
+								disabled={removingIds.has(friend.id)}
 							>
-								<UserMinus size={14} />
+								{removingIds.has(friend.id) ? <Loader2 size={14} className="spin" /> : <UserMinus size={14} />}
 							</button>
 						</div>
 					</div>
 				))
 			)}
+
+			<style>{`
+				@keyframes spin {
+					from { transform: rotate(0deg); }
+					to { transform: rotate(360deg); }
+				}
+				.spin {
+					animation: spin 1s linear infinite;
+				}
+			`}</style>
 		</>
 	);
 }

@@ -65,12 +65,17 @@ export const fetchFriendsAtom = atom(
 	}
 );
 
-// Action to remove a friend (updates local state)
+// Action to remove a friend
 export const removeFriendAtom = atom(
 	null,
-	(get, set, friendId: number) => {
-		const relations = get(friendRelationsAtom);
-		set(friendRelationsAtom, relations.filter(r => r.friendId !== friendId));
+	async (get, set, friendId: number) => {
+		try {
+			await invitationService.removeFriend(friendId);
+			const relations = get(friendRelationsAtom);
+			set(friendRelationsAtom, relations.filter(r => r.friendId !== friendId));
+		} catch {
+			throw new Error('Failed to remove friend');
+		}
 	}
 );
 
