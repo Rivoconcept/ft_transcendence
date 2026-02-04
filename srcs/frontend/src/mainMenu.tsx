@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useAtomValue, useSetAtom } from 'jotai';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 import { Navigation } from './components';
+import { apiService } from './services';
+import type { User } from './models';
+import {
+	currentUserAtom,
+	currentUserLoadingAtom,
+	initCurrentUserAtom,
+	logoutAtom
+} from './providers';
 import {
 	AuthPage,
 	GameList,
@@ -20,33 +29,47 @@ type GameId = 'diceGame' | 'numberGame';
 
 // Protected Route Wrapper
 interface ProtectedRouteProps {
-	isLoggedIn: boolean;
 	children: React.ReactNode;
 }
 
-function ProtectedRoute({ isLoggedIn, children }: ProtectedRouteProps): React.JSX.Element {
-	if (!isLoggedIn) {
+function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
+	const user = useAtomValue(currentUserAtom);
+
+	if (!user) {
 		return <Navigate to="/" replace />;
+	}
+	return <>{children}</>;
+}
+
+// Public Route - redirect to /games if already logged in
+interface PublicRouteProps {
+	children: React.ReactNode;
+}
+
+function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
+	const user = useAtomValue(currentUserAtom);
+
+	if (user) {
+		return <Navigate to="/games" replace />;
 	}
 	return <>{children}</>;
 }
 
 // Layout with Navigation
 interface LayoutProps {
-	isLoggedIn: boolean;
-	username: string;
+	user: User | null;
 	onLogout: () => void;
 	theme: 'default' | 'neon' | 'dark';
 	onThemeChange: (theme: 'default' | 'neon' | 'dark') => void;
 	children: React.ReactNode;
 }
 
-function Layout({ isLoggedIn, username, onLogout, theme, onThemeChange, children }: LayoutProps): React.JSX.Element {
+function Layout({ user, onLogout, theme, onThemeChange, children }: LayoutProps): React.JSX.Element {
 	return (
 		<div className="app">
-			{isLoggedIn && (
+			{user && (
 				<Navigation
-					username={username}
+					username={user.username}
 					onLogout={onLogout}
 					theme={theme}
 					onThemeChange={onThemeChange}
@@ -81,26 +104,27 @@ function GameWrapper({ GameComponent }: GameWrapperProps): React.JSX.Element {
 	return <GameComponent onBack={() => navigate('/games')} />;
 }
 
-// Auth Wrapper
-interface AuthWrapperProps {
-	onLogin: (username: string) => void;
-	isLoggedIn: boolean;
-}
-
-function AuthWrapper({ onLogin, isLoggedIn }: AuthWrapperProps): React.JSX.Element {
-	if (isLoggedIn) {
-		return <Navigate to="/games" replace />;
-	}
-	return <AuthPage onLogin={onLogin} />;
-}
-
 // Main App Component
 export default function App(): React.JSX.Element {
-	const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-	const [username, setUsername] = useState<string>('');
+	const user = useAtomValue(currentUserAtom);
+	const isLoading = useAtomValue(currentUserLoadingAtom);
+	const initCurrentUser = useSetAtom(initCurrentUserAtom);
+	const logout = useSetAtom(logoutAtom);
 	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('default');
 
-	React.useEffect(() => {
+	// Load token and fetch user on mount
+	useEffect(() => {
+		const init = async () => {
+			apiService.loadToken();
+			if (apiService.isAuthenticated()) {
+				await initCurrentUser();
+			}
+		};
+		init();
+	}, [initCurrentUser]);
+
+	// Theme effect
+	useEffect(() => {
 		if (theme === 'neon')
 			document.documentElement.setAttribute('data-theme', 'neon');
 		else if (theme === 'dark')
@@ -109,21 +133,22 @@ export default function App(): React.JSX.Element {
 			document.documentElement.removeAttribute('data-theme');
 	}, [theme]);
 
-	const handleLogin = (user: string): void => {
-		setUsername(user);
-		setIsLoggedIn(true);
+	const handleLogout = (): void => {
+		logout();
 	};
 
-	const handleLogout = (): void => {
-		setIsLoggedIn(false);
-		setUsername('');
-	};
+	if (isLoading) {
+		return (
+			<div className="app" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+				<p>Loading...</p>
+			</div>
+		);
+	}
 
 	return (
 		<BrowserRouter>
 			<Layout
-				isLoggedIn={isLoggedIn}
-				username={username}
+				user={user}
 				onLogout={handleLogout}
 				theme={theme}
 				onThemeChange={setTheme}
@@ -132,14 +157,18 @@ export default function App(): React.JSX.Element {
 					{/* Auth */}
 					<Route
 						path="/"
-						element={<AuthWrapper onLogin={handleLogin} isLoggedIn={isLoggedIn} />}
+						element={
+							<PublicRoute>
+								<AuthPage />
+							</PublicRoute>
+						}
 					/>
 
 					{/* Games */}
 					<Route
 						path="/games"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<GameListWrapper />
 							</ProtectedRoute>
 						}
@@ -147,7 +176,7 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/games/diceGame"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<GameWrapper GameComponent={DiceGame} />
 							</ProtectedRoute>
 						}
@@ -155,7 +184,7 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/games/numberGame"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<GameWrapper GameComponent={NumberGame} />
 							</ProtectedRoute>
 						}
@@ -163,7 +192,7 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/games/status"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<StatusScreen />
 							</ProtectedRoute>
 						}
@@ -171,7 +200,7 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/games/winner"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<WinnerScreen />
 							</ProtectedRoute>
 						}
@@ -181,15 +210,15 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/profile/me"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
-								<ProfilePage username={username} />
+							<ProtectedRoute>
+								<ProfilePage />
 							</ProtectedRoute>
 						}
 					/>
 					<Route
 						path="/profile/friends"
 						element={
-							<ProtectedRoute isLoggedIn={isLoggedIn}>
+							<ProtectedRoute>
 								<FriendsPage />
 							</ProtectedRoute>
 						}

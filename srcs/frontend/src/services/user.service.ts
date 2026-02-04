@@ -3,7 +3,7 @@ import type { User, UserCreate, UserUpdate, UserLogin, AuthResponse } from '../m
 
 class UserService {
 	async register(data: UserCreate): Promise<AuthResponse> {
-		const response = await apiService.post<AuthResponse>('/auth/register', data);
+		const response = await apiService.post<AuthResponse>('auth/register', data);
 		if (response.accessToken) {
 			apiService.setToken(response.accessToken);
 		}
@@ -11,7 +11,7 @@ class UserService {
 	}
 
 	async login(data: UserLogin): Promise<AuthResponse> {
-		const response = await apiService.post<AuthResponse>('/auth/login', data);
+		const response = await apiService.post<AuthResponse>('auth/login', data);
 		if (response.accessToken) {
 			apiService.setToken(response.accessToken);
 		}
@@ -23,7 +23,7 @@ class UserService {
 	}
 
 	async refreshToken(): Promise<AuthResponse> {
-		const response = await apiService.post<AuthResponse>('/auth/refresh');
+		const response = await apiService.post<AuthResponse>('auth/refresh');
 		if (response.accessToken) {
 			apiService.setToken(response.accessToken);
 		}
@@ -31,15 +31,15 @@ class UserService {
 	}
 
 	async getMe(): Promise<User> {
-		return apiService.get<User>('/users/me');
+		return apiService.get<User>('users/me');
 	}
 
 	async updateMe(data: UserUpdate): Promise<User> {
-		return apiService.put<User>('/users/me', data);
+		return apiService.put<User>('users/me', data);
 	}
 
 	async getById(id: number): Promise<User> {
-		return apiService.get<User>(`/users/${id}`);
+		return apiService.get<User>(`users/${id}`);
 	}
 }
 

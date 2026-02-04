@@ -1,18 +1,22 @@
 import React from 'react';
+import { useAtomValue } from 'jotai';
+import { currentUserAtom } from '../../../providers';
 
-interface ProfilePageProps {
-	username: string;
-}
+export default function ProfilePage(): React.JSX.Element {
+	const user = useAtomValue(currentUserAtom);
 
-export default function ProfilePage({ username }: ProfilePageProps): React.JSX.Element {
+	if (!user) {
+		return <div>Loading...</div>;
+	}
+
 	return (
 		<div className="profile-container">
 			<div className="profile-header">
 				<div className="avatar">
-					{username.charAt(0).toUpperCase()}
+					{user.username.charAt(0).toUpperCase()}
 				</div>
 				<div className="profile-info">
-					<h2>{username}</h2>
+					<h2>{user.username}</h2>
 					<p style={{ color: '#666' }}>Player since 2024</p>
 				</div>
 			</div>

@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/';
 
 class ApiService {
 	private instance: AxiosInstance;
@@ -31,13 +31,25 @@ class ApiService {
 
 		// Response interceptor - handle errors
 		this.instance.interceptors.response.use(
-			(response) => response,
+			(response) => {
+				// Check if response data contains an error field
+				if (response.data && typeof response.data === 'object' && 'error' in response.data) {
+					const errorMessage = response.data.error || 'An error occurred';
+					return Promise.reject(new Error(errorMessage));
+				}
+				return response;
+			},
 			async (error) => {
 				if (error.response?.status === 401) {
 					// Token expired - could implement refresh logic here
 					this.clearToken();
 				}
-				return Promise.reject(error);
+				// Extract error message from response if available
+				const errorMessage = error.response?.data?.error
+					|| error.response?.data?.message
+					|| error.message
+					|| 'An error occurred';
+				return Promise.reject(new Error(errorMessage));
 			}
 		);
 	}
