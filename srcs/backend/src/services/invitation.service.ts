@@ -52,6 +52,8 @@ class InvitationService {
       });
     }
 
+    // Retourner l'invitation avec les informations du receiver
+    invitation.receiver = receiver;
     return invitation;
   }
 
@@ -138,6 +140,27 @@ class InvitationService {
       where: { sender_id: userId, status: InvitationStatus.PENDING },
       relations: ["receiver"],
     });
+  }
+
+  async removeFriend(userId: number, friendId: number): Promise<void> {
+    const friendship = await this.invitationRepository.findOne({
+      where: [
+        { sender_id: userId, receiver_id: friendId, status: InvitationStatus.ACCEPTED },
+        { sender_id: friendId, receiver_id: userId, status: InvitationStatus.ACCEPTED },
+      ],
+    });
+
+    if (!friendship) {
+      throw new Error("Friendship not found");
+    }
+
+    await this.invitationRepository.remove(friendship);
+
+    // Notifier l'autre utilisateur
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`user.${friendId}`).emit("friend:removed", { friendId: userId });
+    }
   }
 
   async getFriendIds(userId: number): Promise<number[]> {
