@@ -1,6 +1,7 @@
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
-import { userService } from '../services';
+import { userService, apiService } from '../services';
+import { socketStore } from '../store/socketStore';
 import type { User } from '../models';
 import { friendRelationsAtom, friendsLoadingAtom, friendsErrorAtom } from './friend.provider';
 import {
@@ -90,6 +91,11 @@ export const initCurrentUserAtom = atom(
 			set(currentUserAtom, user);
 			// Also cache in family provider
 			set(userFamilyProvider(user.id), user);
+			// Connect socket with token
+			const token = apiService.getToken();
+			if (token) {
+				socketStore.connectAndAuth(token);
+			}
 		} catch {
 			set(currentUserAtom, null);
 		} finally {
@@ -105,6 +111,11 @@ export const loginAtom = atom(
 		const response = await userService.login(data);
 		set(currentUserAtom, response.user);
 		set(userFamilyProvider(response.user.id), response.user);
+		// Connect socket with token
+		const token = apiService.getToken();
+		if (token) {
+			socketStore.connectAndAuth(token);
+		}
 		return response.user;
 	}
 );
@@ -116,6 +127,11 @@ export const registerAtom = atom(
 		const response = await userService.register(data);
 		set(currentUserAtom, response.user);
 		set(userFamilyProvider(response.user.id), response.user);
+		// Connect socket with token
+		const token = apiService.getToken();
+		if (token) {
+			socketStore.connectAndAuth(token);
+		}
 		return response.user;
 	}
 );
@@ -125,6 +141,7 @@ export const logoutAtom = atom(
 	null,
 	(_get, set) => {
 		userService.logout();
+		socketStore.disconnect();
 
 		// Clear user state
 		set(currentUserAtom, null);

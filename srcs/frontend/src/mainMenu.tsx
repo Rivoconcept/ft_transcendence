@@ -1,18 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom, useStore } from 'jotai';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 import { Navigation } from './components';
 import { apiService } from './services';
+import { socketStore } from './store/socketStore';
 import type { User } from './models';
 import {
 	currentUserAtom,
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
-	logoutAtom
+	logoutAtom,
+	fetchUserAtom,
+	userFamilyProvider
 } from './providers';
+import {
+	receivedInvitationsAtom,
+	sentInvitationsAtom,
+	type InvitationRelation,
+	type SentInvitationRelation
+} from './providers/invitation.provider';
+import {
+	friendRelationsAtom,
+	type FriendRelation
+} from './providers/friend.provider';
 import {
 	AuthPage,
 	GameList,
@@ -104,6 +117,84 @@ function GameWrapper({ GameComponent }: GameWrapperProps): React.JSX.Element {
 	return <GameComponent onBack={() => navigate('/games')} />;
 }
 
+// Socket Listener - listens to socket events and updates atoms
+function SocketListener(): null {
+	const store = useStore();
+	const user = useAtomValue(currentUserAtom);
+
+	useEffect(() => {
+		if (!user) return;
+
+		const handleInvitationReceived = async (data: { invitationId: number; senderId: number }) => {
+			// Fetch sender info
+			await store.set(fetchUserAtom, data.senderId);
+			// Add to received invitations
+			const current = store.get(receivedInvitationsAtom);
+			if (!current.find(i => i.invitationId === data.invitationId)) {
+				const newInvitation: InvitationRelation = {
+					invitationId: data.invitationId,
+					senderId: data.senderId,
+					status: 'pending',
+					createdAt: new Date().toISOString()
+				};
+				store.set(receivedInvitationsAtom, [...current, newInvitation]);
+			}
+		};
+
+		const handleInvitationAccepted = async (data: { invitationId: number; friendId: number }) => {
+			// Remove from sent invitations
+			const sent = store.get(sentInvitationsAtom);
+			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
+			// Fetch friend info and add to friends
+			await store.set(fetchUserAtom, data.friendId);
+			const friends = store.get(friendRelationsAtom);
+			if (!friends.find(f => f.friendId === data.friendId)) {
+				const newFriend: FriendRelation = {
+					friendId: data.friendId,
+					status: 'accepted'
+				};
+				store.set(friendRelationsAtom, [...friends, newFriend]);
+			}
+		};
+
+		const handleInvitationDeclined = (data: { invitationId: number }) => {
+			const sent = store.get(sentInvitationsAtom);
+			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
+		};
+
+		const handleInvitationCancelled = (data: { invitationId: number }) => {
+			// Could be in received or sent
+			const received = store.get(receivedInvitationsAtom);
+			store.set(receivedInvitationsAtom, received.filter(i => i.invitationId !== data.invitationId));
+			const sent = store.get(sentInvitationsAtom);
+			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
+		};
+
+		const handleFriendRemoved = (data: { friendId: number }) => {
+			const friends = store.get(friendRelationsAtom);
+			store.set(friendRelationsAtom, friends.filter(f => f.friendId !== data.friendId));
+		};
+
+		// Register listeners
+		socketStore.on('invitation:received', handleInvitationReceived);
+		socketStore.on('invitation:accepted', handleInvitationAccepted);
+		socketStore.on('invitation:declined', handleInvitationDeclined);
+		socketStore.on('invitation:cancelled', handleInvitationCancelled);
+		socketStore.on('friend:removed', handleFriendRemoved);
+
+		// Cleanup
+		return () => {
+			socketStore.off('invitation:received', handleInvitationReceived);
+			socketStore.off('invitation:accepted', handleInvitationAccepted);
+			socketStore.off('invitation:declined', handleInvitationDeclined);
+			socketStore.off('invitation:cancelled', handleInvitationCancelled);
+			socketStore.off('friend:removed', handleFriendRemoved);
+		};
+	}, [user, store]);
+
+	return null;
+}
+
 // Main App Component
 export default function App(): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
@@ -147,6 +238,7 @@ export default function App(): React.JSX.Element {
 
 	return (
 		<BrowserRouter>
+			<SocketListener />
 			<Layout
 				user={user}
 				onLogout={handleLogout}
