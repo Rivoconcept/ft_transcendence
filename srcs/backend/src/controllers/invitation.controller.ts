@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { invitationService } from "../services/invitation.service.js";
+import { userService } from "../services/user.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
 
 export async function sendInvitation(req: AuthRequest, res: Response): Promise<void> {
@@ -115,10 +116,10 @@ export async function getSentInvitations(req: AuthRequest, res: Response): Promi
   }
 }
 
-export async function getFriendIds(req: AuthRequest, res: Response): Promise<void> {
+export async function getFriends(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const friendIds = await invitationService.getFriendIds(req.user!.userId);
-    res.json(friendIds);
+    const friends = await userService.getFriends(req.user!.userId);
+    res.json(friends);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get friends";
     res.status(500).json({ error: message });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { Check, X, UserPlus, Clock } from 'lucide-react';
+import { Check, X, UserPlus, Clock, Loader2 } from 'lucide-react';
 import {
 	receivedInvitationsListAtom,
 	receivedInvitationsLoadingAtom,
@@ -18,6 +18,7 @@ export default function Invitation(): React.JSX.Element {
 	const [username, setUsername] = useState<string>('');
 	const [sending, setSending] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
+	const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
 
 	// Invitations reçues
 	const receivedInvitations = useAtomValue(receivedInvitationsListAtom);
@@ -38,27 +39,54 @@ export default function Invitation(): React.JSX.Element {
 		fetchSentInvitations();
 	}, [fetchReceivedInvitations, fetchSentInvitations]);
 
+	const setProcessing = (id: number, isProcessing: boolean) => {
+		setProcessingIds(prev => {
+			const next = new Set(prev);
+			if (isProcessing) {
+				next.add(id);
+			} else {
+				next.delete(id);
+			}
+			return next;
+		});
+	};
+
 	const handleAccept = async (invitationId: number) => {
+		setError(null);
+		setProcessing(invitationId, true);
 		try {
 			await acceptInvitation(invitationId);
 		} catch (err) {
-			console.error('Failed to accept invitation:', err);
+			const message = err instanceof Error ? err.message : 'Failed to accept invitation';
+			setError(message);
+		} finally {
+			setProcessing(invitationId, false);
 		}
 	};
 
 	const handleDecline = async (invitationId: number) => {
+		setError(null);
+		setProcessing(invitationId, true);
 		try {
 			await declineInvitation(invitationId);
 		} catch (err) {
-			console.error('Failed to decline invitation:', err);
+			const message = err instanceof Error ? err.message : 'Failed to decline invitation';
+			setError(message);
+		} finally {
+			setProcessing(invitationId, false);
 		}
 	};
 
 	const handleCancel = async (invitationId: number) => {
+		setError(null);
+		setProcessing(invitationId, true);
 		try {
 			await cancelInvitation(invitationId);
 		} catch (err) {
-			console.error('Failed to cancel invitation:', err);
+			const message = err instanceof Error ? err.message : 'Failed to cancel invitation';
+			setError(message);
+		} finally {
+			setProcessing(invitationId, false);
 		}
 	};
 
@@ -72,14 +100,31 @@ export default function Invitation(): React.JSX.Element {
 			await sendInvitation(username.trim());
 			setUsername('');
 		} catch (err) {
-			setError('Failed to send friend request');
+			const message = err instanceof Error ? err.message : 'Failed to send friend request';
+			setError(message);
 		} finally {
 			setSending(false);
 		}
 	};
 
+	const isProcessing = (id: number) => processingIds.has(id);
+
 	return (
 		<>
+			{/* Message d'erreur global */}
+			{error && (
+				<div style={{
+					color: '#ef4444',
+					marginBottom: '1rem',
+					padding: '0.5rem 0.75rem',
+					background: '#fef2f2',
+					borderRadius: '6px',
+					fontSize: '0.85rem'
+				}}>
+					{error}
+				</div>
+			)}
+
 			{/* Formulaire d'envoi */}
 			<div style={{ marginBottom: '1.5rem' }}>
 				<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Send Friend Request</label>
@@ -89,6 +134,7 @@ export default function Invitation(): React.JSX.Element {
 						placeholder="Enter username..."
 						value={username}
 						onChange={(e) => setUsername(e.target.value)}
+						onKeyDown={(e) => e.key === 'Enter' && handleSendRequest()}
 						style={{
 							flex: 1,
 							padding: '0.5rem 0.75rem',
@@ -116,11 +162,10 @@ export default function Invitation(): React.JSX.Element {
 							opacity: (!username.trim() || sending) ? 0.6 : 1
 						}}
 					>
-						<UserPlus size={14} />
+						{sending ? <Loader2 size={14} className="spin" /> : <UserPlus size={14} />}
 						{sending ? 'Sending...' : 'Send'}
 					</button>
 				</div>
-				{error && <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem' }}>{error}</p>}
 			</div>
 
 			{/* Invitations reçues */}
@@ -143,10 +188,20 @@ export default function Invitation(): React.JSX.Element {
 								</p>
 							</div>
 							<div style={{ display: 'flex', gap: '0.25rem' }}>
-								<button className="btn-primary" style={{ padding: '0.35rem' }} onClick={() => handleAccept(inv.invitationId)}>
-									<Check size={14} />
+								<button
+									className="btn-primary"
+									style={{ padding: '0.35rem' }}
+									onClick={() => handleAccept(inv.invitationId)}
+									disabled={isProcessing(inv.invitationId)}
+								>
+									{isProcessing(inv.invitationId) ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
 								</button>
-								<button className="btn-secondary" style={{ padding: '0.35rem', color: '#ef4444' }} onClick={() => handleDecline(inv.invitationId)}>
+								<button
+									className="btn-secondary"
+									style={{ padding: '0.35rem', color: '#ef4444' }}
+									onClick={() => handleDecline(inv.invitationId)}
+									disabled={isProcessing(inv.invitationId)}
+								>
 									<X size={14} />
 								</button>
 							</div>
@@ -177,12 +232,23 @@ export default function Invitation(): React.JSX.Element {
 							className="btn-secondary"
 							style={{ padding: '0.35rem', color: '#ef4444' }}
 							onClick={() => handleCancel(inv.invitationId)}
+							disabled={isProcessing(inv.invitationId)}
 						>
-							<X size={14} />
+							{isProcessing(inv.invitationId) ? <Loader2 size={14} className="spin" /> : <X size={14} />}
 						</button>
 					</div>
 				))
 			)}
+
+			<style>{`
+				@keyframes spin {
+					from { transform: rotate(0deg); }
+					to { transform: rotate(360deg); }
+				}
+				.spin {
+					animation: spin 1s linear infinite;
+				}
+			`}</style>
 		</>
 	);
 }
