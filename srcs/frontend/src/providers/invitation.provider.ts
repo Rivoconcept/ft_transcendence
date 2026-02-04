@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { invitationService } from '../services';
-import type { Invitation, User } from '../models';
+import type { User } from '../models';
 import { userFamilyProvider } from './user.provider';
 import { addFriendAtom } from './friend.provider';
 

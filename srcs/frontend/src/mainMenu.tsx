@@ -13,14 +13,12 @@ import {
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
 	logoutAtom,
-	fetchUserAtom,
-	userFamilyProvider
+	fetchUserAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
 	sentInvitationsAtom,
-	type InvitationRelation,
-	type SentInvitationRelation
+	type InvitationRelation
 } from './providers/invitation.provider';
 import {
 	friendRelationsAtom,
