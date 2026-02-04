@@ -29,8 +29,7 @@ DOMAIN = localhost
 
 export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0
-export USER = $(shell whoami)
-export DATA_PATH = /home/$(USER)/data
+export DATA_PATH = $(HOME)/data
 CERTS_DIR = ./secrets/certs
 CRT_FILE = $(CERTS_DIR)/nginx.crt
 KEY_FILE = $(CERTS_DIR)/nginx.key
