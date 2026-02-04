@@ -4,16 +4,16 @@ import type { User, UserCreate, UserUpdate, UserLogin, AuthResponse } from '../m
 class UserService {
 	async register(data: UserCreate): Promise<AuthResponse> {
 		const response = await apiService.post<AuthResponse>('auth/register', data);
-		if (response.accessToken) {
-			apiService.setToken(response.accessToken);
+		if (response.tokens?.accessToken) {
+			apiService.setToken(response.tokens.accessToken);
 		}
 		return response;
 	}
 
 	async login(data: UserLogin): Promise<AuthResponse> {
 		const response = await apiService.post<AuthResponse>('auth/login', data);
-		if (response.accessToken) {
-			apiService.setToken(response.accessToken);
+		if (response.tokens?.accessToken) {
+			apiService.setToken(response.tokens.accessToken);
 		}
 		return response;
 	}
@@ -24,8 +24,8 @@ class UserService {
 
 	async refreshToken(): Promise<AuthResponse> {
 		const response = await apiService.post<AuthResponse>('auth/refresh');
-		if (response.accessToken) {
-			apiService.setToken(response.accessToken);
+		if (response.tokens?.accessToken) {
+			apiService.setToken(response.tokens.accessToken);
 		}
 		return response;
 	}

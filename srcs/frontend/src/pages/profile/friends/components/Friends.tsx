@@ -1,43 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { UserMinus, MessageCircle, Search } from 'lucide-react';
-
-interface Friend {
-	id: string;
-	username: string;
-	avatar: string;
-	status: 'online' | 'offline' | 'in-game';
-	gamesPlayed: number;
-	wins: number;
-}
+import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
 
 export default function Friends(): React.JSX.Element {
 	const [searchQuery, setSearchQuery] = useState<string>('');
+	const friends = useAtomValue(friendsListAtom);
+	const isLoading = useAtomValue(friendsLoadingAtom);
+	const fetchFriends = useSetAtom(fetchFriendsAtom);
+	const removeFriend = useSetAtom(removeFriendAtom);
 
-	const friends: Friend[] = [
-		{ id: '1', username: 'Player1', avatar: 'P', status: 'online', gamesPlayed: 25, wins: 18 },
-		{ id: '2', username: 'Player2', avatar: 'P', status: 'in-game', gamesPlayed: 42, wins: 30 },
-		{ id: '3', username: 'Player3', avatar: 'P', status: 'offline', gamesPlayed: 15, wins: 8 }
-	];
+	useEffect(() => {
+		fetchFriends();
+	}, [fetchFriends]);
 
 	const filteredFriends = friends.filter(f =>
 		f.username.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
-	const getStatusColor = (status: Friend['status']): string => {
-		switch (status) {
-			case 'online': return '#22c55e';
-			case 'in-game': return '#f59e0b';
-			case 'offline': return '#6b7280';
-		}
+	const getStatusColor = (isOnline: boolean): string => {
+		return isOnline ? '#22c55e' : '#6b7280';
 	};
 
-	const getStatusText = (status: Friend['status']): string => {
-		switch (status) {
-			case 'online': return 'Online';
-			case 'in-game': return 'In Game';
-			case 'offline': return 'Offline';
-		}
+	const getStatusText = (isOnline: boolean): string => {
+		return isOnline ? 'Online' : 'Offline';
 	};
+
+	const handleRemoveFriend = (friendId: number) => {
+		removeFriend(friendId);
+	};
+
+	if (isLoading && friends.length === 0) {
+		return <p style={{ textAlign: 'center', color: '#666' }}>Loading friends...</p>;
+	}
 
 	return (
 		<>
@@ -61,7 +56,7 @@ export default function Friends(): React.JSX.Element {
 					<div key={friend.id} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem' }}>
 						<div style={{ position: 'relative' }}>
 							<div className="avatar" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
-								{friend.avatar}
+								{friend.avatar || friend.username.charAt(0).toUpperCase()}
 							</div>
 							<span style={{
 								position: 'absolute',
@@ -70,21 +65,25 @@ export default function Friends(): React.JSX.Element {
 								width: '10px',
 								height: '10px',
 								borderRadius: '50%',
-								backgroundColor: getStatusColor(friend.status),
+								backgroundColor: getStatusColor(friend.is_online),
 								border: '2px solid white'
 							}} />
 						</div>
 						<div style={{ flex: 1, minWidth: 0 }}>
 							<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{friend.username}</h3>
-							<p style={{ margin: 0, color: getStatusColor(friend.status), fontSize: '0.75rem' }}>
-								{getStatusText(friend.status)}
+							<p style={{ margin: 0, color: getStatusColor(friend.is_online), fontSize: '0.75rem' }}>
+								{getStatusText(friend.is_online)}
 							</p>
 						</div>
 						<div style={{ display: 'flex', gap: '0.25rem' }}>
 							<button className="btn-secondary" style={{ padding: '0.35rem' }}>
 								<MessageCircle size={14} />
 							</button>
-							<button className="btn-secondary" style={{ padding: '0.35rem', color: '#ef4444' }}>
+							<button
+								className="btn-secondary"
+								style={{ padding: '0.35rem', color: '#ef4444' }}
+								onClick={() => handleRemoveFriend(friend.id)}
+							>
 								<UserMinus size={14} />
 							</button>
 						</div>

@@ -52,6 +52,8 @@ class InvitationService {
       });
     }
 
+    // Retourner l'invitation avec les informations du receiver
+    invitation.receiver = receiver;
     return invitation;
   }
 

@@ -29,7 +29,6 @@ export const friendsListAtom = atom((get) => {
 			friends.push(user);
 		}
 	}
-
 	return friends;
 });
 
