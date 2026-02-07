@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../providers';
+import AvatarUtil from '../../../components/AvatarUtil';
 
 export default function ProfilePage(): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
@@ -12,9 +13,7 @@ export default function ProfilePage(): React.JSX.Element {
 	return (
 		<div className="profile-container">
 			<div className="profile-header">
-				<div className="avatar">
-					{user.username.charAt(0).toUpperCase()}
-				</div>
+				<AvatarUtil radius={100} id={user.id} />
 				<div className="profile-info">
 					<h2>{user.username}</h2>
 					<p style={{ color: '#666' }}>Player since 2024</p>

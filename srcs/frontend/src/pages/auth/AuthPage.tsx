@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
 import { loginAtom, registerAtom } from '../../providers';
+import AvatarSelector from '../../components/AvatarSelector';
 
 interface FormData {
 	username: string;
 	realname: string;
 	password: string;
+	avatar: null | string;
 }
 
 export default function AuthPage(): React.JSX.Element {
@@ -14,7 +16,7 @@ export default function AuthPage(): React.JSX.Element {
 	const login = useSetAtom(loginAtom);
 	const register = useSetAtom(registerAtom);
 	const [isLogin, setIsLogin] = useState<boolean>(true);
-	const [formData, setFormData] = useState<FormData>({ username: '', realname: '', password: '' });
+	const [formData, setFormData] = useState<FormData>({ username: '', realname: '', password: '', avatar: null });
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -42,7 +44,7 @@ export default function AuthPage(): React.JSX.Element {
 				await register({
 					username: formData.username,
 					realname: formData.realname,
-					avatar: formData.username.charAt(0).toUpperCase(),
+					avatar: formData.avatar,
 					password: formData.password
 				});
 			}
@@ -87,6 +89,8 @@ export default function AuthPage(): React.JSX.Element {
 					</div>
 				)}
 
+				{!isLogin && <AvatarSelector value={formData.avatar} radius={100} onChange={img => setFormData({ ...formData, avatar: img })} />}
+
 				<div className="form-group">
 					<label>Username</label>
 					<input
@@ -94,7 +98,7 @@ export default function AuthPage(): React.JSX.Element {
 						placeholder="Enter username"
 						value={formData.username}
 						onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-						onKeyPress={handleKeyPress}
+						onKeyUp={handleKeyPress}
 						disabled={isLoading}
 					/>
 				</div>
@@ -107,7 +111,7 @@ export default function AuthPage(): React.JSX.Element {
 							placeholder="Enter your real name"
 							value={formData.realname}
 							onChange={(e) => setFormData({ ...formData, realname: e.target.value })}
-							onKeyPress={handleKeyPress}
+							onKeyUp={handleKeyPress}
 							disabled={isLoading}
 						/>
 					</div>
@@ -120,7 +124,7 @@ export default function AuthPage(): React.JSX.Element {
 						placeholder="Enter password"
 						value={formData.password}
 						onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-						onKeyPress={handleKeyPress}
+						onKeyUp={handleKeyPress}
 						disabled={isLoading}
 					/>
 				</div>

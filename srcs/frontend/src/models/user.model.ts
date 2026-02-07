@@ -9,7 +9,7 @@ export interface User {
 export interface UserCreate {
 	username: string;
 	realname: string;
-	avatar: string;
+	avatar: null | string;
 	password: string;
 }
 

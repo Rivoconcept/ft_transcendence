@@ -123,7 +123,7 @@ export const loginAtom = atom(
 // Register action
 export const registerAtom = atom(
 	null,
-	async (_get, set, data: { username: string; realname: string; avatar: string; password: string }) => {
+	async (_get, set, data: { username: string; realname: string; avatar: null | string; password: string }) => {
 		const response = await userService.register(data);
 		set(currentUserAtom, response.user);
 		set(userFamilyProvider(response.user.id), response.user);
