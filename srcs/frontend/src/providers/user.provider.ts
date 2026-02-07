@@ -87,9 +87,8 @@ export const initCurrentUserAtom = atom(
 		try {
 			const user = await userService.getMe();
 			set(currentUserAtom, user);
-			// Also cache in family provider
 			set(_userCacheFamily(user.id), user);
-			// Connect socket with token
+			// Connect socket - backend will set is_online to true
 			const token = apiService.getToken();
 			if (token) {
 				socketStore.connectAndAuth(token);
@@ -109,7 +108,7 @@ export const loginAtom = atom(
 		const response = await userService.login(data);
 		set(currentUserAtom, response.user);
 		set(_userCacheFamily(response.user.id), response.user);
-		// Connect socket with token
+		// Connect socket with token - backend will set is_online to true
 		const token = apiService.getToken();
 		if (token) {
 			socketStore.connectAndAuth(token);
@@ -125,7 +124,7 @@ export const registerAtom = atom(
 		const response = await userService.register(data);
 		set(currentUserAtom, response.user);
 		set(_userCacheFamily(response.user.id), response.user);
-		// Connect socket with token
+		// Connect socket with token - backend will set is_online to true
 		const token = apiService.getToken();
 		if (token) {
 			socketStore.connectAndAuth(token);

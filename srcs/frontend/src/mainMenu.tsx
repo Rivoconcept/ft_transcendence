@@ -121,6 +121,21 @@ function SocketListener(): null {
 	const store = useStore();
 	const user = useAtomValue(currentUserAtom);
 
+	// Set up Jotai store reference and status callback in socketStore
+	useEffect(() => {
+		socketStore.setJotaiStore(store);
+
+		// Set up callback for connect/disconnect status updates
+		socketStore.setStatusUpdateCallback((isOnline: boolean) => {
+			const currentUser = store.get(currentUserAtom);
+			if (currentUser) {
+				const updatedUser = { ...currentUser, is_online: isOnline };
+				store.set(currentUserAtom, updatedUser);
+				store.set(userCacheFamily(currentUser.id), updatedUser);
+			}
+		});
+	}, [store]);
+
 	useEffect(() => {
 		if (!user) return;
 
