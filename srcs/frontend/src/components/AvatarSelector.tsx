@@ -11,7 +11,6 @@ export default function AvatarSelector({value, radius = 50, onChange}: {value: n
         display: 'inline-block',
         align: 'center',
     };
-    const buttonSize = 20;
     const fileInput = useRef<HTMLInputElement>(null);
     const manageFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;

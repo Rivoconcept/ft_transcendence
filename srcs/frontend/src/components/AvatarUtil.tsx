@@ -1,15 +1,9 @@
 import { useAtomValue } from "jotai";
-import {
-    userErrorFamilyProvider,
-    userFamilyProvider,
-    userLoadingFamilyProvider
-} from "../providers";
+import { userFamilyProvider } from "../providers";
 import "./AvatarUtil.css";
 
 export default function AvatarUtil({id, radius}: {id: number, radius: number}) {
     const user = useAtomValue(userFamilyProvider(id));
-    const userLoading = useAtomValue(userLoadingFamilyProvider(id));
-    const userError = useAtomValue(userErrorFamilyProvider(id));
 
     if (!user) {
         return (
