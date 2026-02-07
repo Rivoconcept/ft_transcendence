@@ -13,7 +13,7 @@ export default function ProfilePage(): React.JSX.Element {
 	return (
 		<div className="profile-container">
 			<div className="profile-header">
-				<AvatarUtil radius={100} id={user.id} />
+				<AvatarUtil radius={100} id={user.id} showStatus={false} />
 				<div className="profile-info">
 					<h2>{user.username}</h2>
 					<p style={{ color: '#666' }}>Player since 2024</p>
