@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
+import { loadable } from 'jotai/utils';
 import { userService, apiService } from '../services';
 import { socketStore } from '../store/socketStore';
 import type { User } from '../models';
@@ -19,55 +20,34 @@ export const currentUserAtom = atom<User | null>(null);
 // Loading state for current user
 export const currentUserLoadingAtom = atom<boolean>(false);
 
-// User FamilyProvider - cache users by ID
-// If user not in cache, fetches from API
-export const userFamilyProvider = atomFamily(
+// === PRIVATE: Cache brut ===
+const _userCacheFamily = atomFamily(
 	(_userId: number) => atom<User | null>(null)
 );
 
-// Async loading state for user family
-export const userLoadingFamilyProvider = atomFamily(
-	(_userId: number) => atom<boolean>(false)
+// === PRIVATE: Async family avec fetch auto si pas en cache ===
+const _userAsyncFamily = atomFamily((userId: number) =>
+	atom(async (get) => {
+		const cached = get(_userCacheFamily(userId));
+		if (cached) return cached;
+		// Fetch si pas en cache
+		return await userService.getById(userId);
+	})
 );
 
-// Error state for user family
-export const userErrorFamilyProvider = atomFamily(
-	(_userId: number) => atom<string | null>(null)
+// === PUBLIC: Pour l'UI avec loading state ===
+export const userFamily = atomFamily((userId: number) =>
+	loadable(_userAsyncFamily(userId))
 );
 
-// Action to fetch and cache a user
-export const fetchUserAtom = atom(
-	null,
-	async (get, set, userId: number) => {
-		// Check if already loaded
-		const existingUser = get(userFamilyProvider(userId));
-		if (existingUser) return existingUser;
+// === PUBLIC: Cache pour lecture/écriture synchrone (providers, socket events) ===
+export const userCacheFamily = _userCacheFamily;
 
-		// Check if already loading
-		const isLoading = get(userLoadingFamilyProvider(userId));
-		if (isLoading) return null;
-
-		set(userLoadingFamilyProvider(userId), true);
-		set(userErrorFamilyProvider(userId), null);
-
-		try {
-			const user = await userService.getById(userId);
-			set(userFamilyProvider(userId), user);
-			return user;
-		} catch (error) {
-			set(userErrorFamilyProvider(userId), 'Failed to load user');
-			return null;
-		} finally {
-			set(userLoadingFamilyProvider(userId), false);
-		}
-	}
-);
-
-// Action to update user in cache (called when friends/invitations are loaded)
+// Action to update user in cache
 export const updateUserCacheAtom = atom(
 	null,
 	(_get, set, user: User) => {
-		set(userFamilyProvider(user.id), user);
+		set(_userCacheFamily(user.id), user);
 	}
 );
 
@@ -76,8 +56,26 @@ export const updateUsersCacheAtom = atom(
 	null,
 	(_get, set, users: User[]) => {
 		users.forEach(user => {
-			set(userFamilyProvider(user.id), user);
+			set(_userCacheFamily(user.id), user);
 		});
+	}
+);
+
+// Action to fetch user and store in cache (for socket events)
+export const fetchUserToCacheAtom = atom(
+	null,
+	async (get, set, userId: number) => {
+		// Skip if already in cache
+		const cached = get(_userCacheFamily(userId));
+		if (cached) return cached;
+
+		try {
+			const user = await userService.getById(userId);
+			set(_userCacheFamily(userId), user);
+			return user;
+		} catch {
+			return null;
+		}
 	}
 );
 
@@ -90,7 +88,7 @@ export const initCurrentUserAtom = atom(
 			const user = await userService.getMe();
 			set(currentUserAtom, user);
 			// Also cache in family provider
-			set(userFamilyProvider(user.id), user);
+			set(_userCacheFamily(user.id), user);
 			// Connect socket with token
 			const token = apiService.getToken();
 			if (token) {
@@ -110,7 +108,7 @@ export const loginAtom = atom(
 	async (_get, set, data: { username: string; password: string }) => {
 		const response = await userService.login(data);
 		set(currentUserAtom, response.user);
-		set(userFamilyProvider(response.user.id), response.user);
+		set(_userCacheFamily(response.user.id), response.user);
 		// Connect socket with token
 		const token = apiService.getToken();
 		if (token) {
@@ -126,7 +124,7 @@ export const registerAtom = atom(
 	async (_get, set, data: { username: string; realname: string; avatar: null | string; password: string }) => {
 		const response = await userService.register(data);
 		set(currentUserAtom, response.user);
-		set(userFamilyProvider(response.user.id), response.user);
+		set(_userCacheFamily(response.user.id), response.user);
 		// Connect socket with token
 		const token = apiService.getToken();
 		if (token) {
@@ -160,7 +158,6 @@ export const logoutAtom = atom(
 		set(sentInvitationsLoadingAtom, false);
 		set(sentInvitationsErrorAtom, null);
 
-		// Note: atomFamily caches (userFamilyProvider) will be cleared
-		// indirectly since relations are empty, and on next login fresh data loads
+		// Note: atomFamily caches will be cleared on next login with fresh data
 	}
 );

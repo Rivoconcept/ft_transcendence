@@ -13,8 +13,8 @@ import {
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
 	logoutAtom,
-	fetchUserAtom,
-	userFamilyProvider
+	fetchUserToCacheAtom,
+	userCacheFamily
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -126,7 +126,7 @@ function SocketListener(): null {
 
 		const handleInvitationReceived = async (data: { invitationId: number; senderId: number }) => {
 			// Fetch sender info
-			await store.set(fetchUserAtom, data.senderId);
+			await store.set(fetchUserToCacheAtom, data.senderId);
 			// Add to received invitations
 			const current = store.get(receivedInvitationsAtom);
 			if (!current.find(i => i.invitationId === data.invitationId)) {
@@ -145,7 +145,7 @@ function SocketListener(): null {
 			const sent = store.get(sentInvitationsAtom);
 			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
 			// Fetch friend info and add to friends
-			await store.set(fetchUserAtom, data.friendId);
+			await store.set(fetchUserToCacheAtom, data.friendId);
 			const friends = store.get(friendRelationsAtom);
 			if (!friends.find(f => f.friendId === data.friendId)) {
 				const newFriend: FriendRelation = {
@@ -175,9 +175,9 @@ function SocketListener(): null {
 		};
 
 		const handleUserStatusChanged = (data: { userId: number; isOnline: boolean }) => {
-			const cachedUser = store.get(userFamilyProvider(data.userId));
+			const cachedUser = store.get(userCacheFamily(data.userId));
 			if (cachedUser) {
-				store.set(userFamilyProvider(data.userId), {
+				store.set(userCacheFamily(data.userId), {
 					...cachedUser,
 					is_online: data.isOnline
 				});
