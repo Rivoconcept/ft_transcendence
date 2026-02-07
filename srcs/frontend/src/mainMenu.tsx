@@ -13,7 +13,8 @@ import {
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
 	logoutAtom,
-	fetchUserAtom
+	fetchUserAtom,
+	userFamilyProvider
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -173,12 +174,23 @@ function SocketListener(): null {
 			store.set(friendRelationsAtom, friends.filter(f => f.friendId !== data.friendId));
 		};
 
+		const handleUserStatusChanged = (data: { userId: number; isOnline: boolean }) => {
+			const cachedUser = store.get(userFamilyProvider(data.userId));
+			if (cachedUser) {
+				store.set(userFamilyProvider(data.userId), {
+					...cachedUser,
+					is_online: data.isOnline
+				});
+			}
+		};
+
 		// Register listeners
 		socketStore.on('invitation:received', handleInvitationReceived);
 		socketStore.on('invitation:accepted', handleInvitationAccepted);
 		socketStore.on('invitation:declined', handleInvitationDeclined);
 		socketStore.on('invitation:cancelled', handleInvitationCancelled);
 		socketStore.on('friend:removed', handleFriendRemoved);
+		socketStore.on('user:status-changed', handleUserStatusChanged);
 
 		// Cleanup
 		return () => {
@@ -187,6 +199,7 @@ function SocketListener(): null {
 			socketStore.off('invitation:declined', handleInvitationDeclined);
 			socketStore.off('invitation:cancelled', handleInvitationCancelled);
 			socketStore.off('friend:removed', handleFriendRemoved);
+			socketStore.off('user:status-changed', handleUserStatusChanged);
 		};
 	}, [user, store]);
 
