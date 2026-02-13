@@ -9,6 +9,11 @@ describe("User API", () => {
     realname: "User Test",
     password: "password123",
   };
+  const otherUser = {
+    username: "otheruser",
+    realname: "Other User",
+    password: "password123",
+  };
 
   let accessToken: string;
   let userId: number;
@@ -65,6 +70,30 @@ describe("User API", () => {
       expect(res.status).toBe(200);
       expect(res.body.realname).toBe("Updated Name");
       expect(res.body.avatar).toBe("new-avatar.png");
+    });
+
+    it("should update username", async () => {
+      const res = await request(app)
+        .put("/api/users/me")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send({ username: "usertest_new" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.username).toBe("usertest_new");
+    });
+
+    it("should fail when username already exists", async () => {
+      await request(app)
+        .post("/api/auth/register")
+        .send(otherUser);
+
+      const res = await request(app)
+        .put("/api/users/me")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send({ username: otherUser.username });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe("Username already exists");
     });
   });
 

@@ -30,8 +30,18 @@ class UserService {
 
   async updateProfile(
     userId: number,
-    data: { realname?: string; avatar?: string }
+    data: { username?: string; realname?: string; avatar?: string }
   ): Promise<Partial<User> | null> {
+    if (data.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username: data.username },
+      });
+
+      if (existingUser && existingUser.id !== userId) {
+        throw new Error("Username already exists");
+      }
+    }
+
     await this.userRepository.update(userId, data);
     return this.getById(userId);
   }

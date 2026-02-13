@@ -11,6 +11,7 @@ export {
 	initCurrentUserAtom,
 	loginAtom,
 	registerAtom,
+	updateCurrentUserAtom,
 	logoutAtom
 } from './user.provider';
 

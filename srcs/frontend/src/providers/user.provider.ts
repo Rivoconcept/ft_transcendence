@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { userService, apiService } from '../services';
 import { socketStore } from '../store/socketStore';
-import type { User } from '../models';
+import type { User, UserUpdate } from '../models';
 import { friendRelationsAtom, friendsLoadingAtom, friendsErrorAtom } from './friend.provider';
 import {
 	receivedInvitationsAtom,
@@ -133,6 +133,22 @@ export const registerAtom = atom(
 			socketStore.connectAndAuth(token);
 		}
 		return response.user;
+	}
+);
+
+// Update current user profile
+export const updateCurrentUserAtom = atom(
+	null,
+	async (get, set, data: UserUpdate) => {
+		const currentUser = get(currentUserAtom);
+		if (!currentUser) {
+			throw new Error('No authenticated user');
+		}
+
+		const updatedUser = await userService.updateMe(data);
+		set(currentUserAtom, updatedUser);
+		set(userFamilyProvider(updatedUser.id), updatedUser);
+		return updatedUser;
 	}
 );
 

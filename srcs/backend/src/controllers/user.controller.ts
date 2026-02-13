@@ -53,9 +53,19 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { realname, avatar } = req.body;
+    const { username, realname, avatar } = req.body;
+    const normalizedUsername = typeof username === "string" ? username.trim() : undefined;
 
-    const user = await userService.updateProfile(req.user.userId, { realname, avatar });
+    if (normalizedUsername !== undefined && normalizedUsername.length === 0) {
+      res.status(400).json({ error: "Username cannot be empty" });
+      return;
+    }
+
+    const user = await userService.updateProfile(req.user.userId, {
+      username: normalizedUsername,
+      realname,
+      avatar,
+    });
 
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -65,6 +75,10 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
     res.json(user);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update profile";
+    if (message === "Username already exists") {
+      res.status(409).json({ error: message });
+      return;
+    }
     res.status(500).json({ error: message });
   }
 }
