@@ -34,6 +34,8 @@ CERTS_DIR = ./secrets/certs
 CRT_FILE = $(CERTS_DIR)/nginx.crt
 KEY_FILE = $(CERTS_DIR)/nginx.key
 
+DATA_DIR = /home/nobara/data/db_data
+
 all: init-dirs init-volumes certs up addHost
 
 up:
@@ -43,7 +45,7 @@ build:
 	$(COMPOSE) $(ENV_FILE) $(COMPOSE_FILE) build
 
 down:
-	$(COMPOSE) $(COMPOSE_FILE) down
+	$(COMPOSE) $(COMPOSE_FILE) down -v
 
 logs:
 	$(COMPOSE) $(COMPOSE_FILE) logs -f
@@ -107,7 +109,27 @@ certs:
 		chmod 644 $(CRT_FILE); \
 	fi
 
-fclean: down
+logback:
+	docker logs -f backend-dev
+
+logfront:
+	docker logs -f frontend-dev
+
+execback:
+	docker exec -it backend-dev /bin/sh
+
+execfront:
+	docker exec -it backend-dev /bin/sh
+
+execdb:
+	docker exec -it postgres /bin/sh
+
+cleandb:
+	sudo rm -rf $(DATA_DIR)
+
+restart: down cleandb all
+
+fclean: down cleandb
 	docker system prune -af
 	@echo "Cleanup done."
 
