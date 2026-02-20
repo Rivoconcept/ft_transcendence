@@ -1,0 +1,184 @@
+.cardScene {
+  width: 100%;
+  padding: 1rem;
+}
+
+.cardsRow {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.cardSlot {
+  flex: 1 1 150px; /* min width 150px, grandit si possible */
+  max-width: 200px; /* max width pour desktop */
+  aspect-ratio: 5 / 7; /* ratio carte 2.5 / 3.5 */
+}
+
+.cardCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-color: black;
+}
+
+
+.dashboard {
+  width: 20vw;
+  height: 50vh;
+  border-radius: 20px;
+  background: black;
+  display: flex;
+  flex-direction: column;
+}
+
+.avatar {
+  width: 7vw;
+  height: 12vh;
+  background: rgb(229, 118, 233);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  img {
+    max-width: 80%;
+    max-height: 80%;
+  }
+}
+
+.circleTimer {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+}
+
+hr.separator {
+  border: none;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #06f762, transparent);
+  box-shadow: 0 0 8px #06f762;
+  margin-top: 0;
+  margin-bottom: 3px;
+}
+
+.progressTile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-style: italic;
+  font-size: 10px;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-weight: bold;
+  color: red;
+  margin: 0;
+  padding: 0;
+  justify-content: space-between;
+  font-size: clamp(0.6rem, 0.7vw, 0.7rem);
+}
+
+.progressTile .label {
+  flex-shrink: 0;
+}
+
+.progressTile .line {
+  flex-grow: 1;
+  height: 2px;
+  background-color: black;
+  border-radius: 1px;
+}
+
+.progressTile .turn {
+  flex-shrink: 0;
+}
+
+
+.progressBarScore {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.scoreHistoryWrapper {
+  display: flex;
+  margin: 3px;
+  width: 100%;
+}
+
+.scoreLists {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  font-size: clamp(0.6rem, 0.7vw, 0.7rem);
+  color: #f7f306;
+}
+
+.scoreItem {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1px 0;
+}
+
+
+.totalScore {
+  width: 100%;
+  text-align: left;
+  color: #f7b706;
+  font-size: clamp(0.8rem, 1vw, 1rem);
+}
+
+.separatorLine {
+  height: 2px;
+  background: #444;
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+
+.totalScore p {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.resultStatus {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.win {
+  display: block;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: green;
+}
+
+.separatorBottom {
+  margin-top: auto;
+  justify-content: center;
+  padding-bottom: 1px;
+}
+
+.cardButton {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 15px;
+}
+
+.card-body {
+  --bs-card-spacer-y: 1rem !important;
+}
+
+.lose {
+  display: block;
+  color: red;
+  text-align: center;
+  font-size: clamp(0.8rem, 2vw, 2rem);
+}

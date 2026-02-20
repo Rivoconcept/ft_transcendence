@@ -1,0 +1,76 @@
+.scores-table-container {
+  width: 100%;
+  margin-top: 1rem;
+  
+  .table {
+    margin-bottom: 0;
+    
+    thead {
+      th {
+        border-bottom: 2px solid #495057;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+      }
+    }
+    
+    tbody {
+      tr {
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        th {
+          font-weight: 500;
+          color: #adb5bd;
+        }
+        
+        td {
+          vertical-align: middle;
+          
+          .badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            
+            &.bg-success {
+              background-color: #28a745 !important;
+            }
+            
+            &.bg-danger {
+              background-color: #dc3545 !important;
+            }
+          }
+        }
+      }
+    }
+    
+    tfoot {
+      .table-total {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-top: 2px solid #495057;
+        
+        th {
+          font-weight: 700;
+          color: #fff;
+          text-transform: uppercase;
+          font-size: 0.9rem;
+        }
+        
+        .total-score {
+          font-weight: 700;
+          color: #ffc107;
+          font-size: 1.1rem;
+        }
+        
+        .total-wins {
+          font-weight: 700;
+          color: #28a745;
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+}

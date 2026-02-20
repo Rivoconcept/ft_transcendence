@@ -1,15 +1,17 @@
 // /home/rhanitra/GITHUB/transcendence/ft_transcendence/srcs/frontend/src/context/CardContext.tsx
 
 import { createContext, useContext, useState } from "react";
-import { proofByNine } from "../utils/proofByNine";
 import { CARDS } from "../typescript/CardContextType";
 import type { CardContextType } from "../typescript/CardContextType";
+import { drawnCardsAtom } from "../state/CardGameAtoms";
+import { useSetAtom } from "jotai";
 
 
 const CardContext = createContext<CardContextType | null>(null);
 
 export function CardContextProvider({ children }: { children: React.ReactNode }) {
   const [cards, setCards] = useState<CardContextType["cards"]>(null);
+  const setDrawnCards = useSetAtom(drawnCardsAtom);
 
   const drawAll = () => {
     const allCardsRandomOrder = [...CARDS].sort(() => Math.random() - 0.5);
@@ -17,21 +19,23 @@ export function CardContextProvider({ children }: { children: React.ReactNode })
       id: c.id,
       value: c.value,
     }));
+
     setCards(drawn);
+    setDrawnCards(drawn);
   };
 
   const reset = () => {
     setCards(null);
+    setDrawnCards(null);
   };
-  
-  const score = cards && cards.length === 3 ? proofByNine(cards.reduce((s, c) => s + c.value, 0)) : null;
 
   return (
-    <CardContext.Provider value={{ cards, score, drawAll, reset }}>
+    <CardContext.Provider value={{ cards, drawAll, reset }}>
       {children}
     </CardContext.Provider>
   );
 }
+
 
 /* ---------- CUSTOM HOOK ---------- */
 
