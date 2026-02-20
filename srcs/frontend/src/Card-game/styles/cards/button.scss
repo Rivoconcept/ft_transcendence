@@ -1,20 +1,20 @@
-// /home/rhanitra/GITHUB/transcendence/ft_transcendence/srcs/frontend/src/styles/button.scss
-/* From Uiverse.io by alexmaracinaru */ 
+
 .button1 {
   cursor: pointer;
   font-weight: 700;
   transition: all 0.2s;
   padding: 10px 20px;
   border-radius: 100px;
-  background: #cfef00;
+  background: #fcf801;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
   font-size: 15px;
+  color: black;
 }
 
 .button1:hover {
-  background: #c4e201;
+  background: #fcd602;
 }
 
 .button1 > svg {
