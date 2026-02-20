@@ -1,5 +1,6 @@
+import { useCardGameState } from "../context/CardGameContext";
 
-import { useCardGameState } from "../../cardGamecontext/CardGameContext";
+
 
 export function ProgressBar() {
   const { progress } = useCardGameState();
