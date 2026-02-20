@@ -29,6 +29,7 @@ export type DrawnCard = {
 
 export type CardContextType = {
   cards: DrawnCard[] | null;
+  score: number | null;
   drawAll: () => void;
   reset: () => void;
 };

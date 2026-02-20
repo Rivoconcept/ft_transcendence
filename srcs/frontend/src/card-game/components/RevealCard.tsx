@@ -3,7 +3,8 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useRef, useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { CARDS } from "../../typescript/CardContextType";
+import { CARDS } from "../typescript/CardContextType";
+
 
 export default function RevealCard({ cardId }: { cardId: string }) {
   const group = useRef<THREE.Group>(null!);

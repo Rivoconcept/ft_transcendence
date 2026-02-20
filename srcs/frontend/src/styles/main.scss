@@ -1,0 +1,13 @@
+/* Variables Bootstrap (before bootstrap) */
+@use "./cards/button";
+@use "./cards/ProgressBarTimer";
+@use "./cards/ProgressBar";
+@use "./cards/cards";
+@import "./variables";
+@import "bootstrap/scss/bootstrap";
+
+
+body {
+  background-color: #0d1117;
+  color: #e6edf3;
+}

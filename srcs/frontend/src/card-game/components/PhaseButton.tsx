@@ -1,4 +1,4 @@
-type Phase = "BEGIN" | "SHUFFLE" | "PLAY";
+import { Phase } from "../typescript/cardPhase";
 
 type Props = {
   phase: Phase;
@@ -6,7 +6,7 @@ type Props = {
 };
 
 export default function PhaseButton({ phase, onClick }: Props) {
-  if (phase === "BEGIN") {
+  if (phase === Phase.BEGIN) {
     return (
         <button onClick={onClick} className="button1">
         Shuffle
@@ -17,7 +17,7 @@ export default function PhaseButton({ phase, onClick }: Props) {
     );
   }
 
-  if (phase === "SHUFFLE") {
+  if (phase === Phase.SHUFFLE) {
     return (
         <button onClick={onClick} className="button2"> 
         <div className="svg-wrapper-1">
@@ -33,7 +33,7 @@ export default function PhaseButton({ phase, onClick }: Props) {
     );
   }
 
-  if (phase === "PLAY") {
+  if (phase === Phase.PLAY) {
     return (
     <button onClick={onClick} className="button3">
     <span>Restart</span>
