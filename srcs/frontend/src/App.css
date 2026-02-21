@@ -168,7 +168,7 @@ body {
 }
 
 .main-content {
-	padding: 2rem;
+	/* padding: 2rem 0; */
 	max-width: 1200px;
 	margin: 0 auto;
 }
@@ -329,6 +329,7 @@ body {
 /************ GAME CARDS **************/
 
 .game-list{
+	padding: 2rem;
 	display: grid;
 	grid-template-columns: auto auto auto;
 	gap: 2rem;

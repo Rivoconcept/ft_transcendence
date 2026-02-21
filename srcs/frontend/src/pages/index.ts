@@ -6,3 +6,5 @@ export { GameList, DiceGame, NumberGame, StatusScreen, WinnerScreen } from './ga
 
 // Profile
 export { ProfilePage, FriendsPage } from './profile';
+
+export { MessagesPage } from './message';

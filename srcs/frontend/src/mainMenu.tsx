@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { useAtomValue, useSetAtom, useStore } from 'jotai';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+import "./pages/message/message.css"
 
 import { Navigation } from './components';
 import { apiService } from './services';
@@ -33,7 +34,8 @@ import {
 	StatusScreen,
 	WinnerScreen,
 	ProfilePage,
-	FriendsPage
+	FriendsPage,
+	MessagesPage
 } from './pages';
 
 // Types
@@ -227,7 +229,7 @@ export default function App(): React.JSX.Element {
 	const isLoading = useAtomValue(currentUserLoadingAtom);
 	const initCurrentUser = useSetAtom(initCurrentUserAtom);
 	const logout = useSetAtom(logoutAtom);
-	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('default');
+	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('dark');
 
 	// Load token and fetch user on mount
 	useEffect(() => {
@@ -341,7 +343,14 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-
+					<Route
+						path="/messages"
+						element={
+							<ProtectedRoute>
+								<MessagesPage />
+							</ProtectedRoute>
+						}
+					/>
 					{/* Fallback */}
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
