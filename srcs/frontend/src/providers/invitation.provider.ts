@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { invitationService } from '../services';
 import type { User } from '../models';
-import { userFamilyProvider } from './user.provider';
+import { userCacheFamily } from './user.provider';
 import { addFriendAtom } from './friend.provider';
 
 // ============= RECEIVED INVITATIONS =============
@@ -29,7 +29,7 @@ export const receivedInvitationsListAtom = atom((get) => {
 	const invitations: Array<InvitationRelation & { sender: User | null }> = [];
 
 	for (const relation of relations) {
-		const sender = get(userFamilyProvider(relation.senderId));
+		const sender = get(userCacheFamily(relation.senderId));
 		invitations.push({
 			...relation,
 			sender
@@ -56,7 +56,7 @@ export const fetchReceivedInvitationsAtom = atom(
 			for (const inv of invitations) {
 				// Update sender in user cache if available
 				if (inv.sender) {
-					set(userFamilyProvider(inv.sender.id), inv.sender);
+					set(userCacheFamily(inv.sender.id), inv.sender);
 				}
 
 				relations.push({
@@ -90,7 +90,7 @@ export const acceptInvitationAtom = atom(
 
 			// Add sender to friends list
 			if (invitation) {
-				const sender = get(userFamilyProvider(invitation.senderId));
+				const sender = get(userCacheFamily(invitation.senderId));
 				if (sender) {
 					set(addFriendAtom, sender);
 				}
@@ -144,7 +144,7 @@ export const sentInvitationsListAtom = atom((get) => {
 	const invitations: Array<SentInvitationRelation & { receiver: User | null }> = [];
 
 	for (const relation of relations) {
-		const receiver = get(userFamilyProvider(relation.receiverId));
+		const receiver = get(userCacheFamily(relation.receiverId));
 		invitations.push({
 			...relation,
 			receiver
@@ -171,7 +171,7 @@ export const fetchSentInvitationsAtom = atom(
 			for (const inv of invitations) {
 				// Update receiver in user cache if available
 				if (inv.receiver) {
-					set(userFamilyProvider(inv.receiver.id), inv.receiver);
+					set(userCacheFamily(inv.receiver.id), inv.receiver);
 				}
 
 				relations.push({
@@ -200,7 +200,7 @@ export const sendInvitationAtom = atom(
 
 			// Update receiver in cache if available
 			if (invitation.receiver) {
-				set(userFamilyProvider(invitation.receiver.id), invitation.receiver);
+				set(userCacheFamily(invitation.receiver.id), invitation.receiver);
 			}
 
 			// Add to sent invitations

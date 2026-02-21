@@ -34,7 +34,9 @@ CERTS_DIR = ./secrets/certs
 CRT_FILE = $(CERTS_DIR)/nginx.crt
 KEY_FILE = $(CERTS_DIR)/nginx.key
 
-all: init-dirs init-volumes certs up addHost
+DATA_DIR = /home/nobara/data/db_data
+
+all: init-dirs init-volumes certs up
 
 up:
 	$(COMPOSE) $(ENV_FILE) $(COMPOSE_FILE) up -d
@@ -43,7 +45,7 @@ build:
 	$(COMPOSE) $(ENV_FILE) $(COMPOSE_FILE) build
 
 down:
-	$(COMPOSE) $(COMPOSE_FILE) down
+	$(COMPOSE) $(COMPOSE_FILE) down -v
 
 logs:
 	$(COMPOSE) $(COMPOSE_FILE) logs -f
@@ -60,17 +62,6 @@ ps:
 exec:
 	$(COMPOSE) $(COMPOSE_FILE) exec
 
-addHost:
-	@if [ "$$(id -u)" -ne 0 ]; then \
-		echo "Skipping /etc/hosts (no sudo privileges)"; \
-	else \
-		grep -qxF "127.0.0.1 $(DOMAIN)" /etc/hosts || \
-		echo "127.0.0.1 $(DOMAIN)" >> /etc/hosts; \
-	fi
-
-rmHost:
-	@echo "Remove host $(DOMAIN)"
-	@sudo sed -i '\|127.0.0.1[[:space:]]\+$(DOMAIN)|d' /etc/hosts
 
 init-dirs:
 	@if [ ! -d "$(DATA_PATH)/db_data" ]; then \
@@ -107,7 +98,27 @@ certs:
 		chmod 644 $(CRT_FILE); \
 	fi
 
-fclean: down
+logback:
+	docker logs -f backend-dev
+
+logfront:
+	docker logs -f frontend-dev
+
+execback:
+	docker exec -it backend-dev /bin/sh
+
+execfront:
+	docker exec -it backend-dev /bin/sh
+
+execdb:
+	docker exec -it postgres /bin/sh
+
+cleandb:
+	sudo rm -rf $(DATA_DIR)
+
+restart: down cleandb all
+
+fclean: down cleandb
 	docker system prune -af
 	@echo "Cleanup done."
 

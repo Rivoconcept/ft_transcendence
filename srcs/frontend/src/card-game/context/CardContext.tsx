@@ -1,9 +1,9 @@
 // /home/rhanitra/GITHUB/transcendence/ft_transcendence/srcs/frontend/src/context/CardContext.tsx
 
 import { createContext, useContext, useState } from "react";
+import { CARDS, type CardContextType } from "../typescript/CardContextType";
 import { proofByNine } from "../utils/proofByNine";
-import { CARDS } from "../typescript/CardContextType";
-import type { CardContextType } from "../typescript/CardContextType";
+
 
 
 const CardContext = createContext<CardContextType | null>(null);

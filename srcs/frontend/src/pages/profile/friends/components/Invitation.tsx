@@ -13,6 +13,7 @@ import {
 	sendInvitationAtom,
 	cancelInvitationAtom
 } from '../../../../providers/invitation.provider';
+import AvatarUtil from '../../../../components/AvatarUtil';
 
 export default function Invitation(): React.JSX.Element {
 	const [username, setUsername] = useState<string>('');
@@ -178,9 +179,7 @@ export default function Invitation(): React.JSX.Element {
 				<div style={{ marginBottom: '1.5rem' }}>
 					{receivedInvitations.map(inv => (
 						<div key={inv.invitationId} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem' }}>
-							<div className="avatar" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
-								{inv.sender?.avatar || inv.sender?.username?.charAt(0).toUpperCase() || '?'}
-							</div>
+							<AvatarUtil id={inv.senderId} radius={36} showStatus={false} />
 							<div style={{ flex: 1, minWidth: 0 }}>
 								<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{inv.sender?.username || 'Unknown'}</h3>
 								<p style={{ margin: 0, color: '#666', fontSize: '0.75rem' }}>
@@ -219,9 +218,7 @@ export default function Invitation(): React.JSX.Element {
 			) : (
 				sentInvitations.map(inv => (
 					<div key={inv.invitationId} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem' }}>
-						<div className="avatar" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
-							{inv.receiver?.avatar || inv.receiver?.username?.charAt(0).toUpperCase() || '?'}
-						</div>
+						<AvatarUtil id={inv.receiverId} radius={36} showStatus={false} />
 						<div style={{ flex: 1, minWidth: 0 }}>
 							<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{inv.receiver?.username || 'Unknown'}</h3>
 							<p style={{ margin: 0, color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>

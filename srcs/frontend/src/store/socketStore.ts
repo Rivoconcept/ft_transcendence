@@ -1,10 +1,16 @@
 import { io, Socket } from "socket.io-client";
+import type { createStore } from 'jotai';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+
+// Callback type for status updates
+type StatusUpdateCallback = (isOnline: boolean) => void;
 
 class SocketStore {
   private static instance: SocketStore;
   private socket: Socket | null = null;
+  private jotaiStore: ReturnType<typeof createStore> | null = null;
+  private statusUpdateCallback: StatusUpdateCallback | null = null;
 
   private constructor() {}
 
@@ -13,6 +19,20 @@ class SocketStore {
       SocketStore.instance = new SocketStore();
     }
     return SocketStore.instance;
+  }
+
+  // Set callback for status updates (called on connect/disconnect)
+  setStatusUpdateCallback(callback: StatusUpdateCallback): void {
+    this.statusUpdateCallback = callback;
+  }
+
+  // Set Jotai store reference for atom updates
+  setJotaiStore(store: ReturnType<typeof createStore>): void {
+    this.jotaiStore = store;
+  }
+
+  getJotaiStore(): ReturnType<typeof createStore> | null {
+    return this.jotaiStore;
   }
 
   connect(): Socket {
@@ -26,6 +46,8 @@ class SocketStore {
 
     this.socket.on("connect", () => {
       console.log("Socket.IO connecté:", this.socket?.id);
+      // Notify status update
+      this.statusUpdateCallback?.(true);
     });
 
     this.socket.on("welcome", (data: string) => {
@@ -38,6 +60,8 @@ class SocketStore {
 
     this.socket.on("disconnect", (reason: string) => {
       console.log("Socket.IO déconnecté:", reason);
+      // Notify status update
+      this.statusUpdateCallback?.(false);
     });
 
     return this.socket;

@@ -1,10 +1,18 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/';
+
+interface TokenPair {
+	accessToken: string;
+	refreshToken: string;
+}
 
 class ApiService {
 	private instance: AxiosInstance;
 	private accessToken: string | null = null;
+	private refreshToken: string | null = null;
+	private isRefreshing: boolean = false;
+	private refreshSubscribers: ((token: string) => void)[] = [];
 
 	constructor() {
 		this.instance = axios.create({
@@ -15,6 +23,29 @@ class ApiService {
 		});
 
 		this.setupInterceptors();
+	}
+
+	private onRefreshed(token: string): void {
+		this.refreshSubscribers.forEach(callback => callback(token));
+		this.refreshSubscribers = [];
+	}
+
+	private addRefreshSubscriber(callback: (token: string) => void): void {
+		this.refreshSubscribers.push(callback);
+	}
+
+	private async attemptTokenRefresh(): Promise<string> {
+		if (!this.refreshToken) {
+			throw new Error('No refresh token available');
+		}
+
+		const response = await this.instance.post<TokenPair>('auth/refresh', {
+			refreshToken: this.refreshToken
+		});
+
+		const { accessToken, refreshToken } = response.data;
+		this.setTokens(accessToken, refreshToken);
+		return accessToken;
 	}
 
 	private setupInterceptors(): void {
@@ -40,10 +71,50 @@ class ApiService {
 				return response;
 			},
 			async (error) => {
-				if (error.response?.status === 401) {
-					// Token expired - could implement refresh logic here
-					this.clearToken();
+				const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+				// Only attempt refresh on 401 and if we have a refresh token
+				if (error.response?.status === 401 && this.refreshToken && !originalRequest._retry) {
+					// Don't retry refresh endpoint itself
+					if (originalRequest.url?.includes('auth/refresh')) {
+						this.clearTokens();
+						return Promise.reject(error);
+					}
+
+					if (this.isRefreshing) {
+						// Wait for the refresh to complete
+						return new Promise((resolve) => {
+							this.addRefreshSubscriber((token: string) => {
+								originalRequest.headers.Authorization = `Bearer ${token}`;
+								resolve(this.instance(originalRequest));
+							});
+						});
+					}
+
+					originalRequest._retry = true;
+					this.isRefreshing = true;
+
+					try {
+						const newToken = await this.attemptTokenRefresh();
+						this.isRefreshing = false;
+						this.onRefreshed(newToken);
+
+						// Retry original request with new token
+						originalRequest.headers.Authorization = `Bearer ${newToken}`;
+						return this.instance(originalRequest);
+					} catch (refreshError) {
+						this.isRefreshing = false;
+						this.refreshSubscribers = [];
+						this.clearTokens();
+						// Return the original 401 error
+						const errorMessage = error.response?.data?.error
+							|| error.response?.data?.message
+							|| error.message
+							|| 'Session expired. Please log in again.';
+						return Promise.reject(new Error(errorMessage));
+					}
 				}
+
 				// Extract error message from response if available
 				const errorMessage = error.response?.data?.error
 					|| error.response?.data?.message
@@ -54,25 +125,37 @@ class ApiService {
 		);
 	}
 
-	setToken(token: string): void {
-		this.accessToken = token;
-		localStorage.setItem('accessToken', token);
+	setTokens(accessToken: string, refreshToken: string): void {
+		this.accessToken = accessToken;
+		this.refreshToken = refreshToken;
+		localStorage.setItem('accessToken', accessToken);
+		localStorage.setItem('refreshToken', refreshToken);
 	}
 
-	clearToken(): void {
+	clearTokens(): void {
 		this.accessToken = null;
+		this.refreshToken = null;
 		localStorage.removeItem('accessToken');
+		localStorage.removeItem('refreshToken');
 	}
 
 	loadToken(): void {
-		const token = localStorage.getItem('accessToken');
-		if (token) {
-			this.accessToken = token;
+		const accessToken = localStorage.getItem('accessToken');
+		const refreshToken = localStorage.getItem('refreshToken');
+		if (accessToken) {
+			this.accessToken = accessToken;
+		}
+		if (refreshToken) {
+			this.refreshToken = refreshToken;
 		}
 	}
 
 	getToken(): string | null {
 		return this.accessToken;
+	}
+
+	getRefreshToken(): string | null {
+		return this.refreshToken;
 	}
 
 	isAuthenticated(): boolean {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { UserMinus, MessageCircle, Search, Loader2 } from 'lucide-react';
 import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
+import AvatarUtil from '../../../../components/AvatarUtil';
 
 export default function Friends(): React.JSX.Element {
 	const [searchQuery, setSearchQuery] = useState<string>('');
@@ -84,21 +85,7 @@ export default function Friends(): React.JSX.Element {
 			) : (
 				filteredFriends.map(friend => (
 					<div key={friend.id} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem' }}>
-						<div style={{ position: 'relative' }}>
-							<div className="avatar" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
-								{friend.avatar || friend.username.charAt(0).toUpperCase()}
-							</div>
-							<span style={{
-								position: 'absolute',
-								bottom: '0',
-								right: '0',
-								width: '10px',
-								height: '10px',
-								borderRadius: '50%',
-								backgroundColor: getStatusColor(friend.is_online),
-								border: '2px solid white'
-							}} />
-						</div>
+						<AvatarUtil id={friend.id} radius={36} showStatus={true} />
 						<div style={{ flex: 1, minWidth: 0 }}>
 							<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{friend.username}</h3>
 							<p style={{ margin: 0, color: getStatusColor(friend.is_online), fontSize: '0.75rem' }}>

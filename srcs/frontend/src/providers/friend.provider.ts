@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { invitationService } from '../services';
 import type { User } from '../models';
-import { userFamilyProvider } from './user.provider';
+import { userCacheFamily } from './user.provider';
 
 // Friend relation - just the link between current user and friend
 export interface FriendRelation {
@@ -24,7 +24,7 @@ export const friendsListAtom = atom((get) => {
 	const friends: User[] = [];
 
 	for (const relation of relations) {
-		const user = get(userFamilyProvider(relation.friendId));
+		const user = get(userCacheFamily(relation.friendId));
 		if (user) {
 			friends.push(user);
 		}
@@ -49,7 +49,7 @@ export const fetchFriendsAtom = atom(
 			// Update user cache for each friend
 			const relations: FriendRelation[] = [];
 			for (const friend of friends) {
-				set(userFamilyProvider(friend.id), friend);
+				set(userCacheFamily(friend.id), friend);
 				relations.push({
 					friendId: friend.id,
 					status: 'accepted'
@@ -84,7 +84,7 @@ export const addFriendAtom = atom(
 	null,
 	(get, set, friend: User) => {
 		// Update user cache
-		set(userFamilyProvider(friend.id), friend);
+		set(userCacheFamily(friend.id), friend);
 
 		// Add to relations
 		const relations = get(friendRelationsAtom);

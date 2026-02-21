@@ -68,9 +68,7 @@ export default function ProfilePage(): React.JSX.Element {
 	return (
 		<div className="profile-container">
 			<div className="profile-header">
-				{isEditing
-					? <AvatarSelector value={avatar} radius={100} onChange={img => setAvatar(img)} />
-					: <AvatarUtil radius={100} id={user.id} />}
+				<AvatarUtil radius={100} id={user.id} showStatus={true} />
 				<div className="profile-info">
 					{isEditing ? (
 						<div className="form-group" style={{ marginBottom: '0.5rem' }}>

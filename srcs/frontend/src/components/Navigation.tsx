@@ -39,6 +39,12 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 					</button>
 				</div>
 				<NavLink
+					to="/messages"
+					className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+				>
+					Message
+				</NavLink>
+				<NavLink
 					to="/games"
 					className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 				>

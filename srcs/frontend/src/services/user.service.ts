@@ -4,30 +4,22 @@ import type { User, UserCreate, UserUpdate, UserLogin, AuthResponse } from '../m
 class UserService {
 	async register(data: UserCreate): Promise<AuthResponse> {
 		const response = await apiService.post<AuthResponse>('auth/register', data);
-		if (response.tokens?.accessToken) {
-			apiService.setToken(response.tokens.accessToken);
+		if (response.tokens?.accessToken && response.tokens?.refreshToken) {
+			apiService.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
 		}
 		return response;
 	}
 
 	async login(data: UserLogin): Promise<AuthResponse> {
 		const response = await apiService.post<AuthResponse>('auth/login', data);
-		if (response.tokens?.accessToken) {
-			apiService.setToken(response.tokens.accessToken);
+		if (response.tokens?.accessToken && response.tokens?.refreshToken) {
+			apiService.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
 		}
 		return response;
 	}
 
 	async logout(): Promise<void> {
-		apiService.clearToken();
-	}
-
-	async refreshToken(): Promise<AuthResponse> {
-		const response = await apiService.post<AuthResponse>('auth/refresh');
-		if (response.tokens?.accessToken) {
-			apiService.setToken(response.tokens.accessToken);
-		}
-		return response;
+		apiService.clearTokens();
 	}
 
 	async getMe(): Promise<User> {

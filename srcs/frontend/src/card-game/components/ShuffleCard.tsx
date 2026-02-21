@@ -3,7 +3,7 @@
 import { useLoader } from "@react-three/fiber";
 import { useEffect, useState, useRef } from "react";
 import * as THREE from "three";
-import { CARDS } from "../../typescript/CardContextType";
+import { CARDS } from "../typescript/CardContextType";
 
 export default function ShuffleCard() {
   const group = useRef<THREE.Group>(null!);

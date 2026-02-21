@@ -1,28 +1,60 @@
 import { useAtomValue } from "jotai";
-import { userFamilyProvider } from "../providers";
+import { userFamily } from "../providers";
 import "./AvatarUtil.css";
 
-export default function AvatarUtil({id, radius}: {id: number, radius: number}) {
-    const user = useAtomValue(userFamilyProvider(id));
+interface AvatarUtilProps {
+    id: number;
+    radius: number; // Note: represents diameter, not radius
+    showStatus?: boolean;
+}
 
-    if (!user) {
+export default function AvatarUtil({ id, radius, showStatus = true }: AvatarUtilProps) {
+    const userLoadable = useAtomValue(userFamily(id));
+
+    // Indicator size proportional to avatar (about 20% of diameter, min 10px, max 20px)
+    const indicatorSize = Math.min(Math.max(radius * 0.2, 10), 20);
+
+    // Loading state
+    if (userLoadable.state === 'loading') {
         return (
-            <div className="avatar skeleton" style={{ height: radius, width: radius }} />
-        );
-    }
-    const classNames = ['avatar'];
-    if (user.is_online)
-        classNames.push('online');
-    if (!user?.avatar)
-        return (
-            <div className={classNames.join(' ')}>
-                {user!.username.charAt(0).toUpperCase()}
+            <div className="avatar-container" style={{ height: radius, width: radius }}>
+                <div className="avatar skeleton" style={{ height: radius, width: radius }} />
             </div>
         );
-    
+    }
+
+    // Error state
+    if (userLoadable.state === 'hasError') {
+        return (
+            <div className="avatar-container" style={{ height: radius, width: radius }}>
+                <div className="avatar error" style={{ height: radius, width: radius }}>?</div>
+            </div>
+        );
+    }
+
+    // Has data
+    const user = userLoadable.data;
+
     return (
-        <div className={classNames.join(' ')} style={{background: 'transparent', overflow: 'hidden'}} >
-            <img src={user.avatar} alt={user.username} />
+        <div className="avatar-container" style={{ height: radius, width: radius }}>
+            {user?.avatar ? (
+                <div className="avatar" style={{ height: radius, width: radius, background: 'transparent', overflow: 'hidden' }}>
+                    <img src={user.avatar} alt={user.username} />
+                </div>
+            ) : (
+                <div className="avatar" style={{ height: radius, width: radius, fontSize: radius * 0.4 }}>
+                    {user.username.charAt(0).toUpperCase()}
+                </div>
+            )}
+            {showStatus && (
+                <span
+                    className={`status-indicator ${user.is_online ? 'online' : 'offline'}`}
+                    style={{
+                        width: indicatorSize,
+                        height: indicatorSize,
+                    }}
+                />
+            )}
         </div>
     );
 }

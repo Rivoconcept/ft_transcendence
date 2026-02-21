@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { useAtomValue, useSetAtom, useStore } from 'jotai';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
+import "./pages/message/message.css"
 
 import { Navigation } from './components';
 import { apiService } from './services';
@@ -13,7 +14,8 @@ import {
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
 	logoutAtom,
-	fetchUserAtom
+	fetchUserToCacheAtom,
+	userCacheFamily
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -32,7 +34,8 @@ import {
 	StatusScreen,
 	WinnerScreen,
 	ProfilePage,
-	FriendsPage
+	FriendsPage,
+	MessagesPage
 } from './pages';
 
 // Types
@@ -120,12 +123,27 @@ function SocketListener(): null {
 	const store = useStore();
 	const user = useAtomValue(currentUserAtom);
 
+	// Set up Jotai store reference and status callback in socketStore
+	useEffect(() => {
+		socketStore.setJotaiStore(store);
+
+		// Set up callback for connect/disconnect status updates
+		socketStore.setStatusUpdateCallback((isOnline: boolean) => {
+			const currentUser = store.get(currentUserAtom);
+			if (currentUser) {
+				const updatedUser = { ...currentUser, is_online: isOnline };
+				store.set(currentUserAtom, updatedUser);
+				store.set(userCacheFamily(currentUser.id), updatedUser);
+			}
+		});
+	}, [store]);
+
 	useEffect(() => {
 		if (!user) return;
 
 		const handleInvitationReceived = async (data: { invitationId: number; senderId: number }) => {
 			// Fetch sender info
-			await store.set(fetchUserAtom, data.senderId);
+			await store.set(fetchUserToCacheAtom, data.senderId);
 			// Add to received invitations
 			const current = store.get(receivedInvitationsAtom);
 			if (!current.find(i => i.invitationId === data.invitationId)) {
@@ -144,7 +162,7 @@ function SocketListener(): null {
 			const sent = store.get(sentInvitationsAtom);
 			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
 			// Fetch friend info and add to friends
-			await store.set(fetchUserAtom, data.friendId);
+			await store.set(fetchUserToCacheAtom, data.friendId);
 			const friends = store.get(friendRelationsAtom);
 			if (!friends.find(f => f.friendId === data.friendId)) {
 				const newFriend: FriendRelation = {
@@ -173,12 +191,23 @@ function SocketListener(): null {
 			store.set(friendRelationsAtom, friends.filter(f => f.friendId !== data.friendId));
 		};
 
+		const handleUserStatusChanged = (data: { userId: number; isOnline: boolean }) => {
+			const cachedUser = store.get(userCacheFamily(data.userId));
+			if (cachedUser) {
+				store.set(userCacheFamily(data.userId), {
+					...cachedUser,
+					is_online: data.isOnline
+				});
+			}
+		};
+
 		// Register listeners
 		socketStore.on('invitation:received', handleInvitationReceived);
 		socketStore.on('invitation:accepted', handleInvitationAccepted);
 		socketStore.on('invitation:declined', handleInvitationDeclined);
 		socketStore.on('invitation:cancelled', handleInvitationCancelled);
 		socketStore.on('friend:removed', handleFriendRemoved);
+		socketStore.on('user:status-changed', handleUserStatusChanged);
 
 		// Cleanup
 		return () => {
@@ -187,6 +216,7 @@ function SocketListener(): null {
 			socketStore.off('invitation:declined', handleInvitationDeclined);
 			socketStore.off('invitation:cancelled', handleInvitationCancelled);
 			socketStore.off('friend:removed', handleFriendRemoved);
+			socketStore.off('user:status-changed', handleUserStatusChanged);
 		};
 	}, [user, store]);
 
@@ -199,7 +229,7 @@ export default function App(): React.JSX.Element {
 	const isLoading = useAtomValue(currentUserLoadingAtom);
 	const initCurrentUser = useSetAtom(initCurrentUserAtom);
 	const logout = useSetAtom(logoutAtom);
-	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('default');
+	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('dark');
 
 	// Load token and fetch user on mount
 	useEffect(() => {
@@ -313,7 +343,14 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-
+					<Route
+						path="/messages"
+						element={
+							<ProtectedRoute>
+								<MessagesPage />
+							</ProtectedRoute>
+						}
+					/>
 					{/* Fallback */}
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
