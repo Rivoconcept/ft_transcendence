@@ -10,7 +10,8 @@ import { ProgressBar } from "../components/ProgressBarScore";
 import ScoreList from "../components/ScoreList";
 import { Phase } from "../typescript/cardPhase";
 import { useAtom } from "jotai";
-import { FinalScore } from "../cardAtoms/cardAtoms";
+import { FinalScore, PlayerState } from "../cardAtoms/cardAtoms";
+import CardGameDb from "../components/CardGameDb";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -22,6 +23,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const { playTurn, isWin, isLose, turn } = useCardGameState();
   const [scores, setScores] = useState<number[]>([]);
   const [finalScore, setFinalScore ] = useAtom(FinalScore);
+  const [playerState, setPlayerState ] = useAtom(PlayerState);
 
   const onButtonClick = () => {
     if (phase === Phase.BEGIN) {
@@ -47,6 +49,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
   useEffect(() => {
     setFinalScore(totalScore);
+    setPlayerState(isWin);
   }, [totalScore, setFinalScore]);
 
   return (
@@ -109,7 +112,10 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
           </div>
           <div className="finalScore">
             { finalScore }
+            { playerState ? '✅ Win' : '❌ Lose' }
+
           </div>
+          <CardGameDb finalScore={finalScore} isWin={!!playerState} mode={"SINGLE"} />
         </div>
 
     </>
