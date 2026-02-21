@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai';
 import { friendsAtom } from '../placeholders/friendsAtom';
 import * as Tooltip from '@radix-ui/react-tooltip'; 
-import '../Dashboard.css';
+import '../Dashboard.scss';
 
 export default function FriendsCard() {
   const [friends] = useAtom(friendsAtom);

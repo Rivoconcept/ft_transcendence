@@ -101,6 +101,9 @@ body {
 
 .app {
 	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow-x: hidden;
 }
 
 .nav {
@@ -110,6 +113,7 @@ body {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	flex-shrink: 0;
 }
 
 .nav-brand {
@@ -169,13 +173,17 @@ body {
 
 .main-content {
 	/* padding: 2rem 0; */
-	max-width: 1200px;
+	max-width: 100%;
 	margin: 0 auto;
+	width: 100%;
+	flex: 1;
+	overflow-x: hidden;
+	padding: 2rem;
 }
 
 .auth-container {
 	max-width: 400px;
-	margin: 4rem auto;
+	margin: auto;
 	background: var(--bg-surface);
 	padding: 2rem;
 	border-radius: 12px;

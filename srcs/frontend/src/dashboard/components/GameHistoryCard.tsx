@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { gameHistoryAtom } from '../placeholders/gameHistoryAtom';
-import '../Dashboard.css';
+import '../Dashboard.scss';
 
 export default function GameHistoryCard() {
   const [gameHistory] = useAtom(gameHistoryAtom);

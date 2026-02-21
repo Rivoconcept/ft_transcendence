@@ -35,7 +35,8 @@ import {
 	WinnerScreen,
 	ProfilePage,
 	FriendsPage,
-	MessagesPage
+	MessagesPage,
+	Dashboard
 } from './pages';
 
 // Types
@@ -348,6 +349,14 @@ export default function App(): React.JSX.Element {
 						element={
 							<ProtectedRoute>
 								<MessagesPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/dashboard"
+						element={
+							<ProtectedRoute>
+								<Dashboard />
 							</ProtectedRoute>
 						}
 					/>

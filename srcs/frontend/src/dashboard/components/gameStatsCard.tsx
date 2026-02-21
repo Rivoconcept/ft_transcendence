@@ -1,7 +1,7 @@
 import { useAtom } from 'jotai';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
 import { gameStatsAtom, gameStatsFilterAtom} from '../placeholders/gameStatsAtom';
-import '../Dashboard.css';
+import '../Dashboard.scss';
 
 export default function GameStatsCard() {
   const [stats] = useAtom(gameStatsAtom);

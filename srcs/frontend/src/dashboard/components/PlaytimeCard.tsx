@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { playtimeAtom } from '../placeholders/timeAtom';
-import '../Dashboard.css';
+import '../Dashboard.scss';
 
 function formatMinutes(minutes: number) {
   const hours = Math.floor(minutes / 60);

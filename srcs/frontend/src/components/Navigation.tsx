@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, User, Users, LogOut } from 'lucide-react';
+import { Menu, User, Users, LogOut, BarChart3 } from 'lucide-react';
 
 interface NavigationProps {
 	username: string;
@@ -38,6 +38,13 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 						Dark
 					</button>
 				</div>
+				<NavLink
+					to="/dashboard"
+					className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+				>
+					<BarChart3 size={18} />
+					Dashboard
+				</NavLink>
 				<NavLink
 					to="/messages"
 					className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}

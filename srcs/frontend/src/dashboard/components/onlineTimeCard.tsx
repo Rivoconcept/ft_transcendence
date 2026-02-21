@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { onlineTimeAtom } from '../placeholders/timeAtom';
-import '../Dashboard.css';
+import '../Dashboard.scss';
 
 // Optional: nicer month formatting
 function formatMonth(month: string) {
@@ -39,7 +39,7 @@ export default function OnlineTimeCard() {
     <div className="dashboard-card">
       <h3>Online Time (Last 4 Months)</h3>
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+        <BarChart data={monthlyData} margin={{ top: 10, right: 20, left: 30, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="month"
@@ -51,7 +51,7 @@ export default function OnlineTimeCard() {
             style={{ fontSize: '0.8rem' }}
           />
           <Tooltip
-            formatter={(value: number | undefined) => value ? `${value} min` : 'N/A'}
+            formatter={(value: any) => value ? `${value} min` : 'N/A'}
             labelFormatter={(label) => `Month: ${formatMonth(label)}`}
           />
           <Bar dataKey="minutes" fill="#4c9aff" radius={[4, 4, 0, 0]} />
