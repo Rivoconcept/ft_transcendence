@@ -5,10 +5,10 @@ import { Provider } from "jotai";
 
 import MainMenu from "./mainMenu";
 
-// import './Card-game/styles/main.scss';
-// import { CardContextProvider } from "./Card-game/cardGamecontext/CardContext";
-// import { CardGameContextProvider } from "./Card-game/cardGamecontext/CardGameContext";
-// import CardScene from "./Card-game/cardScenes/CardScene";
+import './styles/main.scss';
+import { CardContextProvider } from "./card-game/context/CardContext";
+import { CardGameContextProvider } from "./card-game/context/CardGameContext";
+import CardScene from "./card-game/cardScenes/CardScene";
 
 
 
@@ -17,10 +17,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 		<Provider>
 			<MainMenu />
 		</Provider>
-		{/* <CardContextProvider>
+		<CardContextProvider>
 			<CardGameContextProvider>
 				<CardScene />
 			</CardGameContextProvider>
-		</CardContextProvider> */}
+		</CardContextProvider>
 	</React.StrictMode>
 );

@@ -9,6 +9,8 @@ import ProgressCircleTimer from "../components/ProgressCircleTimer";
 import { ProgressBar } from "../components/ProgressBarScore";
 import ScoreList from "../components/ScoreList";
 import { Phase } from "../typescript/cardPhase";
+import { useAtom } from "jotai";
+import { FinalScore } from "../cardAtoms/cardAtoms";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -19,6 +21,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const { score, reset } = useCardState();
   const { playTurn, isWin, isLose, turn } = useCardGameState();
   const [scores, setScores] = useState<number[]>([]);
+  const [finalScore, setFinalScore ] = useAtom(FinalScore);
 
   const onButtonClick = () => {
     if (phase === Phase.BEGIN) {
@@ -41,6 +44,10 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   }, [score]);
 
   const totalScore = scores.reduce((sum, s) => sum + s, 0);
+
+  useEffect(() => {
+    setFinalScore(totalScore);
+  }, [totalScore, setFinalScore]);
 
   return (
     <>
@@ -99,6 +106,9 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
           </div>
           <div className="cardButton">
             <PhaseButton phase={phase} onClick={onButtonClick} />
+          </div>
+          <div className="finalScore">
+            { finalScore }
           </div>
         </div>
 
