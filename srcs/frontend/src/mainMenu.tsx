@@ -39,8 +39,11 @@ import {
 	Dashboard
 } from './pages';
 
+import CardGamePage from './pages/games/cardGame';
+import CardGameResult from './card-game/components/CardGameResult';
+
 // Types
-type GameId = 'diceGame' | 'numberGame';
+type GameId = 'diceGame' | 'numberGame' | 'cardGame';
 
 // Protected Route Wrapper
 interface ProtectedRouteProps {
@@ -357,6 +360,22 @@ export default function App(): React.JSX.Element {
 						element={
 							<ProtectedRoute>
 								<Dashboard />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/cardGame"
+						element={
+							<ProtectedRoute>
+								<CardGamePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/cardGame/result"
+						element={
+							<ProtectedRoute>
+								<CardGameResult />
 							</ProtectedRoute>
 						}
 					/>
