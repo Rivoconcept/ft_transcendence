@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import apiService from "../../services/api.service";
 
 interface CardGameDbProps {
@@ -6,15 +6,25 @@ interface CardGameDbProps {
   isWin: boolean;
   mode?: "SINGLE" | "MULTI";
   matchId?: string | null;
+  isGameOver: boolean;
 }
 
-export default function CardGameDb({ finalScore, isWin, mode = "SINGLE", matchId = null }: CardGameDbProps) {
+export default function CardGameDb({
+  finalScore,
+  isWin,
+  mode = "SINGLE",
+  matchId = null,
+  isGameOver
+}: CardGameDbProps) {
   const [status, setStatus] = useState<string | null>(null);
+  const hasPushedRef = useRef(false);
 
   useEffect(() => {
-    // Attempt to save when finalScore changes
+    if (!isGameOver || hasPushedRef.current) return;
+
     const save = async () => {
       try {
+        hasPushedRef.current = true; // ✅ immédiat
         setStatus("saving");
         await apiService.post("card-games", {
           mode,
@@ -28,11 +38,8 @@ export default function CardGameDb({ finalScore, isWin, mode = "SINGLE", matchId
       }
     };
 
-    // Only save when there is a meaningful final score
-    if (finalScore !== null && finalScore !== undefined) {
-      void save();
-    }
-  }, [finalScore, isWin, mode, matchId]);
+    void save();
+  }, [isGameOver, finalScore, isWin, mode, matchId]);
 
   if (!status) return null;
 

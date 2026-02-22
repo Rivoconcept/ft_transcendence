@@ -1,3 +1,5 @@
+// /home/hrv/Pictures/ft_transcendence/srcs/backend/src/database/data-source.ts
+
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { DataSourceOptions } from "typeorm/browser";
