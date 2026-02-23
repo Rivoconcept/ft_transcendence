@@ -1,8 +1,9 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import { gameModeAtom } from './cardGame/cardAtoms/gameMode.atom';
+import { useNavigate } from 'react-router-dom';
 
-type GameId = 'diceGame' | 'numberGame' | 'cardGame';
+type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
 
 interface GameListProps {
 	onStartGame: (gameId: GameId) => void;
@@ -15,8 +16,9 @@ interface Game {
 	icon: React.ReactNode;
 }
 
-export default function GameList({ onStartGame }: GameListProps): React.JSX.Element {
+export default function GameList({ onStartGame }: GameListProps) {
 	const [mode, setMode] = useAtom(gameModeAtom);
+	const navigate = useNavigate();
 
 	const games: Game[] = [
 		{
@@ -26,8 +28,8 @@ export default function GameList({ onStartGame }: GameListProps): React.JSX.Elem
 			icon: '🎲',
 		},
 		{
-			id: 'numberGame',
-			name: 'Number Selection',
+			id: 'kingOfDiamond',
+			name: 'king Of Diamond',
 			description: 'Pick a number between 1 and 100. Choose wisely!',
 			icon: '#️⃣',
 		},
@@ -67,18 +69,31 @@ export default function GameList({ onStartGame }: GameListProps): React.JSX.Elem
 						</div>
 					)}
 
-					<button
-						className="btn-primary"
-						onClick={() => {
-							if (game.id === 'cardGame' && !mode) {
-								alert('Please select a game mode first!');
-								return;
-							}
-							onStartGame(game.id);
-						}}
-					>
-						Play Now
-					</button>
+					<div className='gameCardButton'>
+						<button
+							className="btn-primary"
+							onClick={() => {
+								if (game.id === 'cardGame' && !mode) {
+									alert('Please select a game mode first!');
+									return;
+								}
+								// onStartGame(game.id)
+								navigate('/lobby');
+							}}
+						>
+							Create Looby
+						</button>
+
+						<button
+							className="btn-primary"
+							onClick={() => {
+								// onStartGame(game.id)
+								navigate('/lobby');
+							}}
+						>
+							Join Looby
+						</button>
+					</div>
 				</div>
 			))}
 		</div>

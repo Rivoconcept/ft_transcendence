@@ -370,7 +370,7 @@ Les routes sont définies dans `mainMenu.tsx` avec React Router.
 | `/` | AuthPage | Public | Page de connexion/inscription |
 | `/games` | GameList | Protégé | Liste des jeux disponibles |
 | `/games/diceGame` | DiceGame | Protégé | Jeu de dés |
-| `/games/numberGame` | NumberGame | Protégé | Jeu de nombres |
+| `/games/kingOfDiamond` | kingOfDiamond | Protégé | Jeu de nombres |
 | `/games/status` | StatusScreen | Protégé | Écran de statut de partie |
 | `/games/winner` | WinnerScreen | Protégé | Écran de victoire |
 | `/profile/me` | ProfilePage | Protégé | Profil de l'utilisateur |

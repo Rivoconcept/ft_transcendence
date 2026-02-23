@@ -378,6 +378,12 @@ body {
 	line-height: 1.6;
 }
 
+.gameCardButton {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
 .game-container {
 	max-width: 600px;
 	margin: 2rem auto;

@@ -4,7 +4,7 @@ interface GameProps {
 	onBack: () => void;
 }
 
-export default function NumberGame({ onBack }: GameProps): React.JSX.Element {
+export default function kingOfDiamond({ onBack }: GameProps): React.JSX.Element {
 	const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
 	const [submitted, setSubmitted] = useState<boolean>(false);
 
@@ -24,7 +24,7 @@ export default function NumberGame({ onBack }: GameProps): React.JSX.Element {
 	return (
 		<div className="game-container">
 			<div className="game-header">
-				<h2>Number Selection Game</h2>
+				<h2>king Of Diamond Game</h2>
 				<button className="back-btn" onClick={onBack}>Back</button>
 			</div>
 
@@ -59,20 +59,22 @@ export default function NumberGame({ onBack }: GameProps): React.JSX.Element {
 						Submit Number
 					</button>
 				</>
-			) : (
-				<div className="game-over-container">
-					<h2>Number Submitted!</h2>
-					<p>You selected: <strong>{selectedNumber}</strong></p>
-					<div className="button-group">
-						<button className="btn-primary" onClick={handlePlayAgain}>
-							Play Again
-						</button>
-						<button className="back-btn" onClick={onBack}>
-							Back to Games
-						</button>
+			)
+				:
+				(
+					<div className="game-over-container">
+						<h2>Number Submitted!</h2>
+						<p>You selected: <strong>{selectedNumber}</strong></p>
+						<div className="button-group">
+							<button className="btn-primary" onClick={handlePlayAgain}>
+								Play Again
+							</button>
+							<button className="back-btn" onClick={onBack}>
+								Back to Games
+							</button>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 		</div>
 	);
 }

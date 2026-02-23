@@ -18,28 +18,28 @@ export default function StatusScreen(): React.JSX.Element {
 			winner: Math.random() > 0.5
 		},
 		{
-			id: 'numberGame',
+			id: 'kingOfDiamond',
 			img: 'default.png',
 			point: '5',
 			value: '34',
 			winner: Math.random() > 0.5
 		},
 		{
-			id: 'numberGame',
+			id: 'kingOfDiamond',
 			img: 'default.png',
 			point: '9',
 			value: '12',
 			winner: Math.random() > 0.5
 		},
 		{
-			id: 'numberGame',
+			id: 'kingOfDiamond',
 			img: 'default.png',
 			point: '2',
 			value: '5',
 			winner: Math.random() > 0.5
 		},
 		{
-			id: 'numberGame',
+			id: 'kingOfDiamond',
 			img: 'default.png',
 			point: '3',
 			value: '5',

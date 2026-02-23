@@ -30,10 +30,11 @@ import {
 	AuthPage,
 	GameList,
 	DiceGame,
-	NumberGame,
+	kingOfDiamond,
 	CardGamePage,
-	StatusScreen,
-	WinnerScreen,
+	Lobby,
+	// StatusScreen,
+	// WinnerScreen,
 	ProfilePage,
 	FriendsPage,
 	MessagesPage,
@@ -43,7 +44,7 @@ import {
 import CardGameResult from './pages/games/cardGame/components/CardGameResult';
 
 // Types
-type GameId = 'diceGame' | 'numberGame' | 'cardGame';
+type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
 
 // Protected Route Wrapper
 interface ProtectedRouteProps {
@@ -287,7 +288,6 @@ export default function App(): React.JSX.Element {
 							</PublicRoute>
 						}
 					/>
-
 					{/* Games */}
 					<Route
 						path="/games"
@@ -306,29 +306,39 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					<Route
-						path="/games/numberGame"
+						path="/games/kingOfDiamond"
 						element={
 							<ProtectedRoute>
-								<GameWrapper GameComponent={NumberGame} />
+								<GameWrapper GameComponent={kingOfDiamond} />
 							</ProtectedRoute>
 						}
 					/>
 					<Route
-						path="/games/status"
+						path="/lobby"
 						element={
 							<ProtectedRoute>
-								<StatusScreen />
+								<GameWrapper GameComponent={Lobby} />
 							</ProtectedRoute>
 						}
 					/>
-					<Route
-						path="/games/winner"
-						element={
-							<ProtectedRoute>
-								<WinnerScreen />
-							</ProtectedRoute>
-						}
-					/>
+					{
+						/* <Route
+							path="/games/status"
+							element={
+								<ProtectedRoute>
+									<StatusScreen />
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path="/games/winner"
+							element={
+								<ProtectedRoute>
+									<WinnerScreen />
+								</ProtectedRoute>
+							}
+						/> */
+					}
 
 					{/* Profile */}
 					<Route
