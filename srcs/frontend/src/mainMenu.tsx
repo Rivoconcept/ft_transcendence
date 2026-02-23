@@ -31,6 +31,7 @@ import {
 	GameList,
 	DiceGame,
 	NumberGame,
+	CardGamePage,
 	StatusScreen,
 	WinnerScreen,
 	ProfilePage,
@@ -39,8 +40,7 @@ import {
 	Dashboard
 } from './pages';
 
-import CardGamePage from './pages/games/cardGame';
-import CardGameResult from './card-game/components/CardGameResult';
+import CardGameResult from './pages/games/cardGame/components/CardGameResult';
 
 // Types
 type GameId = 'diceGame' | 'numberGame' | 'cardGame';

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCardState } from "./CardContext";
-import type { CardGameContextType } from "../../typescript/CardGameContextType";
+import type { CardGameContextType } from "../typescript/CardGameContextType";
 
 const GameContext = createContext<CardGameContextType | null>(null);
 

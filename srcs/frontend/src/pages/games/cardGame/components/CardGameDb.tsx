@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import apiService from "../../services/api.service";
+import apiService from "../../../../services/api.service";
 
 interface CardGameDbProps {
   finalScore: number;

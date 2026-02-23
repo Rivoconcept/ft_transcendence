@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAtom } from 'jotai';
-import { gameModeAtom } from '../../card-game/cardAtoms/gameMode.atom';
+import { gameModeAtom } from './cardGame/cardAtoms/gameMode.atom';
 
 type GameId = 'diceGame' | 'numberGame' | 'cardGame';
 
@@ -48,24 +48,24 @@ export default function GameList({ onStartGame }: GameListProps): React.JSX.Elem
 					<p>{game.description}</p>
 
 					{/* Only show mode selection for Card Game */}
-          {game.id === 'cardGame' && (
-            <div className="btn-group btn-group-toggle mb-2" data-toggle="buttons">
-              <button
-                type="button"
-                className={`btn btn-outline-primary ${mode === 'SINGLE' ? 'active' : ''}`}
-                onClick={() => setMode('SINGLE')}
-              >
-                🧍 Single Player
-              </button>
-              <button
-                type="button"
-                className={`btn btn-outline-primary ${mode === 'MULTI' ? 'active' : ''}`}
-                onClick={() => setMode('MULTI')}
-              >
-                👥 Multiplayer
-              </button>
-            </div>
-          )}
+					{game.id === 'cardGame' && (
+						<div className="btn-group btn-group-toggle mb-2" data-toggle="buttons">
+							<button
+								type="button"
+								className={`btn btn-outline-primary ${mode === 'SINGLE' ? 'active' : ''}`}
+								onClick={() => setMode('SINGLE')}
+							>
+								🧍 Single Player
+							</button>
+							<button
+								type="button"
+								className={`btn btn-outline-primary ${mode === 'MULTI' ? 'active' : ''}`}
+								onClick={() => setMode('MULTI')}
+							>
+								👥 Multiplayer
+							</button>
+						</div>
+					)}
 
 					<button
 						className="btn-primary"

@@ -2,7 +2,7 @@
 export { AuthPage } from './auth';
 
 // Games
-export { GameList, DiceGame, NumberGame, StatusScreen, WinnerScreen } from './games';
+export { GameList, DiceGame, NumberGame, CardGamePage, StatusScreen, WinnerScreen } from './games';
 
 // Profile
 export { ProfilePage, FriendsPage } from './profile';
