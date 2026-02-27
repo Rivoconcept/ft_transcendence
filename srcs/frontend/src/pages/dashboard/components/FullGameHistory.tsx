@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai';
 import { gameHistoryAtom, type GameType } from '../placeholders/gameHistoryAtom';
 import { dashboardViewAtom, historyFiltersAtom } from '../services';
+import { exportToCSV, exportToPDF } from '../utils/exportStore';
 import '../Dashboard.scss';
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
@@ -122,6 +123,32 @@ export default function FullGameHistory() {
     });
   };
 
+  const handleExportCSV = () => {
+    const dataToExport = filteredGames.map(game => ({
+      Date: formatDate(game.timestamp),
+      Game: getGameTypeName(game.gameType),
+      Result: game.result.toUpperCase(),
+      User: game.user,
+      Opponents: game.opponents.join(', '),
+      Mode: game.isMultiplayer ? 'Multiplayer' : 'Single'
+    }));
+    
+    exportToCSV(dataToExport, 'Game_History_Export');
+  };
+
+  const handleExportPDF = () => {
+    const headers = [['Date', 'Game', 'Result', 'User', 'Opponents']];
+    const body = filteredGames.map(game => [
+      formatDate(game.timestamp),
+      getGameTypeName(game.gameType),
+      game.result.toUpperCase(),
+      game.user,
+      game.opponents.join(', ')
+    ]);
+
+    exportToPDF('My Game History', headers, body, 'Game_History_Report');
+  };
+
   return (
     <div className="full-history-page">
       {/* Back Button */}
@@ -134,10 +161,16 @@ export default function FullGameHistory() {
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
-
+      
       <div className="history-container">
         <h1>Game History</h1>
 
+        {/* Export Buttons */}
+        <div className="export-controls" style={{ marginBottom: '20px' }}>
+          <button onClick={handleExportCSV} className="export-btn">Export CSV</button>
+          <button onClick={handleExportPDF} className="export-btn">Export PDF</button>
+        </div>
+        
         <div className="history-layout">
           {/* Filter Panel */}
           <aside className="filter-panel">

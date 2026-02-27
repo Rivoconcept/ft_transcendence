@@ -144,7 +144,7 @@ export const updateCurrentUserAtom = atom(
 
 		const updatedUser = await userService.updateMe(data);
 		set(currentUserAtom, updatedUser);
-		set(userFamilyProvider(updatedUser.id), updatedUser);
+		set(userCacheFamily(updatedUser.id), updatedUser); //XXX: userFamilyprovider not found, replaced with userCacheFamily, needs erijania
 		return updatedUser;
 	}
 );

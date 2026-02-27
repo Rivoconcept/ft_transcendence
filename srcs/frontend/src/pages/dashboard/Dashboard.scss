@@ -872,3 +872,28 @@
     padding: 10px;
   }
 }
+
+// Export Controls
+.export-controls {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;             
+  width: max-content;    
+  margin-bottom: 20px;  
+}
+
+.export-btn {
+  width: 100%; 
+  padding: 4px 16px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-md);
+  // margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 6px 16px var(--shadow-lg);
+  }
+}
