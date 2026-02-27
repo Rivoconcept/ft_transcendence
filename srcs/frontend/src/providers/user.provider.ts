@@ -1,4 +1,4 @@
-import { atom } from 'jotai';
+ import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { loadable } from 'jotai/utils';
 import { userService, apiService } from '../services';
