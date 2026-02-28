@@ -1,19 +1,41 @@
 import { useAtom } from 'jotai';
 import { gameHistoryAtom } from '../placeholders/gameHistoryAtom';
+import { dashboardViewAtom } from '../services/dashboardNavigation';
 import '../Dashboard.scss';
 
 export default function GameHistoryCard() {
   const [gameHistory] = useAtom(gameHistoryAtom);
+  const [, setView] = useAtom(dashboardViewAtom);
 
   // Display only the first 3 entries
   const recentGames = gameHistory.slice(0, 3);
 
   const getGameTypeName = (gameType: string) => {
-    return gameType === 'tsabo9' ? 'Tsabo 9' : 'Number Game';
+    switch (gameType) {
+      case 'diceGame':
+        return 'Dice Game';
+      case 'kingOfDiamond':
+        return 'King of Diamond';
+      case 'cardGame':
+        return 'Card Game';
+      default:
+        return gameType;
+    }
   };
 
   const getResultColor = (result: string) => {
     return result === 'win' ? '#4ade80' : '#f87171';
+  };
+
+  const getOpponentText = (opponents: string[]) => {
+    if (opponents.length === 1) {
+      return opponents[0];
+    }
+    // For multiplayer, show first 2 names and indicate if there are more
+    if (opponents.length === 2) {
+      return opponents.join(', ');
+    }
+    return `${opponents.slice(0, 2).join(', ')} +${opponents.length - 2}`;
   };
 
   return (
@@ -25,7 +47,10 @@ export default function GameHistoryCard() {
         {recentGames.map((game) => (
           <div key={game.id} className="game-history-item">
             <div className="game-history-top">
-              <span className="game-type">{getGameTypeName(game.gameType)}</span>
+              <div className="game-type-container">
+                <span className="game-type">{getGameTypeName(game.gameType)}</span>
+                {game.isMultiplayer && <span className="multiplayer-badge">Multiplayer</span>}
+              </div>
               <span
                 className="result-badge"
                 style={{ backgroundColor: getResultColor(game.result) }}
@@ -40,8 +65,8 @@ export default function GameHistoryCard() {
               </div>
               <span className="vs-text">vs</span>
               <div className="player-info">
-                <span className="label">Opponent</span>
-                <span className="name">{game.opponent}</span>
+                <span className="label">{game.isMultiplayer ? 'Players' : 'Opponent'}</span>
+                <span className="name opponents-text">{getOpponentText(game.opponents)}</span>
               </div>
             </div>
           </div>
@@ -50,7 +75,14 @@ export default function GameHistoryCard() {
 
       {/* View full history link */}
       <div className="history-footer">
-        <a href="#" className="view-history-link disabled" onClick={(e) => e.preventDefault()}>
+        <a 
+          href="#" 
+          className="view-history-link" 
+          onClick={(e) => {
+            e.preventDefault();
+            setView('fullHistory');
+          }}
+        >
           View full history
         </a>
       </div>

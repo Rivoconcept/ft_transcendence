@@ -35,16 +35,22 @@ export default function GameStatsCard() {
           Overall
         </button>
         <button
-          className={filter === 'tsabo9' ? 'active' : ''}
-          onClick={() => setFilter('tsabo9')}
+          className={filter === 'diceGame' ? 'active' : ''}
+          onClick={() => setFilter('diceGame')}
         >
-          Tsabo 9
+          Dice Game
         </button>
         <button
-          className={filter === 'number' ? 'active' : ''}
-          onClick={() => setFilter('number')}
+          className={filter === 'kingOfDiamond' ? 'active' : ''}
+          onClick={() => setFilter('kingOfDiamond')}
         >
-          Number Game
+          King of Diamond
+        </button>
+        <button
+          className={filter === 'cardGame' ? 'active' : ''}
+          onClick={() => setFilter('cardGame')}
+        >
+          Card Game
         </button>
       </div>
 
