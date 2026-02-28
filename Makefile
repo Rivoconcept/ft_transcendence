@@ -34,7 +34,7 @@ CERTS_DIR = ./secrets/certs
 CRT_FILE = $(CERTS_DIR)/nginx.crt
 KEY_FILE = $(CERTS_DIR)/nginx.key
 
-DATA_DIR = /home/Fiderana/data/db_data
+DATA_DIR = /home/arajaona/data/db_data
 
 all: init-dirs init-volumes certs up
 
