@@ -38,10 +38,12 @@ import {
 	ProfilePage,
 	FriendsPage,
 	MessagesPage,
-	Dashboard
+	Dashboard,
+	StatusScreen
 } from './pages';
 
 import CardGameResult from './pages/games/cardGame/components/CardGameResult';
+import { MultiplayerGame, MultiplayerLobby, MultiplayerSetup } from './pages/games';
 
 // Types
 type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
@@ -386,6 +388,41 @@ export default function App(): React.JSX.Element {
 						element={
 							<ProtectedRoute>
 								<CardGameResult />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/:gameSlug/lobby"
+						element={
+							<ProtectedRoute>
+								<StatusScreen />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/:gameSlug/multiplayer/setup"
+						element={
+							<ProtectedRoute>
+								<MultiplayerSetup />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+					path="/games/:gameSlug/multiplayer/lobby/:roomId"
+						element={
+							<ProtectedRoute>
+								<MultiplayerLobby />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+					path="/games/:gameSlug/multiplayer/game/:roomId"
+						element={
+							<ProtectedRoute>
+								<MultiplayerGame />
 							</ProtectedRoute>
 						}
 					/>
