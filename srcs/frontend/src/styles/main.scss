@@ -12,3 +12,20 @@ body {
   color: #e6edf3;
   display: block;
 }
+
+.game-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.game-card {
+  width: 300px;
+}
+
+.gameCardButton {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
