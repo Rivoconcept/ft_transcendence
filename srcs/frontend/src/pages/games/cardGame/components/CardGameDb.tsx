@@ -1,53 +1,51 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import apiService from "../../../../services/api.service";
 
 interface CardGameDbProps {
   finalScore: number;
   isWin: boolean;
-  mode?: "SINGLE" | "MULTI";
+  mode: "SINGLE" | "MULTI";
   matchId?: string | null;
   isGameOver: boolean;
+  onSaved: () => void;
 }
 
 export default function CardGameDb({
   finalScore,
   isWin,
-  mode = "SINGLE",
+  mode,
   matchId = null,
-  isGameOver
+  isGameOver,
+  onSaved,
 }: CardGameDbProps) {
-  const [status, setStatus] = useState<string | null>(null);
+
   const hasPushedRef = useRef(false);
 
   useEffect(() => {
-    if (!isGameOver || hasPushedRef.current) return;
+    if (!isGameOver) return;
+    if (hasPushedRef.current) return;
 
-    const save = async () => {
+    const saveGame = async () => {
       try {
-        hasPushedRef.current = true; // ✅ immédiat
-        setStatus("saving");
+        hasPushedRef.current = true;
+
         await apiService.post("card-games", {
           mode,
           final_score: finalScore,
           is_win: isWin,
           match_id: matchId,
         });
-        setStatus("saved");
-      } catch (err) {
-        setStatus("error");
+
+        onSaved();
+
+      } catch (error) {
+        console.error("Error saving game:", error);
       }
     };
 
-    void save();
-  }, [isGameOver, finalScore, isWin, mode, matchId]);
+    void saveGame();
 
-  if (!status) return null;
+  }, [isGameOver]);
 
-  return (
-    <div className="card-game-db">
-      {status === "saving" && <span>Saving...</span>}
-      {status === "saved" && <span>Saved</span>}
-      {status === "error" && <span>Error saving</span>}
-    </div>
-  );
+  return null;
 }

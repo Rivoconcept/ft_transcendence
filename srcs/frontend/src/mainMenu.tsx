@@ -384,6 +384,14 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					<Route
+						path="/games/card-game/single"
+						element={
+							<ProtectedRoute>
+							<CardGamePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
 						path="/games/cardGame/result"
 						element={
 							<ProtectedRoute>
