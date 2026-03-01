@@ -3,6 +3,12 @@
   padding: 1rem;
 }
 
+.card-body {
+  --bs-card-spacer-y: 0.4rem !important;
+  --bs-card-spacer-x: 0.5rem !important;
+  padding: 0.4rem 0.5rem !important;
+}
+
 .cardsRow {
   display: flex;
   justify-content: center;
@@ -11,9 +17,9 @@
 }
 
 .cardSlot {
-  flex: 1 1 150px; /* min width 150px, grandit si possible */
-  max-width: 200px; /* max width pour desktop */
-  aspect-ratio: 5 / 7; /* ratio carte 2.5 / 3.5 */
+  flex: 1 1 150px;
+  max-width: 200px;
+  aspect-ratio: 5 / 7; 
 }
 
 .cardCanvas {
@@ -23,14 +29,14 @@
   background-color: black;
 }
 
-
 .dashboard {
-  width: 20vw;
-  height: 50vh;
+  width: 18vw;
+  height: 48vh;
   border-radius: 20px;
   background: black;
   display: flex;
   flex-direction: column;
+  padding: 0.5rem;
 }
 
 .avatar {
@@ -103,7 +109,7 @@ hr.separator {
 
 .scoreHistoryWrapper {
   display: flex;
-  margin: 3px;
+  margin: 2px;
   width: 100%;
 }
 
@@ -134,7 +140,7 @@ hr.separator {
 .separatorLine {
   height: 2px;
   background: #444;
-  margin-bottom: 6px;
+  margin-bottom: 1px;
   border-radius: 2px;
 }
 
@@ -142,13 +148,6 @@ hr.separator {
   display: flex;
   justify-content: space-between;
   margin: 0;
-}
-
-.resultStatus {
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .win {
@@ -169,7 +168,7 @@ hr.separator {
   margin-top: auto;
   display: flex;
   justify-content: center;
-  padding-bottom: 15px;
+  padding-bottom: 1px;
 }
 
 .card-body {
@@ -180,5 +179,5 @@ hr.separator {
   display: block;
   color: red;
   text-align: center;
-  font-size: clamp(0.8rem, 2vw, 2rem);
+  font-size: clamp(0.8rem, 1.7vw, 1.7rem);
 }

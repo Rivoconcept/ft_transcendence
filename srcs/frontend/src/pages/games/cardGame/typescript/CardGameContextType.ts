@@ -13,4 +13,5 @@ export type CardGameContextType = {
   addTime: (sec: number) => void;
   isWin: boolean;
   isLose: boolean;
+  isFinished: boolean;
 };

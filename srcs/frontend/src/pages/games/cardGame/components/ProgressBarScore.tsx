@@ -1,12 +1,9 @@
-import { useCardGameState } from "../context/CardGameContext";
+interface ProgressBar {
+  progress: number;
+}
 
-
-
-export function ProgressBar() {
-  const { progress } = useCardGameState();
-
-
-  return (
+export const ProgressBar = ({ progress }: ProgressBar) => {
+   return (
     <div className="progressBarContainer">
       <div
         className="progressBarFill"
