@@ -77,8 +77,8 @@ export default function GameList({ onStartGame }: GameListProps) {
 									alert('Please select a game mode first!');
 									return;
 								}
-								// onStartGame(game.id)
-								navigate('/lobby');
+								onStartGame(game.id)
+								// navigate('/lobby');
 							}}
 						>
 							Create Looby
@@ -87,8 +87,8 @@ export default function GameList({ onStartGame }: GameListProps) {
 						<button
 							className="btn-primary"
 							onClick={() => {
-								// onStartGame(game.id)
-								navigate('/lobby');
+								onStartGame(game.id)
+								// navigate('/lobby');
 							}}
 						>
 							Join Looby
