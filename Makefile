@@ -12,7 +12,7 @@
 
 
 NAME = ft_stranscendance
-
+USER_NAME = $(shell whoami)
 COMPOSE = docker compose
 
 MODE ?= dev  # valeur par défaut = dev
@@ -34,7 +34,7 @@ CERTS_DIR = ./secrets/certs
 CRT_FILE = $(CERTS_DIR)/nginx.crt
 KEY_FILE = $(CERTS_DIR)/nginx.key
 
-DATA_DIR = /home/arajaona/data/db_data
+DATA_DIR = /home/$(USER_NAME)/data/db_data
 
 all: init-dirs init-volumes certs up
 

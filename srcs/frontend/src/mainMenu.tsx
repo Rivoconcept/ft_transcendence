@@ -32,18 +32,18 @@ import {
 	DiceGame,
 	kingOfDiamond,
 	CardGamePage,
-	Lobby,
-	// StatusScreen,
-	// WinnerScreen,
 	ProfilePage,
 	FriendsPage,
 	MessagesPage,
 	Dashboard,
-	StatusScreen
 } from './pages';
 
 import CardGameResult from './pages/games/cardGame/components/CardGameResult';
-import { MultiplayerGame, MultiplayerLobby, MultiplayerSetup } from './pages/games';
+import {
+	MultiplayerLobby,
+	MultiplayerSetup,
+	GameSetup
+} from './pages/games';
 
 // Types
 type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
@@ -111,7 +111,8 @@ function GameListWrapper(): React.JSX.Element {
 		navigate(`/games/${gameId}`);
 	};
 
-	return <GameList onStartGame={handleStartGame} />;
+	// return <GameList onStartGame={handleStartGame} />;
+	return <GameList />;
 }
 
 // Game Wrapper with back navigation
@@ -281,6 +282,7 @@ export default function App(): React.JSX.Element {
 				onThemeChange={setTheme}
 			>
 				<Routes>
+
 					{/* Auth */}
 					<Route
 						path="/"
@@ -290,7 +292,8 @@ export default function App(): React.JSX.Element {
 							</PublicRoute>
 						}
 					/>
-					{/* Games */}
+
+					{/* Games Config */}
 					<Route
 						path="/games"
 						element={
@@ -299,48 +302,79 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
+
 					<Route
-						path="/games/diceGame"
+						path="/games/:gameSlug/setup"
+						element={
+							<ProtectedRoute>
+								<GameWrapper GameComponent={GameSetup} />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/:gameSlug/multiplayer/setup"
+						element={
+							<ProtectedRoute>
+								<MultiplayerSetup />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/:gameSlug/multiplayer/lobby/:roomId"
+						element={
+							<ProtectedRoute>
+								<MultiplayerLobby />
+							</ProtectedRoute>
+						}
+					/>
+
+					{/* Games */}
+					<Route
+						path="/games/diceGame/:roomId/play"
+						// path="/games/diceGame"
 						element={
 							<ProtectedRoute>
 								<GameWrapper GameComponent={DiceGame} />
 							</ProtectedRoute>
 						}
 					/>
+
 					<Route
-						path="/games/kingOfDiamond"
+						path="/games/kingOfDiamond/:roomId/play"
 						element={
 							<ProtectedRoute>
 								<GameWrapper GameComponent={kingOfDiamond} />
 							</ProtectedRoute>
 						}
 					/>
+
 					<Route
-						path="/lobby"
+						path="/games/cardGame/:roomId/play"
 						element={
 							<ProtectedRoute>
-								<GameWrapper GameComponent={Lobby} />
+								<CardGamePage />
 							</ProtectedRoute>
 						}
 					/>
-					{
-						/* <Route
-							path="/games/status"
-							element={
-								<ProtectedRoute>
-									<StatusScreen />
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/games/winner"
-							element={
-								<ProtectedRoute>
-									<WinnerScreen />
-								</ProtectedRoute>
-							}
-						/> */
-					}
+
+					<Route
+						path="/games/cardGame/single"
+						element={
+							<ProtectedRoute>
+								<CardGamePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/cardGame/result"
+						element={
+							<ProtectedRoute>
+								<CardGameResult />
+							</ProtectedRoute>
+						}
+					/>
 
 					{/* Profile */}
 					<Route
@@ -375,67 +409,8 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-					<Route
-						path="/games/cardGame"
-						element={
-							<ProtectedRoute>
-								<CardGamePage />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/games/card-game/single"
-						element={
-							<ProtectedRoute>
-							<CardGamePage />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/games/cardGame/result"
-						element={
-							<ProtectedRoute>
-								<CardGameResult />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/games/:gameSlug/lobby"
-						element={
-							<ProtectedRoute>
-								<StatusScreen />
-							</ProtectedRoute>
-						}
-					/>
-
-					<Route
-						path="/games/:gameSlug/multiplayer/setup"
-						element={
-							<ProtectedRoute>
-								<MultiplayerSetup />
-							</ProtectedRoute>
-						}
-					/>
-
-					<Route
-					path="/games/:gameSlug/multiplayer/lobby/:roomId"
-						element={
-							<ProtectedRoute>
-								<MultiplayerLobby />
-							</ProtectedRoute>
-						}
-					/>
-
-					<Route
-					path="/games/:gameSlug/multiplayer/game/:roomId"
-						element={
-							<ProtectedRoute>
-								<MultiplayerGame />
-							</ProtectedRoute>
-						}
-					/>
 					{/* Fallback */}
-					<Route path="*" element={<Navigate to="/" replace />} />
+					{/* <Route path="*" element={<Navigate to="/" replace />} /> */}
 				</Routes>
 			</Layout>
 		</BrowserRouter>

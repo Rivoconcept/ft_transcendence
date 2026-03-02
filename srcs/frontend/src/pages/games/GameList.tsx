@@ -10,7 +10,6 @@ interface Game {
   name: string;
   description: string;
   icon: React.ReactNode;
-  slug: string;
 }
 
 export default function GameList() {
@@ -23,21 +22,18 @@ export default function GameList() {
       name: 'Dice Game',
       description: 'Roll three dice and test your luck! Get the highest score possible.',
       icon: '🎲',
-      slug: 'roll-dice',
     },
     {
       id: 'kingOfDiamond',
       name: 'King Of Diamond',
       description: 'Pick a number between 1 and 100. Choose wisely!',
       icon: '#️⃣',
-      slug: 'king-of-diamond',
     },
     {
       id: 'cardGame',
       name: 'Card Game',
       description: 'Single or Multiplayer card challenge',
       icon: '🃏',
-      slug: 'card-game',
     },
   ];
 
@@ -51,15 +47,15 @@ export default function GameList() {
     // 🎯 CARD GAME
     if (game.id === 'cardGame') {
       if (mode === 'SINGLE') {
-        navigate(`/games/${game.slug}/single`);
+        navigate(`/games/${game.id}/single`);
       } else {
-        navigate(`/games/${game.slug}/multiplayer/setup`);
+        navigate(`/games/${game.id}/multiplayer/setup`);
       }
       return;
     }
 
     // 🎯 AUTRES JEUX (par défaut solo pour l’instant)
-    navigate(`/games/${game.slug}/single`);
+    navigate(`/games/${game.id}/single`);
   };
 
   return (
@@ -93,12 +89,23 @@ export default function GameList() {
 
           {/* Bouton Play unique */}
           <div className="gameCardButton">
-            <button
-              className="btn-primary"
-              onClick={() => handlePlay(game)}
-            >
-              ▶️ Play
-            </button>
+            {game.id === 'cardGame' && (
+              <button
+                className="btn-primary"
+                onClick={() => handlePlay(game)}
+              >
+                ▶️ Play
+              </button>
+            )}
+
+            {game.id !== 'cardGame' && (
+              <button
+                className="btn-primary"
+                onClick={() => navigate(`/games/${game.id}/setup`)}
+              >
+                ▶️ Play
+              </button>
+            )}
           </div>
         </div>
       ))}

@@ -41,12 +41,6 @@ function Lobby() {
 					{players.map(player => (
 						<li key={player.id} className={player.ready ? 'ready' : 'not-ready'}>
 							<span>{player.name}</span>
-							{/* <button
-								onClick={() => toggleReady(player.id)}
-								className={player.ready ? 'unready-btn' : 'ready-btn'}
-							>
-								{player.ready ? 'Unready' : 'Ready'}
-							</button> */}
 						</li>
 					))}
 				</ul>
