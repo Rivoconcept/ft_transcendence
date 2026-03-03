@@ -6,16 +6,31 @@ export interface User {
     isBlocked: boolean;
 }
 
-export type MessageType = "text" | "game_invite" | "tournament_notification"
+export type Message = TextMessage | GameInviteMessage
 
-export interface Message {
+export interface BaseMessage {
     id: number;
-    text: string;
     time: string;
     senderId: number;
     read?: boolean;
-    type: MessageType;
 }
+
+export interface TextMessage extends BaseMessage {
+    type: "text"
+    text: string
+}
+
+export interface GameInviteMessage extends BaseMessage {
+    type: "game_invite"
+    roomId : number
+    gameName: string
+    status: "pending" | "accepted" | "declined"
+}
+
+// export interface TextMessage extends BaseMessage {
+    
+// }
+// export type NewMessage = Omit<Message, id | "time">
 
 export interface Conversation {
 	id: number;
