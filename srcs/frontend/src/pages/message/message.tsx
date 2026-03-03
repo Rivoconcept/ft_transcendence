@@ -1,4 +1,4 @@
-import type {Conversation} from "./struct"
+// import type {Conversation} from "./struct"
 import { conversations } from "./mockdata";
 import { useState } from "react";
 import {Send} from "lucide-react"

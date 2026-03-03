@@ -1,4 +1,4 @@
-import type {User , Conversation} from "./struct"
+import type {User , Conversation} from "."
 
 export const currentUser: User = {
     id: 1, 
@@ -18,29 +18,45 @@ export const mockUsers: User[] = [
 export const conversations: Conversation[] = [
     {
         id: 1,
-        lastMessage: "Coucou !", 
-        time: "10:35",           
-        unread: 0,               
+        lastMessage: "how are u?", 
+        time: "9:33 AM",           
+        unread: 1,               
         participants: [currentUser, mockUsers[0]], 
         messages: [
-            { id: 2,
+            { id: 1,
                 text: "Hello",
                 time: "9:30 AM",
                 senderId: 2,
                 read: true,
                 type: "text",
             },
-            { id: 1,
+            { id: 2,
                 text: "Hey",
                 time: "9:32 AM",
                 senderId: 1,
                 read: true,
                 type: "text",
             },
-            { id: 2,
+            { id: 3,
                 text: "how are u?",
                 time: "9:33 AM",
                 senderId: 2,
+                read: false,
+                type: "text",
+            },
+        ],
+    },
+    {
+        id: 2,
+        lastMessage: "Hey", 
+        time: "10:35 AM",           
+        unread: 1,               
+        participants: [currentUser, mockUsers[1]], 
+        messages: [
+            { id: 1,
+                text: "Hey",
+                time: "10:35 AM",
+                senderId: 3,
                 read: false,
                 type: "text",
             },
