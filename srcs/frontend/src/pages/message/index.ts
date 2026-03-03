@@ -1,2 +1,3 @@
-// export { default as MessagesPage } from './message';
-export * from "./message"
+
+export { default as MessagesPage } from './mess';
+export * from "."
