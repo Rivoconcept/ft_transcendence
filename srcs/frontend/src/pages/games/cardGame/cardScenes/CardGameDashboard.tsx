@@ -1,5 +1,3 @@
-// /src/cardScenes/CardScene.tsx
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PhaseButton from "../components/PhaseButton";
@@ -12,6 +10,7 @@ import { Phase } from "../typescript/cardPhase";
 import { useAtom, useAtomValue } from "jotai";
 import { FinalScore, PlayerState } from "../cardAtoms/cardAtoms";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
+import CardGameDb from "../components/CardGameDb";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -20,17 +19,19 @@ interface CardGameDashboardProps {
 
 export default function CardGameDashboard({ phase, setPhase }: CardGameDashboardProps) {
   const { score, reset } = useCardState();
-  const { playTurn, isWin, isLose, turn } = useCardGameState();
+  const { playTurn, isWin, isLose, turn, isFinished, timeLeft } = useCardGameState();
   const [scores, setScores] = useState<number[]>([]);
+  const [hasFinalScore, setHasFinalScore] = useState(false);
   const [, setFinalScore] = useAtom(FinalScore);
   const [, setPlayerState] = useAtom(PlayerState);
   const mode = useAtomValue(gameModeAtom);
   const navigate = useNavigate();
 
-  if (!mode) {
-    throw new Error("Game started without a selected mode");
-  }
+  if (!mode) throw new Error("Game started without a selected mode");
 
+  // -----------------------------
+  // Gestion bouton
+  // -----------------------------
   const onButtonClick = () => {
     if (phase === Phase.BEGIN) {
       setPhase(Phase.SHUFFLE);
@@ -38,9 +39,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       playTurn();
       setPhase(Phase.PLAY);
     } else if (phase === Phase.PLAY) {
-      if (turn === 5) {
-        setPhase(Phase.SHOW_RESULT);
-      } else {
+      if (!isFinished) {
         reset();
         setPhase(Phase.BEGIN);
       }
@@ -49,29 +48,51 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
     }
   };
 
+  // -----------------------------
+  // Ajouter score à chaque round
+  // -----------------------------
   useEffect(() => {
     if (score !== null) {
       setScores(prev => [...prev, score]);
     }
   }, [score]);
 
-  const totalScore = scores.reduce((sum, s) => sum + s, 0);
+  const totalScoreCalculated = scores.reduce((sum, s) => sum + s, 0);
 
+  // -----------------------------
+  // Sync Jotai
+  // -----------------------------
   useEffect(() => {
-    setFinalScore(totalScore);
+    setFinalScore(totalScoreCalculated);
     setPlayerState(isWin);
-  }, [totalScore, setFinalScore, isWin, setPlayerState]);
+  }, [totalScoreCalculated, isWin, setFinalScore, setPlayerState]);
 
-
+  // -----------------------------
+  // Fin automatique du jeu (après 5 scores ou conditions)
+  // -----------------------------
   useEffect(() => {
-    if (turn === 5 ) {
+    const isTurnLimitReached = scores.length >= 5;
 
+    if (
+      timeLeft <= 0 ||
+      totalScoreCalculated >= 27 ||
+      isTurnLimitReached
+    ) {
       setPhase(Phase.SHOW_RESULT);
     }
-  }, [turn, setPhase]);
+  }, [timeLeft, totalScoreCalculated, scores.length, setPhase]);
+
+  // -----------------------------
+  // Détection fin pour push DB (sécurisé)
+  // -----------------------------
+  const isGameOverForPush =
+    timeLeft <= 0 ||
+    totalScoreCalculated >= 27 ||
+    scores.length >= 5;
 
   return (
     <div className="dashboard">
+      {/* UI inchangée */}
       <div className="card-group">
         <div className="card border-0 bg-black text-light">
           <div className="card-body">
@@ -80,6 +101,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
             </div>
           </div>
         </div>
+
         <div className="card border-0 bg-black text-light">
           <div className="card-body">
             <div className="circleTimer">
@@ -91,13 +113,12 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
       <hr className="separator"/>
 
-      {/* PROGRESS BAR */}
       <div className="progressBarScore">
         <div className="progressTile">
           <span className="label">PROGRESS</span>
           <span className="turn">{turn} / 5</span>
         </div>
-        <ProgressBar />
+        <ProgressBar progress={Math.min((totalScoreCalculated / 27) * 100, 100)} />
       </div>
 
       <div className="card-group">
@@ -110,26 +131,35 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
             </ul>
             <div className="separatorLine" />
             <div className="totalScore">
-              <p>Score <span>{totalScore}</span></p>
+              <p>Score <span>{totalScoreCalculated}</span></p>
             </div>
           </div>
         </div>
 
         <div className="card border-0 bg-black text-light">
           <div className="card-body">
-            {isWin && <><h2 className="win">🎉 </h2> <h2 className="win">You Win!</h2></>}
-            {isLose && !isWin && <> <span className="lose">💀</span> <span className="lose">You lose!</span></>}
+            {isWin && <><h2 className="win">🎉</h2><h3 className="win">You Win!</h3></>}
+            {isLose && !isWin && <><span className="lose">💀</span><span className="lose">You lose!</span></>}
           </div>
         </div>
       </div>
 
-      {/* BUTTON */}
       <div className="separatorBottom">
         <hr className="separator"/>
       </div>
+
       <div className="cardButton">
         <PhaseButton phase={phase} onClick={onButtonClick} />
       </div>
+
+      {/* Push DB une seule fois */}
+      <CardGameDb
+        finalScore={totalScoreCalculated}
+        isWin={isWin}
+        mode={mode}
+        isGameOver={isGameOverForPush && !hasFinalScore}
+        onSaved={() => setHasFinalScore(true)}
+      />
     </div>
   );
 }

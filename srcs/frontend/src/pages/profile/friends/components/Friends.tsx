@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
+import { useNavigate } from 'react-router-dom';
 import { UserMinus, MessageCircle, Search, Loader2 } from 'lucide-react';
 import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
+import { openOrCreateDirectChatAtom } from '../../../../providers/chat.provider';
 import AvatarUtil from '../../../../components/AvatarUtil';
 
 export default function Friends(): React.JSX.Element {
+	const navigate = useNavigate();
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [error, setError] = useState<string | null>(null);
 	const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
@@ -13,6 +16,7 @@ export default function Friends(): React.JSX.Element {
 	const isLoading = useAtomValue(friendsLoadingAtom);
 	const fetchFriends = useSetAtom(fetchFriendsAtom);
 	const removeFriend = useSetAtom(removeFriendAtom);
+	const openOrCreateDirectChat = useSetAtom(openOrCreateDirectChatAtom);
 
 	useEffect(() => {
 		fetchFriends();
@@ -48,8 +52,18 @@ export default function Friends(): React.JSX.Element {
 		}
 	};
 
+	const handleOpenChat = async (friendId: number) => {
+		try {
+			const chatId = await openOrCreateDirectChat(friendId);
+			navigate(`/messages/${chatId}`);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Failed to open chat';
+			setError(message);
+		}
+	};
+
 	if (isLoading && friends.length === 0) {
-		return <p style={{ textAlign: 'center', color: '#666' }}>Loading friends...</p>;
+		return <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading friends...</p>;
 	}
 
 	return (
@@ -59,7 +73,7 @@ export default function Friends(): React.JSX.Element {
 					color: '#ef4444',
 					marginBottom: '1rem',
 					padding: '0.5rem 0.75rem',
-					background: '#fef2f2',
+					background: 'var(--bg-surface)',
 					borderRadius: '6px',
 					fontSize: '0.85rem'
 				}}>
@@ -69,7 +83,7 @@ export default function Friends(): React.JSX.Element {
 
 			<div className="form-group" style={{ marginBottom: '1.5rem' }}>
 				<div style={{ position: 'relative' }}>
-					<Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+					<Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
 					<input
 						type="text"
 						placeholder="Search friends..."
@@ -81,10 +95,10 @@ export default function Friends(): React.JSX.Element {
 			</div>
 
 			{filteredFriends.length === 0 ? (
-				<p style={{ textAlign: 'center', color: '#666' }}>No friends found</p>
+				<p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No friends found</p>
 			) : (
 				filteredFriends.map(friend => (
-					<div key={friend.id} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem' }}>
+					<div key={friend.id} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem', width: '100%' }}>
 						<AvatarUtil id={friend.id} radius={36} showStatus={true} />
 						<div style={{ flex: 1, minWidth: 0 }}>
 							<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{friend.username}</h3>
@@ -93,7 +107,7 @@ export default function Friends(): React.JSX.Element {
 							</p>
 						</div>
 						<div style={{ display: 'flex', gap: '0.25rem' }}>
-							<button className="btn-secondary" style={{ padding: '0.35rem' }}>
+							<button className="btn-secondary" style={{ padding: '0.35rem' }} onClick={() => handleOpenChat(friend.id)}>
 								<MessageCircle size={14} />
 							</button>
 							<button

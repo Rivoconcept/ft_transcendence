@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 
-export type GameType = 'tsabo9' | 'number';
+export type GameType = 'diceGame' | 'kingOfDiamond' | 'cardGame';
 
 export interface GameResult {
   id: number;
@@ -16,7 +16,7 @@ const generateGameStats = (): GameResult[] => {
   const now = Date.now();
 
   for (let i = 1; i <= 50; i++) {
-    const game: GameType = Math.random() < 0.5 ? 'tsabo9' : 'number';
+    const game: GameType = ['diceGame', 'kingOfDiamond', 'cardGame'][Math.floor(Math.random() * 3)] as GameType;
 
     const result: 'win' | 'loss' = Math.random() < 0.6 ? 'win' : 'loss';
 

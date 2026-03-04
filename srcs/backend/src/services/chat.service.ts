@@ -21,6 +21,7 @@ interface SendMessageDTO {
   chatId: number;
   content: string;
   type?: "text" | "image";
+  socketId?: string;
 }
 
 // Réponses minimalistes - uniquement les IDs
@@ -31,6 +32,8 @@ interface ChatListItem {
   channel_id: string;
   created_at: Date;
   lastMessageId: number | null;
+  lastMessageContent: string | null;
+  lastMessageDate: string | null;
   memberIds: number[];
 }
 
@@ -254,21 +257,26 @@ class ChatService {
       membersByChatId.set(m.chat_id, existing);
     });
 
-    // Récupérer le dernier message ID de chaque chat (par date de création)
+    // Récupérer le dernier message de chaque chat (par date de création)
     const lastMessages = await Promise.all(
       chatIds.map(async (chatId) => {
         const message = await this.messageRepository.findOne({
           where: { chat_id: chatId },
           order: { created_at: "DESC" },
-          select: ["id", "created_at"],
+          select: ["id", "content", "created_at"],
         });
-        return { chatId, messageId: message?.id ?? null, createdAt: message?.created_at };
+        return {
+          chatId,
+          messageId: message?.id ?? null,
+          content: message?.content ?? null,
+          createdAt: message?.created_at,
+        };
       })
     );
 
     const lastMessageMap = new Map(lastMessages.map((lm) => [lm.chatId, lm]));
 
-    // Formater les résultats - uniquement les IDs
+    // Formater les résultats
     const chatList: ChatListItem[] = chats.map((chat) => {
       const lastMsg = lastMessageMap.get(chat.id);
       return {
@@ -278,6 +286,8 @@ class ChatService {
         channel_id: chat.channel_id,
         created_at: chat.created_at,
         lastMessageId: lastMsg?.messageId ?? null,
+        lastMessageContent: lastMsg?.content ?? null,
+        lastMessageDate: lastMsg?.createdAt?.toISOString() ?? null,
         memberIds: membersByChatId.get(chat.id) ?? [],
       };
     });
@@ -379,7 +389,7 @@ class ChatService {
   }
 
   async sendMessage(userId: number, data: SendMessageDTO): Promise<MessageItem> {
-    const { chatId, content, type = "text" } = data;
+    const { chatId, content, type = "text", socketId } = data;
 
     if (!content || content.trim() === "") {
       throw new Error("Message content is required");
@@ -419,14 +429,23 @@ class ChatService {
       reactions: [],
     };
 
-    // Notifier tous les membres via la room du chat
+    // Notifier les membres du chat (exclure uniquement le socket émetteur)
     const io = socketService.getIO();
     if (io) {
-      io.to(`chat.${chat.channel_id}`).emit("message:new", {
-        chatId,
-        channelId: chat.channel_id,
-        message: messageItem,
-      });
+      const broadcast = io.to(`chat.${chat.channel_id}`);
+      if (socketId) {
+        broadcast.except(socketId).emit("message:new", {
+          chatId,
+          channelId: chat.channel_id,
+          message: messageItem,
+        });
+      } else {
+        broadcast.emit("message:new", {
+          chatId,
+          channelId: chat.channel_id,
+          message: messageItem,
+        });
+      }
     }
 
     return messageItem;
@@ -458,7 +477,7 @@ class ChatService {
     const lastMessage = await this.messageRepository.findOne({
       where: { chat_id: chatId },
       order: { created_at: "DESC" },
-      select: ["id"],
+      select: ["id", "content", "created_at"],
     });
 
     return {
@@ -468,6 +487,8 @@ class ChatService {
       channel_id: chat.channel_id,
       created_at: chat.created_at,
       lastMessageId: lastMessage?.id ?? null,
+      lastMessageContent: lastMessage?.content ?? null,
+      lastMessageDate: lastMessage?.created_at?.toISOString() ?? null,
       memberIds: members.map((m) => m.user_id),
     };
   }

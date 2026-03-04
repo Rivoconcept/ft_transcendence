@@ -13,6 +13,13 @@ import {
 	sentInvitationsLoadingAtom,
 	sentInvitationsErrorAtom
 } from './invitation.provider';
+import {
+	chatListAtom,
+	chatListLoadingAtom,
+	chatListErrorAtom,
+	chatMessagesMapAtom,
+	selectedChatIdAtom
+} from './chat.provider';
 
 // Current authenticated user
 export const currentUserAtom = atom<User | null>(null);
@@ -144,7 +151,7 @@ export const updateCurrentUserAtom = atom(
 
 		const updatedUser = await userService.updateMe(data);
 		set(currentUserAtom, updatedUser);
-		set(userFamilyProvider(updatedUser.id), updatedUser);
+		set(_userCacheFamily(updatedUser.id), updatedUser);
 		return updatedUser;
 	}
 );
@@ -172,6 +179,13 @@ export const logoutAtom = atom(
 		set(sentInvitationsAtom, []);
 		set(sentInvitationsLoadingAtom, false);
 		set(sentInvitationsErrorAtom, null);
+
+		// Clear chat cache
+		set(chatListAtom, []);
+		set(chatListLoadingAtom, false);
+		set(chatListErrorAtom, null);
+		set(chatMessagesMapAtom, {});
+		set(selectedChatIdAtom, null);
 
 		// Note: atomFamily caches will be cleared on next login with fresh data
 	}

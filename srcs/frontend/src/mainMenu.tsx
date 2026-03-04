@@ -8,14 +8,16 @@ import "./pages/message/message.css"
 import { Navigation } from './components';
 import { apiService } from './services';
 import { socketStore } from './store/socketStore';
-import type { User } from './models';
+import type { User, ChatListItem, MessageItem } from './models';
 import {
 	currentUserAtom,
 	currentUserLoadingAtom,
 	initCurrentUserAtom,
 	logoutAtom,
 	fetchUserToCacheAtom,
-	userCacheFamily
+	userCacheFamily,
+	onNewMessageAtom,
+	onChatCreatedAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -32,16 +34,18 @@ import {
 	DiceGame,
 	kingOfDiamond,
 	CardGamePage,
-	Lobby,
-	// StatusScreen,
-	// WinnerScreen,
 	ProfilePage,
 	FriendsPage,
 	MessagesPage,
-	Dashboard
+	Dashboard,
 } from './pages';
 
 import CardGameResult from './pages/games/cardGame/components/CardGameResult';
+import {
+	MultiplayerLobby,
+	MultiplayerSetup,
+	GameSetup
+} from './pages/games';
 
 // Types
 type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
@@ -109,7 +113,8 @@ function GameListWrapper(): React.JSX.Element {
 		navigate(`/games/${gameId}`);
 	};
 
-	return <GameList onStartGame={handleStartGame} />;
+	// return <GameList onStartGame={handleStartGame} />;
+	return <GameList />;
 }
 
 // Game Wrapper with back navigation
@@ -206,6 +211,25 @@ function SocketListener(): null {
 			}
 		};
 
+		// Chat events
+		const handleMessageNew = (data: { chatId: number; channelId: string; message: MessageItem }) => {
+			store.set(onNewMessageAtom, data.message);
+		};
+
+		const handleChatCreated = (data: { chatId: number; channelId: string; type: string; name?: string }) => {
+			const chat: ChatListItem = {
+				id: data.chatId,
+				name: data.name ?? null,
+				type: data.type as 'direct' | 'group',
+				channel_id: data.channelId,
+				created_at: new Date().toISOString(),
+				lastMessageId: null,
+				memberIds: []
+			};
+			store.set(onChatCreatedAtom, chat);
+			socketStore.emit('chat:join', { channelId: data.channelId });
+		};
+
 		// Register listeners
 		socketStore.on('invitation:received', handleInvitationReceived);
 		socketStore.on('invitation:accepted', handleInvitationAccepted);
@@ -213,6 +237,8 @@ function SocketListener(): null {
 		socketStore.on('invitation:cancelled', handleInvitationCancelled);
 		socketStore.on('friend:removed', handleFriendRemoved);
 		socketStore.on('user:status-changed', handleUserStatusChanged);
+		socketStore.on('message:new', handleMessageNew);
+		socketStore.on('chat:created', handleChatCreated);
 
 		// Cleanup
 		return () => {
@@ -222,6 +248,8 @@ function SocketListener(): null {
 			socketStore.off('invitation:cancelled', handleInvitationCancelled);
 			socketStore.off('friend:removed', handleFriendRemoved);
 			socketStore.off('user:status-changed', handleUserStatusChanged);
+			socketStore.off('message:new', handleMessageNew);
+			socketStore.off('chat:created', handleChatCreated);
 		};
 	}, [user, store]);
 
@@ -279,6 +307,7 @@ export default function App(): React.JSX.Element {
 				onThemeChange={setTheme}
 			>
 				<Routes>
+
 					{/* Auth */}
 					<Route
 						path="/"
@@ -288,7 +317,8 @@ export default function App(): React.JSX.Element {
 							</PublicRoute>
 						}
 					/>
-					{/* Games */}
+
+					{/* Games Config */}
 					<Route
 						path="/games"
 						element={
@@ -297,8 +327,38 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
+
 					<Route
-						path="/games/diceGame"
+						path="/games/:gameSlug/setup"
+						element={
+							<ProtectedRoute>
+								<GameWrapper GameComponent={GameSetup} />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/:gameSlug/multiplayer/setup"
+						element={
+							<ProtectedRoute>
+								<MultiplayerSetup />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/:gameSlug/multiplayer/lobby/:roomId"
+						element={
+							<ProtectedRoute>
+								<MultiplayerLobby />
+							</ProtectedRoute>
+						}
+					/>
+
+					{/* Games */}
+					<Route
+						path="/games/diceGame/:roomId/play"
+						// path="/games/diceGame"
 						element={
 							<ProtectedRoute>
 								<GameWrapper GameComponent={DiceGame} />
@@ -306,7 +366,17 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					<Route
-						path="/games/kingOfDiamond"
+						path="/games/diceGame/single"
+						// path="/games/diceGame"
+						element={
+							<ProtectedRoute>
+								<GameWrapper GameComponent={DiceGame} />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/kingOfDiamond/:roomId/play"
 						element={
 							<ProtectedRoute>
 								<GameWrapper GameComponent={kingOfDiamond} />
@@ -314,31 +384,39 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					<Route
-						path="/lobby"
+						path="/games/kingOfDiamond/single"
 						element={
 							<ProtectedRoute>
-								<GameWrapper GameComponent={Lobby} />
+								<GameWrapper GameComponent={kingOfDiamond} />
 							</ProtectedRoute>
 						}
 					/>
-					{
-						/* <Route
-							path="/games/status"
-							element={
-								<ProtectedRoute>
-									<StatusScreen />
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/games/winner"
-							element={
-								<ProtectedRoute>
-									<WinnerScreen />
-								</ProtectedRoute>
-							}
-						/> */
-					}
+
+					<Route
+						path="/games/cardGame/:roomId/play"
+						element={
+							<ProtectedRoute>
+								<CardGamePage />
+							</ProtectedRoute>
+						}
+					/>
+
+					<Route
+						path="/games/cardGame/single"
+						element={
+							<ProtectedRoute>
+								<CardGamePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/cardGame/result"
+						element={
+							<ProtectedRoute>
+								<CardGameResult />
+							</ProtectedRoute>
+						}
+					/>
 
 					{/* Profile */}
 					<Route
@@ -366,6 +444,14 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					<Route
+						path="/messages/:chatId"
+						element={
+							<ProtectedRoute>
+								<MessagesPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
 						path="/dashboard"
 						element={
 							<ProtectedRoute>
@@ -373,24 +459,8 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-					<Route
-						path="/games/cardGame"
-						element={
-							<ProtectedRoute>
-								<CardGamePage />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/games/cardGame/result"
-						element={
-							<ProtectedRoute>
-								<CardGameResult />
-							</ProtectedRoute>
-						}
-					/>
 					{/* Fallback */}
-					<Route path="*" element={<Navigate to="/" replace />} />
+					{/* <Route path="*" element={<Navigate to="/" replace />} /> */}
 				</Routes>
 			</Layout>
 		</BrowserRouter>

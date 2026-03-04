@@ -1,12 +1,12 @@
 .messages-root {
-	height: 100vh;
+	height: 100%;
 	display: flex;
 	overflow: hidden;
 	/* background: var(--bg-surface-alt); */
 }
 
 .msg-sidebar {
-	padding-top: 2rem;
+	padding-top: 0.75rem;
 	width: 320px;
 	min-width: 280px;
 	display: flex;
@@ -44,7 +44,8 @@
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	border: 2px solid #fff;
+	background: #28a745;
+	border: 2px solid var(--bg-surface);
 	position: absolute;
 	bottom: 1px;
 	right: 1px;
@@ -153,9 +154,13 @@
 }
 .icon-action:hover { background: var(--bg-surface-hover); }
 
+.icon-themed {
+	color: var(--text-secondary);
+}
+
 .send-btn-custom {
-	width: 38px;
-	height: 38px;
+	width: 42px;
+	height: 42px;
 	border-radius: 50%;
 	border: none;
 	display: flex;

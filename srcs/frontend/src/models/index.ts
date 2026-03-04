@@ -7,6 +7,13 @@ export type {
 	AuthResponse
 } from './user.model';
 
+// Chat
+export type {
+	ChatListItem,
+	MessageItem,
+	PaginatedMessages
+} from './chat.model';
+
 // Invitation
 export type {
 	Invitation,

@@ -9,48 +9,46 @@ const MAX_SCORE = 27;
 const TIME_LIMIT = 30;
 
 export function CardGameContextProvider({ children }: { children: React.ReactNode }) {
-  const { drawAll, score, reset: resetCards } = useCardState();
+  const { drawAll, score: cardScore, reset: resetCards } = useCardState();
 
   const [turn, setTurn] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  /* ================= TIMER GAME LOOP ================= */
+  /* ================= TIMER ================= */
   useEffect(() => {
     if (!isTimerRunning) return;
     if (timeLeft <= 0) {
       setIsTimerRunning(false);
       return;
     }
-
-    const timer = setInterval(() => {
-      setTimeLeft(t => t - 1);
-    }, 1000);
-
+    const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
     return () => clearInterval(timer);
   }, [isTimerRunning, timeLeft]);
 
   /* ================= GAMEPLAY ================= */
-
   const playTurn = () => {
     if (turn >= MAX_TURNS || timeLeft <= 0) return;
     drawAll();
     setTurn(t => t + 1);
-    setIsTimerRunning(true); // démarre le timer au premier tour
   };
 
-  useEffect(() => {
-    if (score !== null) setTotalScore(s => s + score);
-  }, [score]);
+  useEffect(() => setIsTimerRunning(true), []);
 
-  const progress = Math.min((totalScore / MAX_SCORE) * 100, 100);
-  const isWin = progress >= 100 && timeLeft > 0;
-  const isLose = timeLeft <= 0 || turn >= MAX_TURNS;
+  /* cumul score automatiquement */
+  useEffect(() => {
+    if (cardScore !== null) setTotalScore(prev => prev + cardScore);
+  }, [cardScore]);
+
+  /* ================= FIN DU JEU ================= */
+  const isWin = totalScore >= MAX_SCORE && turn <= MAX_TURNS;
+  const isLose = (timeLeft <= 0) || (turn >= MAX_TURNS && totalScore < MAX_SCORE);
+  const isFinished = isWin || isLose || turn >= MAX_TURNS || timeLeft <= 0;
 
   useEffect(() => {
-    if (isWin || isLose) setIsTimerRunning(false);
-  }, [isWin, isLose]);
+    if (isFinished) setIsTimerRunning(false);
+  }, [isFinished]);
 
   const resetGame = () => {
     setTurn(0);
@@ -59,6 +57,8 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
     setIsTimerRunning(false);
     resetCards();
   };
+
+  const progress = Math.min((totalScore / MAX_SCORE) * 100, 100);
 
   return (
     <GameContext.Provider
@@ -73,6 +73,7 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
         resetGame,
         isWin,
         isLose,
+        isFinished,
         pauseTimer: () => setIsTimerRunning(false),
         resumeTimer: () => setIsTimerRunning(true),
         addTime: (sec: number) => setTimeLeft(t => Math.min(t + sec, TIME_LIMIT)),
