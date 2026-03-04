@@ -10,7 +10,7 @@ class ChatService {
 		return apiService.get<PaginatedMessages>(`chats/${chatId}/messages?page=${page}&limit=${limit}`);
 	}
 
-	async sendMessage(chatId: number, payload: { content: string; type?: string }): Promise<MessageItem> {
+	async sendMessage(chatId: number, payload: { content: string; type?: string; socketId?: string }): Promise<MessageItem> {
 		return apiService.post<MessageItem>(`chats/${chatId}/messages`, payload);
 	}
 

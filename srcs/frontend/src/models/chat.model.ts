@@ -5,6 +5,8 @@ export interface ChatListItem {
 	channel_id: string;
 	created_at: string;
 	lastMessageId: number | null;
+	lastMessageContent: string | null;
+	lastMessageDate: string | null;
 	memberIds: number[];
 }
 

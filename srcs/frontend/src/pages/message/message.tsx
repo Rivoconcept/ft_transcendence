@@ -184,9 +184,8 @@ export default function MessagesPage() {
 		return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 	};
 
-	// Get last message text from loaded messages
-	const getLastMessagePreview = (_chat: ChatListItem): string => {
-		return "...";
+	const getLastMessagePreview = (chat: ChatListItem): string => {
+		return chat.lastMessageContent ?? "";
 	};
 
 	return (
@@ -234,7 +233,7 @@ export default function MessagesPage() {
 											{getChatDisplayName(c)}
 										</span>
 										<span className="ms-2 flex-shrink-0" style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
-											{formatTime(c.created_at)}
+											{formatTime(c.lastMessageDate ?? c.created_at)}
 										</span>
 									</div>
 									<div className="d-flex justify-content-between align-items-center mt-1">

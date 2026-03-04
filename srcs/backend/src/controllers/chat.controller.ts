@@ -22,6 +22,8 @@ export async function createDirectChat(req: AuthRequest, res: Response): Promise
       channel_id: chat.channel_id,
       created_at: chat.created_at,
       lastMessageId: null,
+      lastMessageContent: null,
+      lastMessageDate: null,
       memberIds: [currentUserId, userId],
     };
 
@@ -120,7 +122,7 @@ export async function sendMessage(req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const { content, type } = req.body;
+    const { content, type, socketId } = req.body;
 
     if (!content || typeof content !== "string") {
       res.status(400).json({ error: "Message content is required" });
@@ -131,6 +133,7 @@ export async function sendMessage(req: AuthRequest, res: Response): Promise<void
       chatId,
       content,
       type,
+      socketId,
     });
 
     res.status(201).json(message);

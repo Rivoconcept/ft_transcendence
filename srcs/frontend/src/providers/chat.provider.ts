@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { chatService } from '../services';
+import { socketStore } from '../store/socketStore';
 import type { ChatListItem, MessageItem, PaginatedMessages } from '../models';
 
 // ============================================================
@@ -28,10 +29,14 @@ export const fetchChatListAtom = atom(
 	}
 );
 
-// Derived: sorted by most recent activity (backend already sorts, but keep for safety)
+// Derived: sorted by most recent activity
 export const sortedChatListAtom = atom((get) => {
 	const chats = get(chatListAtom);
-	return [...chats].sort((a, b) => (b.lastMessageId ?? 0) - (a.lastMessageId ?? 0));
+	return [...chats].sort((a, b) => {
+		const dateA = a.lastMessageDate ?? a.created_at;
+		const dateB = b.lastMessageDate ?? b.created_at;
+		return new Date(dateB).getTime() - new Date(dateA).getTime();
+	});
 });
 
 // ============================================================
@@ -170,7 +175,7 @@ export const sendMessageAtom = atom(
 		});
 
 		try {
-			const realMsg = await chatService.sendMessage(chatId, { content, type: 'text' });
+			const realMsg = await chatService.sendMessage(chatId, { content, type: 'text', socketId: socketStore.getSocketId() });
 			const currentMap = get(chatMessagesMapAtom);
 			const currentState = currentMap[chatId];
 			set(chatMessagesMapAtom, {
@@ -181,10 +186,10 @@ export const sendMessageAtom = atom(
 				}
 			});
 
-			// Update lastMessageId in chat list
+			// Update last message info in chat list
 			const chats = get(chatListAtom);
 			set(chatListAtom, chats.map(c =>
-				c.id === chatId ? { ...c, lastMessageId: realMsg.id } : c
+				c.id === chatId ? { ...c, lastMessageId: realMsg.id, lastMessageContent: realMsg.content, lastMessageDate: realMsg.created_at } : c
 			));
 		} catch {
 			// Remove optimistic message on failure
@@ -213,22 +218,33 @@ export const onNewMessageAtom = atom(
 		const state = map[message.chatId];
 
 		if (state) {
-			// Deduplicate (sender already has it via optimistic update)
+			// Deduplicate: skip if already present by id
 			if (state.messages.some(m => m.id === message.id)) return;
 
-			set(chatMessagesMapAtom, {
-				...map,
-				[message.chatId]: {
-					...state,
-					messages: [...state.messages, message]
-				}
-			});
+			// Check for optimistic message (negative id, same content) and replace it
+			const optimisticIndex = state.messages.findIndex(m => m.id < 0 && m.content === message.content);
+			if (optimisticIndex !== -1) {
+				const updated = [...state.messages];
+				updated[optimisticIndex] = message;
+				set(chatMessagesMapAtom, {
+					...map,
+					[message.chatId]: { ...state, messages: updated }
+				});
+			} else {
+				set(chatMessagesMapAtom, {
+					...map,
+					[message.chatId]: {
+						...state,
+						messages: [...state.messages, message]
+					}
+				});
+			}
 		}
 
-		// Update lastMessageId in chat list
+		// Update last message info in chat list
 		const chats = get(chatListAtom);
 		set(chatListAtom, chats.map(c =>
-			c.id === message.chatId ? { ...c, lastMessageId: message.id } : c
+			c.id === message.chatId ? { ...c, lastMessageId: message.id, lastMessageContent: message.content, lastMessageDate: message.created_at } : c
 		));
 	}
 );

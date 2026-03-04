@@ -76,6 +76,10 @@ class SocketStore {
     return this.socket;
   }
 
+  getSocketId(): string | undefined {
+    return this.socket?.id;
+  }
+
   isConnected(): boolean {
     return this.socket?.connected ?? false;
   }
