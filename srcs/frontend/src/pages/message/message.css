@@ -131,11 +131,15 @@
 	cursor: pointer;
 }
 
+.bubble-with-image {
+	padding: 4px;
+}
+
 .bubble-caption {
-	padding: 6px 10px 2px;
+	padding: 4px 8px 4px;
 	font-size: 13.5px;
 	line-height: 1.4;
-	color: var(--text-primary);
+	color: inherit;
 	word-break: break-word;
 }
 
