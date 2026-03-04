@@ -1,250 +1,321 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAtomValue, useSetAtom } from "jotai";
 import {
 	Search,
 	Send,
 	MoreVertical,
-	Phone,
-	Video,
 	ArrowLeft,
-	Check,
-	CheckCheck,
 	Paperclip,
 	Smile,
 } from "lucide-react";
-
-interface Message {
-	id: number;
-	text: string;
-	time: string;
-	fromMe: boolean;
-	read?: boolean;
-}
-
-interface Conversation {
-	id: number;
-	name: string;
-	avatar: string;
-	lastMessage: string;
-	time: string;
-	unread: number;
-	online: boolean;
-	messages: Message[];
-}
-
-const conversations: Conversation[] = [
-	{
-		id: 1,
-		name: "friend",
-		avatar: "SC",
-		lastMessage: "hello world",
-		time: "9:41 AM",
-		unread: 3,
-		online: true,
-		messages: [
-			{ id: 1, text: "sdfefsef", time: "9:30 AM", fromMe: false },
-			{ id: 2, text: "sdfgshfef", time: "9:32 AM", fromMe: true, read: true },
-			{ id: 6, text: "hello world", time: "9:41 AM", fromMe: false },
-		],
-	},
-];
-
-const avatarColors: Record<string, string> = {
-	SC: "#E57373",
-	AR: "#64B5F6",
-	DT: "#81C784",
-	JP: "#FFB74D",
-	PS: "#BA68C8",
-};
+import {
+	currentUserAtom,
+	sortedChatListAtom,
+	chatListLoadingAtom,
+	fetchChatListAtom,
+	selectedChatAtom,
+	selectedChatIdAtom,
+	selectedChatMessagesAtom,
+	selectChatAtom,
+	loadOlderMessagesAtom,
+	sendMessageAtom,
+} from "../../providers";
+import { socketStore } from "../../store/socketStore";
+import AvatarUtil from "../../components/AvatarUtil";
+import type { ChatListItem } from "../../models";
 
 export default function MessagesPage() {
-	const [selected, setSelected] = useState<Conversation | null>(null);
+	const { chatId: chatIdParam } = useParams<{ chatId?: string }>();
+	const navigate = useNavigate();
+
+	const currentUser = useAtomValue(currentUserAtom);
+	const chats = useAtomValue(sortedChatListAtom);
+	const chatsLoading = useAtomValue(chatListLoadingAtom);
+	const fetchChats = useSetAtom(fetchChatListAtom);
+	const selectedChat = useAtomValue(selectedChatAtom);
+	const selectedChatId = useAtomValue(selectedChatIdAtom);
+	const messagesState = useAtomValue(selectedChatMessagesAtom);
+	const selectChat = useSetAtom(selectChatAtom);
+	const loadOlder = useSetAtom(loadOlderMessagesAtom);
+	const doSendMessage = useSetAtom(sendMessageAtom);
+
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
-	const [allConvos, setAllConvos] = useState(conversations);
 	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
+	const topSentinelRef = useRef<HTMLDivElement>(null);
+	const prevScrollHeightRef = useRef<number>(0);
+	const isInitialLoadRef = useRef<boolean>(true);
 
-	const filtered = allConvos.filter((c) =>
-		c.name.toLowerCase().includes(search.toLowerCase())
-	);
+	const messages = messagesState?.messages ?? [];
+	const hasMore = messagesState?.hasMore ?? false;
+	const isLoading = messagesState?.loading ?? false;
 
+	// Fetch chats on mount
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [selected?.messages]);
+		fetchChats();
+	}, [fetchChats]);
 
-	const sendMessage = () => {
-		if (!input.trim() || !selected) return;
-		const newMsg: Message = {
-			id: Date.now(),
-			text: input.trim(),
-			time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-			fromMe: true,
-			read: false,
-		};
-		const updated = allConvos.map((c) =>
-			c.id === selected.id
-				? { ...c, messages: [...c.messages, newMsg], lastMessage: newMsg.text, time: newMsg.time }
-				: c
+	// Join socket rooms when chat list changes
+	useEffect(() => {
+		chats.forEach(chat => {
+			socketStore.emit("chat:join", { channelId: chat.channel_id });
+		});
+	}, [chats]);
+
+	// Handle URL param chatId
+	useEffect(() => {
+		if (chatIdParam) {
+			const id = Number(chatIdParam);
+			if (!isNaN(id) && id !== selectedChatId) {
+				selectChat(id);
+				setMobileView("chat");
+			}
+		}
+	}, [chatIdParam, selectChat, selectedChatId]);
+
+	// Scroll to bottom on initial load
+	useEffect(() => {
+		if (isInitialLoadRef.current && messages.length > 0 && !isLoading) {
+			bottomRef.current?.scrollIntoView();
+			isInitialLoadRef.current = false;
+		}
+	}, [messages.length, isLoading]);
+
+	// Reset initial load flag when chat changes
+	useEffect(() => {
+		isInitialLoadRef.current = true;
+	}, [selectedChatId]);
+
+	// Scroll to bottom when current user sends a message
+	useEffect(() => {
+		if (messages.length > 0) {
+			const lastMsg = messages[messages.length - 1];
+			if (lastMsg.authorId === currentUser?.id || lastMsg.id < 0) {
+				bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+			}
+		}
+	}, [messages.length, currentUser?.id]);
+
+	// Preserve scroll position after prepending older messages
+	useEffect(() => {
+		const container = scrollContainerRef.current;
+		if (!container || isInitialLoadRef.current) return;
+
+		const newScrollHeight = container.scrollHeight;
+		const diff = newScrollHeight - prevScrollHeightRef.current;
+		if (diff > 0 && prevScrollHeightRef.current > 0) {
+			container.scrollTop = diff;
+		}
+	}, [messages.length]);
+
+	// IntersectionObserver for scroll-up pagination
+	useEffect(() => {
+		const sentinel = topSentinelRef.current;
+		const container = scrollContainerRef.current;
+		if (!sentinel || !container || !selectedChatId) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && hasMore && !isLoading) {
+					prevScrollHeightRef.current = container.scrollHeight;
+					loadOlder(selectedChatId);
+				}
+			},
+			{
+				root: container,
+				rootMargin: "100px 0px 0px 0px",
+				threshold: 0,
+			}
 		);
-		setAllConvos(updated);
-		setSelected(updated.find((c) => c.id === selected.id) || null);
+
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, [selectedChatId, hasMore, isLoading, loadOlder]);
+
+	const handleSelectChat = useCallback((chatId: number) => {
+		selectChat(chatId);
+		navigate(`/messages/${chatId}`);
+		setMobileView("chat");
+	}, [selectChat, navigate]);
+
+	const handleSend = useCallback(() => {
+		if (!input.trim() || !selectedChatId) return;
+		doSendMessage({ chatId: selectedChatId, content: input.trim() });
 		setInput("");
+	}, [input, selectedChatId, doSendMessage]);
+
+	const getOtherUserId = (chat: ChatListItem): number => {
+		if (chat.type === "direct" && currentUser) {
+			return chat.memberIds.find(id => id !== currentUser.id) ?? chat.memberIds[0];
+		}
+		return chat.memberIds[0];
 	};
 
-	const openConvo = (c: Conversation) => {
-		const updated = allConvos.map((conv) =>
-			conv.id === c.id ? { ...conv, unread: 0 } : conv
-		);
-		setAllConvos(updated);
-		setSelected(updated.find((conv) => conv.id === c.id) || null);
-		setMobileView("chat");
+	const getChatDisplayName = (chat: ChatListItem): string => {
+		if (chat.name) return chat.name;
+		return "Chat";
+	};
+
+	const filtered = chats.filter(c => {
+		const name = c.name ?? "";
+		return name.toLowerCase().includes(search.toLowerCase());
+	});
+
+	const formatTime = (dateStr: string) => {
+		return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+	};
+
+	// Get last message text from loaded messages
+	const getLastMessagePreview = (_chat: ChatListItem): string => {
+		return "...";
 	};
 
 	function MessagesSidebar() {
 		return (
-			<>
-				{/* ── Sidebar ── */}
-				<aside className="msg-sidebar">
-					{/* Search */}
-					<div className="px-3 pb-2 search-wrapper">
-						<div className="input-group input-group-sm">
-							<span className="input-group-text border-end-0 rounded-start-pill">
-								<Search size={14} className="icon-themed" />
-							</span>
-							<input
-								type="text"
-								className="form-control border-start-0 rounded-end-pill"
-								placeholder="Search conversations…"
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-								style={{ fontSize: 13.5, boxShadow: "none" }}
-							/>
-						</div>
+			<aside className="msg-sidebar">
+				{/* Search */}
+				<div className="px-3 pb-2 search-wrapper">
+					<div className="input-group input-group-sm">
+						<span className="input-group-text border-end-0 rounded-start-pill">
+							<Search size={14} className="icon-themed" />
+						</span>
+						<input
+							type="text"
+							className="form-control border-start-0 rounded-end-pill"
+							placeholder="Search conversations..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							style={{ fontSize: 13.5, boxShadow: "none" }}
+						/>
 					</div>
+				</div>
 
-					{/* List */}
-					<div className="overflow-auto flex-grow-1">
-						{filtered.length === 0 && (
-							<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>No conversations found.</p>
-						)}
-						{filtered.map((c) => (
+				{/* List */}
+				<div className="overflow-auto flex-grow-1">
+					{chatsLoading && chats.length === 0 && (
+						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>Loading...</p>
+					)}
+					{!chatsLoading && filtered.length === 0 && (
+						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>No conversations found.</p>
+					)}
+					{filtered.map((c) => {
+						const otherUserId = getOtherUserId(c);
+						return (
 							<div
 								key={c.id}
-								className={`convo-item d-flex align-items-center gap-2 px-3 py-2${selected?.id === c.id ? " active" : ""}`}
-								onClick={() => openConvo(c)}
+								className={`convo-item d-flex align-items-center gap-2 px-3 py-2${selectedChatId === c.id ? " active" : ""}`}
+								onClick={() => handleSelectChat(c.id)}
 							>
 								<div className="position-relative flex-shrink-0">
-									<div className="msg-avatar" style={{ background: avatarColors[c.avatar] || "#6c757d" }}>
-										{c.avatar}
-									</div>
-									{c.online && <span className="online-dot" />}
+									<AvatarUtil id={otherUserId} radius={44} />
 								</div>
 
 								<div className="flex-grow-1 overflow-hidden">
 									<div className="d-flex justify-content-between align-items-center">
-										<span className="fw-semibold text-truncate" style={{ fontSize: 14, color: "var(--text-primary)" }}>{c.name}</span>
-										<span className="ms-2 flex-shrink-0" style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>{c.time}</span>
+										<span className="fw-semibold text-truncate" style={{ fontSize: 14, color: "var(--text-primary)" }}>
+											{getChatDisplayName(c)}
+										</span>
+										<span className="ms-2 flex-shrink-0" style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+											{formatTime(c.created_at)}
+										</span>
 									</div>
 									<div className="d-flex justify-content-between align-items-center mt-1">
 										<span
 											className="text-truncate"
-											style={{
-												fontSize: 13,
-												color: c.unread > 0 ? "var(--text-primary)" : "var(--text-secondary)",
-												fontWeight: c.unread > 0 ? 500 : 400,
-											}}
+											style={{ fontSize: 13, color: "var(--text-secondary)" }}
 										>
-											{c.lastMessage}
+											{getLastMessagePreview(c)}
 										</span>
-										{c.unread > 0 && (
-											<span className="unread-badge ms-2 flex-shrink-0">
-												{c.unread}
-											</span>
-										)}
 									</div>
 								</div>
 							</div>
-						))}
-					</div>
-				</aside>
-			</>
-		)
+						);
+					})}
+				</div>
+			</aside>
+		);
 	}
 
 	function ChatPanel() {
 		return (
 			<main className="msg-chat-panel">
-				{selected ? (
+				{selectedChat ? (
 					<>
 						{/* Header */}
 						<div className="msg-chat-header d-flex align-items-center gap-2 px-3 py-2">
-							<button className="icon-action back-btn" onClick={() => setMobileView("list")}>
+							<button className="icon-action back-btn" onClick={() => { setMobileView("list"); navigate("/messages"); }}>
 								<ArrowLeft size={18} className="icon-themed" />
 							</button>
 
-							<div
-								className="msg-avatar flex-shrink-0"
-								style={{ background: avatarColors[selected.avatar] || "#6c757d", width: 40, height: 40, fontSize: 13 }}
-							>
-								{selected.avatar}
+							<div className="flex-shrink-0">
+								<AvatarUtil id={getOtherUserId(selectedChat)} radius={40} />
 							</div>
 
 							<div className="flex-grow-1">
-								<div className="fw-semibold" style={{ fontSize: 15, color: "var(--text-primary)" }}>{selected.name}</div>
-								<div className="d-flex align-items-center gap-1" style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-									{selected.online ? (
-										<>
-											<span
-												style={{ width: 7, height: 7, borderRadius: "50%", background: "#28a745", display: "inline-block" }}
-											/>
-											Active now
-										</>
-									) : "Offline"}
+								<div className="fw-semibold" style={{ fontSize: 15, color: "var(--text-primary)" }}>
+									{getChatDisplayName(selectedChat)}
+								</div>
+								<div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+									{selectedChat.type === "group"
+										? `${selectedChat.memberIds.length} members`
+										: ""}
 								</div>
 							</div>
 
 							<div className="d-flex gap-1">
-								<button className="icon-action"><Phone size={17} className="icon-themed" /></button>
-								<button className="icon-action"><Video size={17} className="icon-themed" /></button>
 								<button className="icon-action"><MoreVertical size={17} className="icon-themed" /></button>
 							</div>
 						</div>
 
 						{/* Messages */}
-						<div className="msg-area">
-							<div className="date-divider">Today</div>
+						<div className="msg-area" ref={scrollContainerRef}>
+							{/* Top sentinel for infinite scroll */}
+							<div ref={topSentinelRef} style={{ height: 1 }} />
 
-							{selected.messages.map((msg) => (
-								<div
-									key={msg.id}
-									className={`d-flex mb-2 ${msg.fromMe ? "justify-content-end" : "justify-content-start"}`}
-								>
-									{!msg.fromMe && (
-										<div
-											className="msg-avatar flex-shrink-0 me-2 align-self-end"
-											style={{ background: avatarColors[selected.avatar] || "#6c757d", width: 30, height: 30, fontSize: 10 }}
-										>
-											{selected.avatar}
-										</div>
-									)}
+							{isLoading && messages.length > 0 && (
+								<div className="text-center py-2">
+									<small style={{ color: "var(--text-secondary)" }}>Loading older messages...</small>
+								</div>
+							)}
 
-									<div>
-										<div className={`bubble ${msg.fromMe ? "bubble-me" : "bubble-them"}`}>
-											{msg.text}
-										</div>
-										<div
-											className={`d-flex align-items-center mt-1 gap-1 ${msg.fromMe ? "justify-content-end" : "justify-content-start"}`}
-										>
-											<small style={{ fontSize: 11, color: "var(--text-secondary)" }}>{msg.time}</small>
-											{msg.fromMe && (
-												msg.read
-													? <CheckCheck size={12} color="#28a745" />
-													: <Check size={12} style={{ color: "var(--text-secondary)" }} />
-											)}
+							{isLoading && messages.length === 0 && (
+								<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+									<small style={{ color: "var(--text-secondary)" }}>Loading messages...</small>
+								</div>
+							)}
+
+							{messages.map((msg) => {
+								const fromMe = msg.authorId === currentUser?.id || msg.id < 0;
+								return (
+									<div
+										key={msg.id}
+										className={`d-flex mb-2 ${fromMe ? "justify-content-end" : "justify-content-start"}`}
+									>
+										{!fromMe && (
+											<div className="me-2 align-self-end">
+												<AvatarUtil id={msg.authorId} radius={30} showStatus={false} />
+											</div>
+										)}
+
+										<div>
+											<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"}`}>
+												{msg.content}
+											</div>
+											<div
+												className={`d-flex align-items-center mt-1 gap-1 ${fromMe ? "justify-content-end" : "justify-content-start"}`}
+											>
+												<small style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+													{formatTime(msg.created_at)}
+												</small>
+											</div>
 										</div>
 									</div>
-								</div>
-							))}
+								);
+							})}
 							<div ref={bottomRef} />
 						</div>
 
@@ -257,11 +328,11 @@ export default function MessagesPage() {
 							<textarea
 								className="msg-textarea"
 								rows={1}
-								placeholder="Type a message…"
+								placeholder="Type a message..."
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+									if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
 								}}
 							/>
 
@@ -271,7 +342,7 @@ export default function MessagesPage() {
 
 							<button
 								className="send-btn-custom"
-								onClick={sendMessage}
+								onClick={handleSend}
 								disabled={!input.trim()}
 							>
 								<Send size={20} />
@@ -292,11 +363,9 @@ export default function MessagesPage() {
 	}
 
 	return (
-		<>
-			<div className="messages-root">
-				<MessagesSidebar />
-				<ChatPanel />
-			</div>
-		</>
+		<div className="messages-root">
+			<MessagesSidebar />
+			<ChatPanel />
+		</div>
 	);
 }
