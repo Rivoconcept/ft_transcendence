@@ -340,9 +340,26 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
+					<Route
+						path="/games/diceGame/single"
+						// path="/games/diceGame"
+						element={
+							<ProtectedRoute>
+								<GameWrapper GameComponent={DiceGame} />
+							</ProtectedRoute>
+						}
+					/>
 
 					<Route
 						path="/games/kingOfDiamond/:roomId/play"
+						element={
+							<ProtectedRoute>
+								<GameWrapper GameComponent={kingOfDiamond} />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/games/kingOfDiamond/single"
 						element={
 							<ProtectedRoute>
 								<GameWrapper GameComponent={kingOfDiamond} />
