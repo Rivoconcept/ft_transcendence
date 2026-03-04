@@ -3,7 +3,7 @@ export interface User {
     name: string;
     avatar: string;
     isOnline: boolean;
-    isBlocked: boolean;
+    blockedUsers?: number[];
 }
 
 export type Message = TextMessage | GameInviteMessage
@@ -21,6 +21,7 @@ export interface TextMessage extends BaseMessage {
 }
 
 export interface GameInviteMessage extends BaseMessage {
+    text: string
     type: "game_invite"
     roomId : number
     gameName: string

@@ -5,14 +5,14 @@ export const currentUser: User = {
     name: "Moi",
     avatar: "SC",
     isOnline: true,
-    isBlocked: false
+    blockedUsers: [4, 5],
 };
 
 export const mockUsers: User[] = [
-    { id: 2, name: "Alice", avatar: "AR", isOnline: true, isBlocked: false },
-    { id: 3, name: "Jackson", avatar: "DT", isOnline: false, isBlocked: false },
-    { id: 4, name: "Bob", avatar: "JP", isOnline: true, isBlocked: true },
-    { id: 5, name: "Charlie", avatar: "PS", isOnline: false, isBlocked: true },
+    { id: 2, name: "Alice", avatar: "AR", isOnline: true },
+    { id: 3, name: "Jackson", avatar: "DT", isOnline: false},
+    { id: 4, name: "Bob", avatar: "JP", isOnline: true},
+    { id: 5, name: "Charlie", avatar: "PS", isOnline: false},
   ]
 
 export const conversations: Conversation[] = [
