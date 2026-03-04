@@ -20,10 +20,20 @@ import {
 	selectChatAtom,
 	loadOlderMessagesAtom,
 	sendMessageAtom,
+	userFamily,
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
 import AvatarUtil from "../../components/AvatarUtil";
 import type { ChatListItem } from "../../models";
+
+// Small component to resolve a user's display name from cache/API
+function UserName({ userId, fallback = "Chat" }: { userId: number; fallback?: string }) {
+	const userLoadable = useAtomValue(userFamily(userId));
+	if (userLoadable.state === "hasData" && userLoadable.data) {
+		return <>{userLoadable.data.username}</>;
+	}
+	return <>{fallback}</>;
+}
 
 export default function MessagesPage() {
 	const { chatId: chatIdParam } = useParams<{ chatId?: string }>();
@@ -155,12 +165,17 @@ export default function MessagesPage() {
 		return chat.memberIds[0];
 	};
 
-	const getChatDisplayName = (chat: ChatListItem): string => {
+	const getChatDisplayName = (chat: ChatListItem): React.ReactNode => {
 		if (chat.name) return chat.name;
+		if (chat.type === "direct") {
+			const otherUserId = getOtherUserId(chat);
+			return <UserName userId={otherUserId} />;
+		}
 		return "Chat";
 	};
 
 	const filtered = chats.filter(c => {
+		if (!search.trim()) return true;
 		const name = c.name ?? "";
 		return name.toLowerCase().includes(search.toLowerCase());
 	});

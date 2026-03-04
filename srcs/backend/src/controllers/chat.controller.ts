@@ -11,8 +11,21 @@ export async function createDirectChat(req: AuthRequest, res: Response): Promise
       return;
     }
 
-    const chat = await chatService.createDirectChat(req.user!.userId, { userId });
-    res.status(201).json(chat);
+    const currentUserId = req.user!.userId;
+    const chat = await chatService.createDirectChat(currentUserId, { userId });
+
+    // Return formatted ChatListItem instead of raw entity
+    const chatListItem = {
+      id: chat.id,
+      name: chat.name ?? null,
+      type: chat.type,
+      channel_id: chat.channel_id,
+      created_at: chat.created_at,
+      lastMessageId: null,
+      memberIds: [currentUserId, userId],
+    };
+
+    res.status(201).json(chatListItem);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create chat";
     res.status(400).json({ error: message });

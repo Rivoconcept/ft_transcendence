@@ -3,7 +3,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { useNavigate } from 'react-router-dom';
 import { UserMinus, MessageCircle, Search, Loader2 } from 'lucide-react';
 import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
-import { chatService } from '../../../../services';
+import { openOrCreateDirectChatAtom } from '../../../../providers/chat.provider';
 import AvatarUtil from '../../../../components/AvatarUtil';
 
 export default function Friends(): React.JSX.Element {
@@ -16,6 +16,7 @@ export default function Friends(): React.JSX.Element {
 	const isLoading = useAtomValue(friendsLoadingAtom);
 	const fetchFriends = useSetAtom(fetchFriendsAtom);
 	const removeFriend = useSetAtom(removeFriendAtom);
+	const openOrCreateDirectChat = useSetAtom(openOrCreateDirectChatAtom);
 
 	useEffect(() => {
 		fetchFriends();
@@ -53,8 +54,8 @@ export default function Friends(): React.JSX.Element {
 
 	const handleOpenChat = async (friendId: number) => {
 		try {
-			const chat = await chatService.createDirectChat(friendId);
-			navigate(`/messages/${chat.id}`);
+			const chatId = await openOrCreateDirectChat(friendId);
+			navigate(`/messages/${chatId}`);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : 'Failed to open chat';
 			setError(message);
