@@ -189,10 +189,10 @@ export default function MessagesPage() {
 		return "...";
 	};
 
-	function MessagesSidebar() {
-		return (
+	return (
+		<div className="messages-root">
+			{/* Sidebar */}
 			<aside className="msg-sidebar">
-				{/* Search */}
 				<div className="px-3 pb-2 search-wrapper">
 					<div className="input-group input-group-sm">
 						<span className="input-group-text border-end-0 rounded-start-pill">
@@ -209,7 +209,6 @@ export default function MessagesPage() {
 					</div>
 				</div>
 
-				{/* List */}
 				<div className="overflow-auto flex-grow-1">
 					{chatsLoading && chats.length === 0 && (
 						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>Loading...</p>
@@ -252,15 +251,11 @@ export default function MessagesPage() {
 					})}
 				</div>
 			</aside>
-		);
-	}
 
-	function ChatPanel() {
-		return (
+			{/* Chat Panel */}
 			<main className="msg-chat-panel">
 				{selectedChat ? (
 					<>
-						{/* Header */}
 						<div className="msg-chat-header d-flex align-items-center gap-2 px-3 py-2">
 							<button className="icon-action back-btn" onClick={() => { setMobileView("list"); navigate("/messages"); }}>
 								<ArrowLeft size={18} className="icon-themed" />
@@ -286,9 +281,7 @@ export default function MessagesPage() {
 							</div>
 						</div>
 
-						{/* Messages */}
 						<div className="msg-area" ref={scrollContainerRef}>
-							{/* Top sentinel for infinite scroll */}
 							<div ref={topSentinelRef} style={{ height: 1 }} />
 
 							{isLoading && messages.length > 0 && (
@@ -334,7 +327,6 @@ export default function MessagesPage() {
 							<div ref={bottomRef} />
 						</div>
 
-						{/* Input */}
 						<div className="msg-input-area">
 							<button className="icon-action">
 								<Paperclip size={17} className="icon-themed" />
@@ -374,13 +366,6 @@ export default function MessagesPage() {
 					</div>
 				)}
 			</main>
-		);
-	}
-
-	return (
-		<div className="messages-root">
-			<MessagesSidebar />
-			<ChatPanel />
 		</div>
 	);
 }
