@@ -100,10 +100,10 @@ body {
 }
 
 .app {
-	min-height: 100vh;
+	height: 100vh;
 	display: flex;
 	flex-direction: column;
-	overflow-x: hidden;
+	overflow: hidden;
 }
 
 .nav {
@@ -177,7 +177,7 @@ body {
 	width: 100%;
 	flex: 1;
 	min-height: 0;
-	overflow-x: hidden;
+	overflow: auto;
 }
 
 .auth-container {
