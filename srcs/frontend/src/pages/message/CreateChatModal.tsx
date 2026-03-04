@@ -31,6 +31,7 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 	const [groupName, setGroupName] = useState("");
 	const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
 	const [creating, setCreating] = useState(false);
+	const [memberSearch, setMemberSearch] = useState("");
 
 	useEffect(() => {
 		if (friends.length === 0) {
@@ -87,7 +88,7 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 					</button>
 				</div>
 
-				<div className="auth-tabs" style={{ padding: "0.75rem 1rem 0", marginBottom: 0 }}>
+				<div className="auth-tabs">
 					<button
 						className={`tab-btn ${activeTab === "direct" ? "active" : ""}`}
 						onClick={() => setActiveTab("direct")}
@@ -108,19 +109,22 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 							<input
 								type="text"
 								className="form-control"
-								placeholder="Group name..."
+								placeholder="Group name"
 								value={groupName}
 								onChange={(e) => setGroupName(e.target.value)}
-								style={{
-									background: "var(--bg-surface-alt)",
-									border: "1px solid var(--border-color)",
-									color: "var(--text-primary)",
-									borderRadius: 8,
-									fontSize: 14,
-								}}
 							/>
 						</div>
 					)}
+
+					<div style={{ padding: "0.75rem 1rem 0" }}>
+						<input
+							type="text"
+							className="form-control"
+							placeholder="Search friends..."
+							value={memberSearch}
+							onChange={(e) => setMemberSearch(e.target.value)}
+						/>
+					</div>
 
 					{friendsLoading && friends.length === 0 && (
 						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>
@@ -135,7 +139,9 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 					)}
 
 					<div className="friend-list-modal">
-						{friends.map((friend) => (
+						{friends
+							.filter(f => !memberSearch.trim() || f.username.toLowerCase().includes(memberSearch.toLowerCase()))
+							.map((friend) => (
 							<div
 								key={friend.id}
 								className="friend-item"
@@ -148,12 +154,6 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 									}
 								}}
 							>
-								<AvatarUtil id={friend.id} radius={38} />
-								<div className="flex-grow-1">
-									<span className="fw-semibold" style={{ fontSize: 14, color: "var(--text-primary)" }}>
-										{friend.username}
-									</span>
-								</div>
 								{activeTab === "group" && (
 									<input
 										type="checkbox"
@@ -163,6 +163,12 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 										className="friend-item-checkbox"
 									/>
 								)}
+								<AvatarUtil id={friend.id} radius={38} />
+								<div className="flex-grow-1">
+									<span className="fw-semibold" style={{ fontSize: 14, color: "var(--text-primary)" }}>
+										{friend.username}
+									</span>
+								</div>
 							</div>
 						))}
 					</div>

@@ -38,6 +38,34 @@ function UserName({ userId, fallback = "Chat" }: { userId: number; fallback?: st
 	return <>{fallback}</>;
 }
 
+// Avatar for group chats — shows initials from group name
+function GroupAvatar({ name, size }: { name: string; size: number }) {
+	const initials = name
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map(w => w[0].toUpperCase())
+		.join("");
+	return (
+		<div className="avatar-container" style={{ height: size, width: size }}>
+			<div className="avatar" style={{ height: size, width: size, fontSize: size * 0.35 }}>
+				{initials || "G"}
+			</div>
+		</div>
+	);
+}
+
+// Renders the appropriate avatar based on chat type
+function ChatAvatar({ chat, size, currentUserId }: { chat: ChatListItem; size: number; currentUserId?: number }) {
+	if (chat.type === "group") {
+		return <GroupAvatar name={chat.name ?? "Group"} size={size} />;
+	}
+	const otherUserId = currentUserId
+		? (chat.memberIds.find(id => id !== currentUserId) ?? chat.memberIds[0])
+		: chat.memberIds[0];
+	return <AvatarUtil id={otherUserId} radius={size} />;
+}
+
 export default function MessagesPage() {
 	const { chatId: chatIdParam } = useParams<{ chatId?: string }>();
 	const navigate = useNavigate();
@@ -225,7 +253,6 @@ export default function MessagesPage() {
 						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>No conversations found.</p>
 					)}
 					{filtered.map((c) => {
-						const otherUserId = getOtherUserId(c);
 						return (
 							<div
 								key={c.id}
@@ -233,7 +260,7 @@ export default function MessagesPage() {
 								onClick={() => handleSelectChat(c.id)}
 							>
 								<div className="position-relative flex-shrink-0">
-									<AvatarUtil id={otherUserId} radius={44} />
+									<ChatAvatar chat={c} size={44} currentUserId={currentUser?.id} />
 								</div>
 
 								<div className="flex-grow-1 overflow-hidden">
@@ -270,7 +297,7 @@ export default function MessagesPage() {
 							</button>
 
 							<div className="flex-shrink-0">
-								<AvatarUtil id={getOtherUserId(selectedChat)} radius={40} />
+								<ChatAvatar chat={selectedChat} size={40} currentUserId={currentUser?.id} />
 							</div>
 
 							<div className="flex-grow-1">

@@ -4,10 +4,11 @@
 	--primary-color: #667eea;
 	--primary-dark: #5568d3;
 	--secondary-color: #764ba2;
-	
+
 	/* Background Colors */
 	--bg-gradient-start: #ffffff;
 	--bg-gradient-end: #ffffff;
+	--bg-surface: #ffffff;
 	--bg-surface-hover: #f0f0f0;
 	--bg-surface-alt: #f8f9fa;
 	
