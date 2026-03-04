@@ -201,8 +201,11 @@ function SocketListener(): null {
 			store.set(friendRelationsAtom, friends.filter(f => f.friendId !== data.friendId));
 		};
 
-		const handleUserStatusChanged = (data: { userId: number; isOnline: boolean }) => {
-			const cachedUser = store.get(userCacheFamily(data.userId));
+		const handleUserStatusChanged = async (data: { userId: number; isOnline: boolean }) => {
+			let cachedUser = store.get(userCacheFamily(data.userId));
+			if (!cachedUser) {
+				cachedUser = await store.set(fetchUserToCacheAtom, data.userId) as User | null;
+			}
 			if (cachedUser) {
 				store.set(userCacheFamily(data.userId), {
 					...cachedUser,

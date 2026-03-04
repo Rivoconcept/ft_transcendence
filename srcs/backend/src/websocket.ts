@@ -80,12 +80,17 @@ class SocketService {
         console.log(`User ${socket.username} left chat room chat.${channelId}`);
       });
 
-      socket.on("disconnect", async () => {
+      socket.on("disconnect", async (reason) => {
+        console.log(`Socket ${socket.id} disconnect reason: ${reason}`);
         if (socket.userId) {
-          await userService.setOnlineStatus(socket.userId, false);
-          console.log(`User ${socket.username} disconnected`);
+          try {
+            await userService.setOnlineStatus(socket.userId, false);
+            console.log(`User ${socket.username} set offline successfully`);
+          } catch (error) {
+            console.error(`Failed to set user ${socket.username} offline:`, error);
+          }
         } else {
-          console.log("Client disconnected:", socket.id);
+          console.log("Unauthenticated client disconnected:", socket.id);
         }
       });
     });
