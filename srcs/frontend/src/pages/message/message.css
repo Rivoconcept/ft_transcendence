@@ -242,6 +242,82 @@
 
 .back-btn { display: none; }
 
+/* Create Chat Modal */
+.create-chat-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 1050;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.create-chat-modal {
+	background: var(--bg-surface);
+	border-radius: 12px;
+	width: 420px;
+	max-width: 90vw;
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+	animation: slideUp 0.2s ease;
+}
+@keyframes slideUp {
+	from { opacity: 0; transform: translateY(16px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.create-chat-header {
+	padding: 1rem;
+	border-bottom: 1px solid var(--border-color);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.create-chat-body {
+	flex: 1;
+	overflow-y: auto;
+	min-height: 0;
+}
+
+.create-chat-footer {
+	padding: 0.75rem 1rem;
+	border-top: 1px solid var(--border-color);
+}
+
+.friend-list-modal {
+	padding: 0.5rem 0;
+}
+
+.friend-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	transition: background 0.12s;
+}
+.friend-item:hover {
+	background: var(--bg-surface-hover);
+}
+
+.friend-item-checkbox {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--primary-color);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
 /* @media (max-width: 575.98px) {
 	.msg-sidebar    { width: 100% !important; min-width: 0 !important; display: ${mobileView === "list" ? "flex" : "none"} !important; }
 	.msg-chat-panel { display: ${mobileView === "chat" ? "flex" : "none"} !important; }

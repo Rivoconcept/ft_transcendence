@@ -276,6 +276,19 @@ export const openOrCreateDirectChatAtom = atom(
 	}
 );
 
+// Action: create a group chat, add to list, return chat id
+export const createGroupChatAtom = atom(
+	null,
+	async (get, set, { name, memberIds }: { name: string; memberIds: number[] }) => {
+		const chat = await chatService.createGroupChat(name, memberIds);
+		const chats = get(chatListAtom);
+		if (!chats.find(c => c.id === chat.id)) {
+			set(chatListAtom, [chat, ...chats]);
+		}
+		return chat.id;
+	}
+);
+
 // Action: select a chat (set id + load messages)
 export const selectChatAtom = atom(
 	null,

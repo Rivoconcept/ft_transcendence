@@ -64,6 +64,7 @@ export {
 	onNewMessageAtom,
 	onChatCreatedAtom,
 	selectChatAtom,
-	openOrCreateDirectChatAtom
+	openOrCreateDirectChatAtom,
+	createGroupChatAtom
 } from './chat.provider';
 export type { ChatMessagesState } from './chat.provider';

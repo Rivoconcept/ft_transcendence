@@ -8,6 +8,7 @@ import {
 	ArrowLeft,
 	Paperclip,
 	Smile,
+	Plus,
 } from "lucide-react";
 import {
 	currentUserAtom,
@@ -24,6 +25,7 @@ import {
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
 import AvatarUtil from "../../components/AvatarUtil";
+import CreateChatModal from "./CreateChatModal";
 import type { ChatListItem } from "../../models";
 import "./message.css";
 
@@ -54,6 +56,7 @@ export default function MessagesPage() {
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
 	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+	const [showCreateModal, setShowCreateModal] = useState(false);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -77,9 +80,11 @@ export default function MessagesPage() {
 		});
 	}, [chats]);
 
-	// Handle URL param chatId
+	// Handle URL param chatId or "create"
 	useEffect(() => {
-		if (chatIdParam) {
+		if (chatIdParam === "create") {
+			setShowCreateModal(true);
+		} else if (chatIdParam) {
 			const id = Number(chatIdParam);
 			if (!isNaN(id) && id !== selectedChatId) {
 				selectChat(id);
@@ -193,8 +198,8 @@ export default function MessagesPage() {
 		<div className="messages-root">
 			{/* Sidebar */}
 			<aside className="msg-sidebar">
-				<div className="px-3 pb-2 search-wrapper">
-					<div className="input-group input-group-sm">
+				<div className="px-3 pb-2 search-wrapper d-flex align-items-center gap-2">
+					<div className="input-group input-group-sm flex-grow-1">
 						<span className="input-group-text border-end-0 rounded-start-pill">
 							<Search size={14} className="icon-themed" />
 						</span>
@@ -207,6 +212,9 @@ export default function MessagesPage() {
 							style={{ fontSize: 13.5, boxShadow: "none" }}
 						/>
 					</div>
+					<button className="icon-action flex-shrink-0" onClick={() => setShowCreateModal(true)} title="New conversation">
+						<Plus size={18} className="icon-themed" />
+					</button>
 				</div>
 
 				<div className="overflow-auto flex-grow-1">
@@ -366,6 +374,13 @@ export default function MessagesPage() {
 					</div>
 				)}
 			</main>
+
+			{showCreateModal && (
+				<CreateChatModal onClose={() => {
+					setShowCreateModal(false);
+					if (chatIdParam === "create") navigate("/messages");
+				}} />
+			)}
 		</div>
 	);
 }
