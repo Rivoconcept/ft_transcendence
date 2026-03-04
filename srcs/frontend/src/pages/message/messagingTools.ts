@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { chatService } from "./chatService"
-import { currentUser, type Conversation, type Message } from "."
+import { currentUser, type Conversation, type Message } from "./type"
 
 export const useMessaging = () => {
 
@@ -10,6 +10,9 @@ export const useMessaging = () => {
   const [selected, setSelected] = useState<Conversation | null>(null)
   const [input, setInput] = useState("")
   const [search, setSearch] = useState("")
+  const getOtherParticipant = (conversation: Conversation) => {
+    return (conversation.participants.find(p => p.id !== currentUser.id))
+  }
 
   const selectConversation = (id: number) => {
     setSelected (chatService.getConversationById(id) ?? null)
@@ -51,5 +54,6 @@ export const useMessaging = () => {
     setSearch,
     selectConversation,
     sendMessage,
+    getOtherParticipant,
   }
 }

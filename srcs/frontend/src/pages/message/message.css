@@ -40,16 +40,23 @@
 	flex-shrink: 0;
 }
 
-.online-dot {
+.status-dot {
 	width: 10px;
 	height: 10px;
 	border-radius: 50%;
-	background: #28a745;
 	border: 2px solid #fff;
 	position: absolute;
 	bottom: 1px;
 	right: 1px;
-}
+  }
+  
+  .online-dot {
+	background: #28a745;
+  }
+  
+  .offline-dot {
+	background: #ff1003;
+  }
 
 .msg-chat-panel {
 	flex: 1;

@@ -1,4 +1,4 @@
-import type {User , Conversation} from "."
+import type {User , Conversation} from "./type"
 
 export const currentUser: User = {
     id: 1, 
