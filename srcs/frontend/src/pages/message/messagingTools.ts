@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { chatService } from "./chatService"
-import { currentUser, type Conversation, type Message } from "./type"
+import { currentUser } from "./mockdata"
+import type { Conversation, Message } from "./struct"
 
 export const useMessaging = () => {
 

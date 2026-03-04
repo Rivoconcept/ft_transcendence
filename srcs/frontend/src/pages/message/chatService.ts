@@ -1,4 +1,5 @@
-import { conversations, currentUser, type Conversation, type Message, type User } from "."
+import { conversations, currentUser } from "./mockdata"
+import type { Conversation, Message, User } from "./struct"
 
 export const chatService = {
 

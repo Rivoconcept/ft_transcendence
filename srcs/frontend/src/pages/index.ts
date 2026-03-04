@@ -7,7 +7,7 @@ export { GameList, DiceGame, kingOfDiamond, CardGamePage, StatusScreen } from '.
 // Profile
 export { ProfilePage, FriendsPage } from './profile';
 
-export { MessagesPage } from './message';
+export { default as MessagesPage } from './message';
 
 // Dashboard
 export { default as Dashboard } from './dashboard/Dashboard';
