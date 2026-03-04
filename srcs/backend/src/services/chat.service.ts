@@ -33,6 +33,7 @@ interface ChatListItem {
   created_at: Date;
   lastMessageId: number | null;
   lastMessageContent: string | null;
+  lastMessageType: string | null;
   lastMessageDate: string | null;
   memberIds: number[];
 }
@@ -263,12 +264,13 @@ class ChatService {
         const message = await this.messageRepository.findOne({
           where: { chat_id: chatId },
           order: { created_at: "DESC" },
-          select: ["id", "content", "created_at"],
+          select: ["id", "content", "type", "created_at"],
         });
         return {
           chatId,
           messageId: message?.id ?? null,
           content: message?.content ?? null,
+          type: message?.type ?? null,
           createdAt: message?.created_at,
         };
       })
@@ -287,6 +289,7 @@ class ChatService {
         created_at: chat.created_at,
         lastMessageId: lastMsg?.messageId ?? null,
         lastMessageContent: lastMsg?.content ?? null,
+        lastMessageType: lastMsg?.type ?? null,
         lastMessageDate: lastMsg?.createdAt?.toISOString() ?? null,
         memberIds: membersByChatId.get(chat.id) ?? [],
       };
@@ -477,7 +480,7 @@ class ChatService {
     const lastMessage = await this.messageRepository.findOne({
       where: { chat_id: chatId },
       order: { created_at: "DESC" },
-      select: ["id", "content", "created_at"],
+      select: ["id", "content", "type", "created_at"],
     });
 
     return {
@@ -488,6 +491,7 @@ class ChatService {
       created_at: chat.created_at,
       lastMessageId: lastMessage?.id ?? null,
       lastMessageContent: lastMessage?.content ?? null,
+      lastMessageType: lastMessage?.type ?? null,
       lastMessageDate: lastMessage?.created_at?.toISOString() ?? null,
       memberIds: members.map((m) => m.user_id),
     };

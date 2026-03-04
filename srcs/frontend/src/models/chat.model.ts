@@ -6,6 +6,7 @@ export interface ChatListItem {
 	created_at: string;
 	lastMessageId: number | null;
 	lastMessageContent: string | null;
+	lastMessageType: string | null;
 	lastMessageDate: string | null;
 	memberIds: number[];
 }

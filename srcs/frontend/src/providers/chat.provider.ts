@@ -151,7 +151,7 @@ export const loadOlderMessagesAtom = atom(
 
 export const sendMessageAtom = atom(
 	null,
-	async (get, set, { chatId, content }: { chatId: number; content: string }) => {
+	async (get, set, { chatId, content, type = 'text' }: { chatId: number; content: string; type?: string }) => {
 		const map = get(chatMessagesMapAtom);
 		const state = map[chatId];
 		if (!state) return;
@@ -160,7 +160,7 @@ export const sendMessageAtom = atom(
 		const optimisticMsg: MessageItem = {
 			id: tempId,
 			content,
-			type: 'text',
+			type,
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
 			authorId: 0, // placeholder, component uses currentUserAtom to check fromMe
@@ -175,7 +175,7 @@ export const sendMessageAtom = atom(
 		});
 
 		try {
-			const realMsg = await chatService.sendMessage(chatId, { content, type: 'text', socketId: socketStore.getSocketId() });
+			const realMsg = await chatService.sendMessage(chatId, { content, type, socketId: socketStore.getSocketId() });
 			const currentMap = get(chatMessagesMapAtom);
 			const currentState = currentMap[chatId];
 			set(chatMessagesMapAtom, {
@@ -189,7 +189,7 @@ export const sendMessageAtom = atom(
 			// Update last message info in chat list
 			const chats = get(chatListAtom);
 			set(chatListAtom, chats.map(c =>
-				c.id === chatId ? { ...c, lastMessageId: realMsg.id, lastMessageContent: realMsg.content, lastMessageDate: realMsg.created_at } : c
+				c.id === chatId ? { ...c, lastMessageId: realMsg.id, lastMessageContent: realMsg.content, lastMessageType: realMsg.type, lastMessageDate: realMsg.created_at } : c
 			));
 		} catch {
 			// Remove optimistic message on failure
@@ -244,7 +244,7 @@ export const onNewMessageAtom = atom(
 		// Update last message info in chat list
 		const chats = get(chatListAtom);
 		set(chatListAtom, chats.map(c =>
-			c.id === message.chatId ? { ...c, lastMessageId: message.id, lastMessageContent: message.content, lastMessageDate: message.created_at } : c
+			c.id === message.chatId ? { ...c, lastMessageId: message.id, lastMessageContent: message.content, lastMessageType: message.type, lastMessageDate: message.created_at } : c
 		));
 	}
 );

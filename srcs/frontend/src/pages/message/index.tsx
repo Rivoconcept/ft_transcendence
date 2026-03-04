@@ -9,6 +9,8 @@ import {
 	Paperclip,
 	Smile,
 	Plus,
+	X,
+	Image,
 } from "lucide-react";
 import {
 	currentUserAtom,
@@ -26,6 +28,7 @@ import {
 import { socketStore } from "../../store/socketStore";
 import AvatarUtil from "../../components/AvatarUtil";
 import CreateChatModal from "./CreateChatModal";
+import MessageBubble from "./MessageBubble";
 import type { ChatListItem } from "../../models";
 import "./message.css";
 
@@ -85,12 +88,15 @@ export default function MessagesPage() {
 	const [search, setSearch] = useState("");
 	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 	const [showCreateModal, setShowCreateModal] = useState(false);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [imageError, setImageError] = useState<string | null>(null);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const topSentinelRef = useRef<HTMLDivElement>(null);
 	const prevScrollHeightRef = useRef<number>(0);
 	const isInitialLoadRef = useRef<boolean>(true);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const messages = messagesState?.messages ?? [];
 	const hasMore = messagesState?.hasMore ?? false;
@@ -187,10 +193,52 @@ export default function MessagesPage() {
 	}, [selectChat, navigate]);
 
 	const handleSend = useCallback(() => {
-		if (!input.trim() || !selectedChatId) return;
+		if (!selectedChatId) return;
+		if (imagePreview) {
+			const caption = input.trim();
+			const content = caption ? `${imagePreview}\n${caption}` : imagePreview;
+			doSendMessage({ chatId: selectedChatId, content, type: 'image' });
+			setImagePreview(null);
+			setInput("");
+			return;
+		}
+		if (!input.trim()) return;
 		doSendMessage({ chatId: selectedChatId, content: input.trim() });
 		setInput("");
-	}, [input, selectedChatId, doSendMessage]);
+	}, [input, selectedChatId, doSendMessage, imagePreview]);
+
+	const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2Mo
+	const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+	const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+		setImageError(null);
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		if (!ALLOWED_TYPES.includes(file.type)) {
+			setImageError("Format non supporté. Utilisez JPEG, PNG, GIF ou WebP.");
+			if (fileInputRef.current) fileInputRef.current.value = "";
+			return;
+		}
+
+		if (file.size > MAX_IMAGE_SIZE) {
+			setImageError("L'image ne doit pas dépasser 2 Mo.");
+			if (fileInputRef.current) fileInputRef.current.value = "";
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			setImagePreview(reader.result as string);
+		};
+		reader.readAsDataURL(file);
+		if (fileInputRef.current) fileInputRef.current.value = "";
+	}, []);
+
+	const cancelImagePreview = useCallback(() => {
+		setImagePreview(null);
+		setImageError(null);
+	}, []);
 
 	const getOtherUserId = (chat: ChatListItem): number => {
 		if (chat.type === "direct" && currentUser) {
@@ -218,7 +266,10 @@ export default function MessagesPage() {
 		return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 	};
 
-	const getLastMessagePreview = (chat: ChatListItem): string => {
+	const getLastMessagePreview = (chat: ChatListItem): React.ReactNode => {
+		if (chat.lastMessageType === "image") {
+			return <span className="d-flex align-items-center gap-1"><Image size={13} /> Image</span>;
+		}
 		return chat.lastMessageContent ?? "";
 	};
 
@@ -331,39 +382,45 @@ export default function MessagesPage() {
 								</div>
 							)}
 
-							{messages.map((msg) => {
-								const fromMe = msg.authorId === currentUser?.id || msg.id < 0;
-								return (
-									<div
-										key={msg.id}
-										className={`d-flex mb-2 ${fromMe ? "justify-content-end" : "justify-content-start"}`}
-									>
-										{!fromMe && (
-											<div className="me-2 align-self-end">
-												<AvatarUtil id={msg.authorId} radius={30} showStatus={false} />
-											</div>
-										)}
-
-										<div>
-											<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"}`}>
-												{msg.content}
-											</div>
-											<div
-												className={`d-flex align-items-center mt-1 gap-1 ${fromMe ? "justify-content-end" : "justify-content-start"}`}
-											>
-												<small style={{ fontSize: 11, color: "var(--text-secondary)" }}>
-													{formatTime(msg.created_at)}
-												</small>
-											</div>
-										</div>
-									</div>
-								);
-							})}
+							{messages.map((msg) => (
+								<MessageBubble
+									key={msg.id}
+									message={msg}
+									fromMe={msg.authorId === currentUser?.id || msg.id < 0}
+									formatTime={formatTime}
+								/>
+							))}
 							<div ref={bottomRef} />
 						</div>
 
+						{imagePreview && (
+							<div className="image-preview-bar">
+								<img src={imagePreview} alt="preview" className="image-preview-thumb" />
+								<span className="image-preview-label" style={{ color: "var(--text-secondary)", fontSize: 13 }}>Image ready to send</span>
+								<button className="icon-action" onClick={cancelImagePreview} title="Cancel">
+									<X size={16} className="icon-themed" />
+								</button>
+							</div>
+						)}
+
+						{imageError && (
+							<div className="image-error-bar">
+								<small>{imageError}</small>
+								<button className="icon-action" onClick={() => setImageError(null)}>
+									<X size={14} className="icon-themed" />
+								</button>
+							</div>
+						)}
+
 						<div className="msg-input-area">
-							<button className="icon-action">
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept="image/jpeg,image/png,image/gif,image/webp"
+								hidden
+								onChange={handleImageSelect}
+							/>
+							<button className="icon-action" onClick={() => fileInputRef.current?.click()} title="Send image">
 								<Paperclip size={17} className="icon-themed" />
 							</button>
 
@@ -385,7 +442,7 @@ export default function MessagesPage() {
 							<button
 								className="send-btn-custom"
 								onClick={handleSend}
-								disabled={!input.trim()}
+								disabled={!input.trim() && !imagePreview}
 							>
 								<Send size={20} />
 							</button>

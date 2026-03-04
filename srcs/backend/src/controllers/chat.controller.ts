@@ -23,6 +23,7 @@ export async function createDirectChat(req: AuthRequest, res: Response): Promise
       created_at: chat.created_at,
       lastMessageId: null,
       lastMessageContent: null,
+      lastMessageType: null,
       lastMessageDate: null,
       memberIds: [currentUserId, userId],
     };
@@ -127,6 +128,28 @@ export async function sendMessage(req: AuthRequest, res: Response): Promise<void
     if (!content || typeof content !== "string") {
       res.status(400).json({ error: "Message content is required" });
       return;
+    }
+
+    // Validate image messages (content format: base64dataUrl or base64dataUrl\ncaption)
+    if (type === "image") {
+      const newlineIndex = content.indexOf("\n");
+      const imageData = newlineIndex === -1 ? content : content.substring(0, newlineIndex);
+
+      const dataUrlRegex = /^data:image\/(jpeg|png|gif|webp);base64,/;
+      if (!dataUrlRegex.test(imageData)) {
+        res.status(400).json({ error: "Invalid image format. Supported: JPEG, PNG, GIF, WebP" });
+        return;
+      }
+      const base64Data = imageData.split(",")[1];
+      if (!base64Data) {
+        res.status(400).json({ error: "Invalid image data" });
+        return;
+      }
+      const sizeInBytes = Math.ceil(base64Data.length * 3 / 4);
+      if (sizeInBytes > 2 * 1024 * 1024) {
+        res.status(400).json({ error: "Image must not exceed 2 MB" });
+        return;
+      }
     }
 
     const message = await chatService.sendMessage(req.user!.userId, {
