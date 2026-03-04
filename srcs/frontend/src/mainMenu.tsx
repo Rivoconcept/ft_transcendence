@@ -224,6 +224,8 @@ function SocketListener(): null {
 				channel_id: data.channelId,
 				created_at: new Date().toISOString(),
 				lastMessageId: null,
+				lastMessageContent: null,
+				lastMessageDate: null,
 				memberIds: []
 			};
 			store.set(onChatCreatedAtom, chat);
@@ -236,7 +238,7 @@ function SocketListener(): null {
 		socketStore.on('invitation:declined', handleInvitationDeclined);
 		socketStore.on('invitation:cancelled', handleInvitationCancelled);
 		socketStore.on('friend:removed', handleFriendRemoved);
-		socketStore.on('user:status-changed', handleUserStatusChanged);
+		socketStore.on('friend:status', handleUserStatusChanged);
 		socketStore.on('message:new', handleMessageNew);
 		socketStore.on('chat:created', handleChatCreated);
 
@@ -247,7 +249,7 @@ function SocketListener(): null {
 			socketStore.off('invitation:declined', handleInvitationDeclined);
 			socketStore.off('invitation:cancelled', handleInvitationCancelled);
 			socketStore.off('friend:removed', handleFriendRemoved);
-			socketStore.off('user:status-changed', handleUserStatusChanged);
+			socketStore.off('friend:status', handleUserStatusChanged);
 			socketStore.off('message:new', handleMessageNew);
 			socketStore.off('chat:created', handleChatCreated);
 		};

@@ -46,9 +46,9 @@ export default function AvatarUtil({ id, radius, showStatus = true }: AvatarUtil
                     {user.username.charAt(0).toUpperCase()}
                 </div>
             )}
-            {showStatus && (
+            {showStatus && user.is_online && (
                 <span
-                    className={`status-indicator ${user.is_online ? 'online' : 'offline'}`}
+                    className="status-indicator online"
                     style={{
                         width: indicatorSize,
                         height: indicatorSize,
