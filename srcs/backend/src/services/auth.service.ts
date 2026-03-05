@@ -95,6 +95,18 @@ class AuthService {
     return this.generateTokens(user);
   }
 
+  async deleteUserByUsername(username: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { username },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    await this.userRepository.remove(user);
+  }
+
   verifyToken(token: string): JWTPayload {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
   }

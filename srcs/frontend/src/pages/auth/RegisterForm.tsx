@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { registerAtom } from '../../providers';
+import { registerAtom, initCurrentUserAtom, logoutAtom } from '../../providers';
+import { apiService } from '../../services';
 import AvatarSelector from '../../components/AvatarSelector';
 
 interface RegisterFormData {
@@ -15,6 +16,8 @@ interface RegisterFormData {
 export default function RegisterForm(): React.JSX.Element {
     const navigate = useNavigate();
     const register = useSetAtom(registerAtom);
+    const initCurrentUser = useSetAtom(initCurrentUserAtom);
+    const logout = useSetAtom(logoutAtom);
     const [formData, setFormData] = useState<RegisterFormData>({
         username: '',
         realname: '',
@@ -24,15 +27,14 @@ export default function RegisterForm(): React.JSX.Element {
     });
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [showTerms, setShowTerms] = useState<boolean>(false);
 
     const handleSubmit = async (): Promise<void> => {
-        // Validate required fields
         if (!formData.username || !formData.realname || !formData.password) {
             setError('Please fill in all required fields');
             return;
         }
 
-        // Validate password confirmation
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -48,7 +50,7 @@ export default function RegisterForm(): React.JSX.Element {
                 avatar: formData.avatar,
                 password: formData.password
             });
-            navigate('/games');
+            setShowTerms(true);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -56,6 +58,39 @@ export default function RegisterForm(): React.JSX.Element {
                 setError('Registration failed. Please try again.');
             }
         } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAcceptTerms = async (): Promise<void> => {
+        try {
+            setIsLoading(true);
+            await initCurrentUser();
+            setShowTerms(false);
+            navigate('/games');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Could not complete registration. Please try again.');
+            }
+            setShowTerms(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeclineTerms = async (): Promise<void> => {
+        try {
+            setIsLoading(true);
+            await apiService.delete<void>('auth/user', {
+                data: { username: formData.username }
+            });
+        } catch {
+            // Swallow deletion errors; from the user's perspective, they declined the account.
+        } finally {
+            logout();
+            setShowTerms(false);
             setIsLoading(false);
         }
     };
@@ -148,6 +183,89 @@ export default function RegisterForm(): React.JSX.Element {
             >
                 {isLoading ? 'Loading...' : 'Register'}
             </button>
+
+            {showTerms && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 50
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: '#111827',
+                            color: '#f9fafb',
+                            padding: '1.5rem',
+                            borderRadius: '0.75rem',
+                            maxWidth: '600px',
+                            width: '100%',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                        }}
+                    >
+                        <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Terms of Service</h2>
+                        <div
+                            style={{
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                paddingRight: '0.5rem',
+                                marginBottom: '1.5rem',
+                                fontSize: '0.9rem',
+                                lineHeight: 1.5
+                            }}
+                        >
+                            <p>
+                                By creating an account and using this service, you agree to play fairly,
+                                respect other players, and comply with all applicable laws and regulations.
+                            </p>
+                            <p>
+                                You understand that your account and game data may be stored and processed
+                                for the purpose of providing multiplayer features, matchmaking, and improving
+                                the overall game experience.
+                            </p>
+                            <p>
+                                You also agree not to engage in cheating, harassment, or any behavior that
+                                negatively impacts other users. Violation of these terms may result in
+                                suspension or termination of your account.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={handleDeclineTerms}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#374151',
+                                    color: '#e5e7eb',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Decline
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleAcceptTerms}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#10b981',
+                                    color: '#ecfdf5',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                I Agree
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

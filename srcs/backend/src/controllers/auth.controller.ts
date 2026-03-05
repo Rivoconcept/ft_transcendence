@@ -51,3 +51,20 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     res.status(401).json({ error: message });
   }
 }
+
+export async function deleteUser(req: Request, res: Response): Promise<void> {
+  try {
+    const { username } = req.body;
+
+    if (!username) {
+      res.status(400).json({ error: "Username is required" });
+      return;
+    }
+
+    await authService.deleteUserByUsername(username);
+    res.status(204).send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "User deletion failed";
+    res.status(400).json({ error: message });
+  }
+}

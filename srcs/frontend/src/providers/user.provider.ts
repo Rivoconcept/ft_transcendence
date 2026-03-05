@@ -125,17 +125,15 @@ export const loginAtom = atom(
 );
 
 // Register action
+// Note: we intentionally do NOT set currentUserAtom here.
+// This allows the UI to gate first-time access behind a terms-of-service step
+// before completing authentication and socket connection.
 export const registerAtom = atom(
 	null,
-	async (_get, set, data: { username: string; realname: string; avatar: null | string; password: string }) => {
+	async (_get, _set, data: { username: string; realname: string; avatar: null | string; password: string }) => {
 		const response = await userService.register(data);
-		set(currentUserAtom, response.user);
-		set(_userCacheFamily(response.user.id), response.user);
-		// Connect socket with token - backend will set is_online to true
-		const token = apiService.getToken();
-		if (token) {
-			socketStore.connectAndAuth(token);
-		}
+		// Tokens are stored by userService.register; caller can later
+		// finalize authentication (e.g. via initCurrentUserAtom) after ToS acceptance.
 		return response.user;
 	}
 );
