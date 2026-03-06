@@ -32,6 +32,7 @@ import {
 	unblockUserAtom,
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
+import { blockService } from "../../services/block.service";
 import AvatarUtil from "../../components/AvatarUtil";
 import CreateChatModal from "./CreateChatModal";
 import MessageBubble from "./MessageBubble";
@@ -101,6 +102,7 @@ export default function MessagesPage() {
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
 	const [showDropdown, setShowDropdown] = useState(false);
+	const [isChatBlocked, setIsChatBlocked] = useState(false);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -157,11 +159,19 @@ export default function MessagesPage() {
 	// Reset initial load flag and load blocked users when chat changes
 	useEffect(() => {
 		isInitialLoadRef.current = true;
+		setIsChatBlocked(false);
 		if (selectedChatId) {
 			fetchBlockedUsers();
+			// Check bidirectional block for direct chats
+			if (selectedChat?.type === "direct" && currentUser) {
+				const otherUserId = selectedChat.memberIds.find(id => id !== currentUser.id) ?? selectedChat.memberIds[0];
+				blockService.isBlockedMutual(otherUserId).then(({ blocked }) => {
+					setIsChatBlocked(blocked);
+				}).catch(() => {});
+			}
 		}
 		setShowDropdown(false);
-	}, [selectedChatId, fetchBlockedUsers]);
+	}, [selectedChatId, fetchBlockedUsers, selectedChat, currentUser]);
 
 	// Scroll to bottom when current user sends a message
 	useEffect(() => {
@@ -267,6 +277,7 @@ export default function MessagesPage() {
 		if (!window.confirm('Are you sure you want to block this user?')) return;
 		try {
 			await doBlockUser(userId);
+			setIsChatBlocked(true);
 			setShowDropdown(false);
 		} catch { /* silently fail */ }
 	}, [doBlockUser]);
@@ -274,6 +285,7 @@ export default function MessagesPage() {
 	const handleUnblockUser = useCallback(async (userId: number) => {
 		try {
 			await doUnblockUser(userId);
+			setIsChatBlocked(false);
 			setShowDropdown(false);
 		} catch { /* silently fail */ }
 	}, [doUnblockUser]);
@@ -474,6 +486,13 @@ export default function MessagesPage() {
 							</div>
 						)}
 
+						{isChatBlocked ? (
+							<div className="msg-input-area" style={{ justifyContent: "center" }}>
+								<span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 14 }}>
+									You cannot send messages to this person
+								</span>
+							</div>
+						) : (
 						<div className="msg-input-area">
 							<input
 								ref={fileInputRef}
@@ -509,6 +528,7 @@ export default function MessagesPage() {
 								<Send size={20} />
 							</button>
 						</div>
+						)}
 					</>
 				) : (
 					<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">

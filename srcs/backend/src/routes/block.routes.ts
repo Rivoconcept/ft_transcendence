@@ -1,11 +1,14 @@
 import { Router, type IRouter } from "express";
-import { blockUser, unblockUser, getBlockedUsers, checkBlocked } from "../controllers/block.controller.js";
+import { blockUser, unblockUser, getBlockedUsers, checkBlocked, checkBlockedBidirectional } from "../controllers/block.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router: IRouter = Router();
 
 // Liste des utilisateurs bloqués
 router.get("/", authMiddleware, getBlockedUsers);
+
+// Check bidirectional block between two users
+router.get("/:userId/mutual", authMiddleware, checkBlockedBidirectional);
 
 // Vérifier si un utilisateur est bloqué
 router.get("/:userId", authMiddleware, checkBlocked);

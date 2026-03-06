@@ -69,3 +69,13 @@ export async function isBlocked(blockerId: number, blockedId: number): Promise<b
   });
   return !!block;
 }
+
+export async function isBlockedBidirectional(userId1: number, userId2: number): Promise<boolean> {
+  const block = await blockRepo.findOne({
+    where: [
+      { blocker_id: userId1, blocked_id: userId2 },
+      { blocker_id: userId2, blocked_id: userId1 },
+    ],
+  });
+  return !!block;
+}

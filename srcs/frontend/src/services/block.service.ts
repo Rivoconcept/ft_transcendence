@@ -16,6 +16,10 @@ class BlockService {
 	async isBlocked(userId: number): Promise<{ blocked: boolean }> {
 		return apiService.get<{ blocked: boolean }>(`blocks/${userId}`);
 	}
+
+	async isBlockedMutual(userId: number): Promise<{ blocked: boolean }> {
+		return apiService.get<{ blocked: boolean }>(`blocks/${userId}/mutual`);
+	}
 }
 
 export const blockService = new BlockService();

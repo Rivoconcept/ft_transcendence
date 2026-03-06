@@ -76,3 +76,20 @@ export async function checkBlocked(req: AuthRequest, res: Response): Promise<voi
     res.status(500).json({ error: "Failed to check block status" });
   }
 }
+
+export async function checkBlockedBidirectional(req: AuthRequest, res: Response): Promise<void> {
+  const userId = req.user!.userId;
+  const otherUserId = Number(req.params.userId);
+
+  if (isNaN(otherUserId)) {
+    res.status(400).json({ error: "Invalid user ID" });
+    return;
+  }
+
+  try {
+    const blocked = await blockService.isBlockedBidirectional(userId, otherUserId);
+    res.json({ blocked });
+  } catch {
+    res.status(500).json({ error: "Failed to check block status" });
+  }
+}
