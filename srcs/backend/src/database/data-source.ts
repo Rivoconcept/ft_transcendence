@@ -14,6 +14,7 @@ import { ChatMember } from "./entities/chat-member.js";
 import { Message } from "./entities/message.js";
 import { Reaction } from "./entities/reaction.js";
 import { UserReaction } from "./entities/user-reaction.js";
+import { BlockedUser } from "./entities/blocked-user.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -38,5 +39,6 @@ export const AppDataSource = new DataSource({
     Message,
     Reaction,
     UserReaction,
+    BlockedUser,
   ],
 } as DataSourceOptions);

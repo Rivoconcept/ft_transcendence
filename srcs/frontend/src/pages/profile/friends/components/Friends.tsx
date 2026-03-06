@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useNavigate } from 'react-router-dom';
-import { UserMinus, MessageCircle, Search, Loader2 } from 'lucide-react';
+import { UserMinus, MessageCircle, Search, Loader2, ShieldBan } from 'lucide-react';
 import { friendsListAtom, fetchFriendsAtom, friendsLoadingAtom, removeFriendAtom } from '../../../../providers/friend.provider';
 import { openOrCreateDirectChatAtom } from '../../../../providers/chat.provider';
+import { blockUserAtom } from '../../../../providers/block.provider';
 import AvatarUtil from '../../../../components/AvatarUtil';
 
 export default function Friends(): React.JSX.Element {
@@ -17,6 +18,8 @@ export default function Friends(): React.JSX.Element {
 	const fetchFriends = useSetAtom(fetchFriendsAtom);
 	const removeFriend = useSetAtom(removeFriendAtom);
 	const openOrCreateDirectChat = useSetAtom(openOrCreateDirectChatAtom);
+	const blockUser = useSetAtom(blockUserAtom);
+	const [blockingIds, setBlockingIds] = useState<Set<number>>(new Set());
 
 	useEffect(() => {
 		fetchFriends();
@@ -35,6 +38,7 @@ export default function Friends(): React.JSX.Element {
 	};
 
 	const handleRemoveFriend = async (friendId: number) => {
+		if (!window.confirm('Are you sure you want to remove this friend?')) return;
 		setError(null);
 		setRemovingIds(prev => new Set(prev).add(friendId));
 
@@ -45,6 +49,25 @@ export default function Friends(): React.JSX.Element {
 			setError(message);
 		} finally {
 			setRemovingIds(prev => {
+				const next = new Set(prev);
+				next.delete(friendId);
+				return next;
+			});
+		}
+	};
+
+	const handleBlockUser = async (friendId: number) => {
+		if (!window.confirm('Are you sure you want to block this user?')) return;
+		setError(null);
+		setBlockingIds(prev => new Set(prev).add(friendId));
+
+		try {
+			await blockUser(friendId);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Failed to block user';
+			setError(message);
+		} finally {
+			setBlockingIds(prev => {
 				const next = new Set(prev);
 				next.delete(friendId);
 				return next;
@@ -107,14 +130,24 @@ export default function Friends(): React.JSX.Element {
 							</p>
 						</div>
 						<div style={{ display: 'flex', gap: '0.25rem' }}>
-							<button className="btn-secondary" style={{ padding: '0.35rem' }} onClick={() => handleOpenChat(friend.id)}>
+							<button className="btn-secondary" style={{ padding: '0.35rem' }} onClick={() => handleOpenChat(friend.id)} title="Message">
 								<MessageCircle size={14} />
+							</button>
+							<button
+								className="btn-secondary"
+								style={{ padding: '0.35rem', color: '#ef4444' }}
+								onClick={() => handleBlockUser(friend.id)}
+								disabled={blockingIds.has(friend.id)}
+								title="Block"
+							>
+								{blockingIds.has(friend.id) ? <Loader2 size={14} className="spin" /> : <ShieldBan size={14} />}
 							</button>
 							<button
 								className="btn-secondary"
 								style={{ padding: '0.35rem', color: '#ef4444' }}
 								onClick={() => handleRemoveFriend(friend.id)}
 								disabled={removingIds.has(friend.id)}
+								title="Remove friend"
 							>
 								{removingIds.has(friend.id) ? <Loader2 size={14} className="spin" /> : <UserMinus size={14} />}
 							</button>

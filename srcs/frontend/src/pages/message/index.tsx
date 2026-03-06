@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -11,6 +11,8 @@ import {
 	Plus,
 	X,
 	Image,
+	ShieldBan,
+	ShieldCheck,
 } from "lucide-react";
 import {
 	currentUserAtom,
@@ -24,11 +26,16 @@ import {
 	loadOlderMessagesAtom,
 	sendMessageAtom,
 	userFamily,
+	blockedUserIdsAtom,
+	fetchBlockedUsersAtom,
+	blockUserAtom,
+	unblockUserAtom,
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
+import { blockService } from "../../services/block.service";
 import AvatarUtil from "../../components/AvatarUtil";
 import CreateChatModal from "./CreateChatModal";
-import MessageBubble from "./MessageBubble";
+import MessageBubble from "../../components/message/MessageBubble";
 import type { ChatListItem } from "../../models";
 import "./message.css";
 
@@ -83,24 +90,38 @@ export default function MessagesPage() {
 	const selectChat = useSetAtom(selectChatAtom);
 	const loadOlder = useSetAtom(loadOlderMessagesAtom);
 	const doSendMessage = useSetAtom(sendMessageAtom);
+	const blockedUserIds = useAtomValue(blockedUserIdsAtom);
+	const fetchBlockedUsers = useSetAtom(fetchBlockedUsersAtom);
+	const doBlockUser = useSetAtom(blockUserAtom);
+	const doUnblockUser = useSetAtom(unblockUserAtom);
 
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
-	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+	const [_, setMobileView] = useState<"list" | "chat">("list");
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
+	const [showDropdown, setShowDropdown] = useState(false);
+	const [isChatBlocked, setIsChatBlocked] = useState(false);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const topSentinelRef = useRef<HTMLDivElement>(null);
 	const prevScrollHeightRef = useRef<number>(0);
-	const isInitialLoadRef = useRef<boolean>(true);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const messages = messagesState?.messages ?? [];
 	const hasMore = messagesState?.hasMore ?? false;
 	const isLoading = messagesState?.loading ?? false;
+	const messagesReady = messagesState !== null && !isLoading;
+
+	// Close dropdown on outside click
+	useEffect(() => {
+		if (!showDropdown) return;
+		const handleClick = () => setShowDropdown(false);
+		document.addEventListener("click", handleClick);
+		return () => document.removeEventListener("click", handleClick);
+	}, [showDropdown]);
 
 	// Fetch chats on mount
 	useEffect(() => {
@@ -120,28 +141,47 @@ export default function MessagesPage() {
 			setShowCreateModal(true);
 		} else if (chatIdParam) {
 			const id = Number(chatIdParam);
-			if (!isNaN(id) && id !== selectedChatId) {
+			if (!isNaN(id)) {
 				selectChat(id);
 				setMobileView("chat");
 			}
 		}
-	}, [chatIdParam, selectChat, selectedChatId]);
+	}, [chatIdParam, selectChat]);
 
-	// Scroll to bottom on initial load
-	useEffect(() => {
-		if (isInitialLoadRef.current && messages.length > 0 && !isLoading) {
-			bottomRef.current?.scrollIntoView();
-			isInitialLoadRef.current = false;
-		}
-	}, [messages.length, isLoading]);
-
-	// Reset initial load flag when chat changes
-	useEffect(() => {
-		isInitialLoadRef.current = true;
+	// Scroll to bottom when messages become ready (initial load)
+	const hasScrolledRef = useRef(false);
+	useLayoutEffect(() => {
+		hasScrolledRef.current = false;
 	}, [selectedChatId]);
+
+	useLayoutEffect(() => {
+		if (messagesReady && !hasScrolledRef.current && messages.length > 0) {
+			const container = scrollContainerRef.current;
+			if (container) {
+				container.scrollTop = container.scrollHeight;
+			}
+			hasScrolledRef.current = true;
+		}
+	}, [messagesReady, messages.length]);
+
+	// Load blocked users when chat changes
+	useEffect(() => {
+		setIsChatBlocked(false);
+		if (selectedChatId) {
+			fetchBlockedUsers();
+			if (selectedChat?.type === "direct" && currentUser) {
+				const otherUserId = selectedChat.memberIds.find(id => id !== currentUser.id) ?? selectedChat.memberIds[0];
+				blockService.isBlockedMutual(otherUserId).then(({ blocked }) => {
+					setIsChatBlocked(blocked);
+				}).catch(() => {});
+			}
+		}
+		setShowDropdown(false);
+	}, [selectedChatId, fetchBlockedUsers, selectedChat, currentUser]);
 
 	// Scroll to bottom when current user sends a message
 	useEffect(() => {
+		if (!hasScrolledRef.current) return;
 		if (messages.length > 0) {
 			const lastMsg = messages[messages.length - 1];
 			if (lastMsg.authorId === currentUser?.id || lastMsg.id < 0) {
@@ -151,9 +191,10 @@ export default function MessagesPage() {
 	}, [messages.length, currentUser?.id]);
 
 	// Preserve scroll position after prepending older messages
-	useEffect(() => {
+	useLayoutEffect(() => {
+		if (!hasScrolledRef.current) return;
 		const container = scrollContainerRef.current;
-		if (!container || isInitialLoadRef.current) return;
+		if (!container) return;
 
 		const newScrollHeight = container.scrollHeight;
 		const diff = newScrollHeight - prevScrollHeightRef.current;
@@ -187,10 +228,9 @@ export default function MessagesPage() {
 	}, [selectedChatId, hasMore, isLoading, loadOlder]);
 
 	const handleSelectChat = useCallback((chatId: number) => {
-		selectChat(chatId);
 		navigate(`/messages/${chatId}`);
 		setMobileView("chat");
-	}, [selectChat, navigate]);
+	}, [navigate]);
 
 	const handleSend = useCallback(() => {
 		if (!selectedChatId) return;
@@ -216,13 +256,13 @@ export default function MessagesPage() {
 		if (!file) return;
 
 		if (!ALLOWED_TYPES.includes(file.type)) {
-			setImageError("Format non supporté. Utilisez JPEG, PNG, GIF ou WebP.");
+			setImageError("Unsupported format. Use JPEG, PNG, GIF or WebP.");
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
 
 		if (file.size > MAX_IMAGE_SIZE) {
-			setImageError("L'image ne doit pas dépasser 2 Mo.");
+			setImageError("Image must not exceed 2 MB.");
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
@@ -239,6 +279,23 @@ export default function MessagesPage() {
 		setImagePreview(null);
 		setImageError(null);
 	}, []);
+
+	const handleBlockUser = useCallback(async (userId: number) => {
+		if (!window.confirm('Are you sure you want to block this user?')) return;
+		try {
+			await doBlockUser(userId);
+			setIsChatBlocked(true);
+			setShowDropdown(false);
+		} catch { /* silently fail */ }
+	}, [doBlockUser]);
+
+	const handleUnblockUser = useCallback(async (userId: number) => {
+		try {
+			await doUnblockUser(userId);
+			setIsChatBlocked(false);
+			setShowDropdown(false);
+		} catch { /* silently fail */ }
+	}, [doUnblockUser]);
 
 	const getOtherUserId = (chat: ChatListItem): number => {
 		if (chat.type === "direct" && currentUser) {
@@ -362,12 +419,31 @@ export default function MessagesPage() {
 								</div>
 							</div>
 
-							<div className="d-flex gap-1">
-								<button className="icon-action"><MoreVertical size={17} className="icon-themed" /></button>
+							<div className="d-flex gap-1 position-relative">
+								<button className="icon-action" onClick={(e) => { e.stopPropagation(); setShowDropdown(prev => !prev); }}>
+									<MoreVertical size={17} className="icon-themed" />
+								</button>
+								{showDropdown && selectedChat.type === "direct" && (() => {
+									const otherUserId = getOtherUserId(selectedChat);
+									const isOtherBlocked = blockedUserIds.has(otherUserId);
+									return (
+										<div className="chat-dropdown-menu">
+											{isOtherBlocked ? (
+												<button className="chat-dropdown-item" onClick={() => handleUnblockUser(otherUserId)}>
+													<ShieldCheck size={15} /> Unblock
+												</button>
+											) : (
+												<button className="chat-dropdown-item danger" onClick={() => handleBlockUser(otherUserId)}>
+													<ShieldBan size={15} /> Block
+												</button>
+											)}
+										</div>
+									);
+								})()}
 							</div>
 						</div>
 
-						<div className="msg-area" ref={scrollContainerRef}>
+						<div className="msg-area" ref={scrollContainerRef} key={selectedChatId}>
 							<div ref={topSentinelRef} style={{ height: 1 }} />
 
 							{isLoading && messages.length > 0 && (
@@ -382,14 +458,19 @@ export default function MessagesPage() {
 								</div>
 							)}
 
-							{messages.map((msg) => (
-								<MessageBubble
-									key={msg.id}
-									message={msg}
-									fromMe={msg.authorId === currentUser?.id || msg.id < 0}
-									formatTime={formatTime}
-								/>
-							))}
+							{messages.map((msg) => {
+								const fromMe = msg.authorId === currentUser?.id || msg.id < 0;
+								const isMessageBlocked = !fromMe && blockedUserIds.has(msg.authorId);
+								return (
+									<MessageBubble
+										key={msg.id}
+										message={msg}
+										fromMe={fromMe}
+										formatTime={formatTime}
+										isBlocked={isMessageBlocked}
+									/>
+								);
+							})}
 							<div ref={bottomRef} />
 						</div>
 
@@ -412,6 +493,13 @@ export default function MessagesPage() {
 							</div>
 						)}
 
+						{isChatBlocked ? (
+							<div className="msg-input-area" style={{ justifyContent: "center" }}>
+								<span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 14 }}>
+									You cannot send messages to this person
+								</span>
+							</div>
+						) : (
 						<div className="msg-input-area">
 							<input
 								ref={fileInputRef}
@@ -447,6 +535,7 @@ export default function MessagesPage() {
 								<Send size={20} />
 							</button>
 						</div>
+						)}
 					</>
 				) : (
 					<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">

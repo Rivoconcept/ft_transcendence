@@ -1,10 +1,12 @@
-import AvatarUtil from "../../components/AvatarUtil";
+import { useState } from "react";
+import AvatarUtil from "../AvatarUtil";
 import type { MessageItem } from "../../models";
 
 interface MessageBubbleProps {
 	message: MessageItem;
 	fromMe: boolean;
 	formatTime: (dateStr: string) => string;
+	isBlocked?: boolean;
 }
 
 function parseImageContent(content: string): { imageUrl: string; caption: string | null } {
@@ -18,10 +20,13 @@ function parseImageContent(content: string): { imageUrl: string; caption: string
 	};
 }
 
-export default function MessageBubble({ message, fromMe, formatTime }: MessageBubbleProps) {
+export default function MessageBubble({ message, fromMe, formatTime, isBlocked }: MessageBubbleProps) {
+	const [revealed, setRevealed] = useState(false);
+	const hidden = isBlocked && !revealed;
+
 	const isImage = message.type === "image";
-	const parsed = isImage ? parseImageContent(message.content) : null;
-	const imageOnly = isImage && !parsed?.caption;
+	const parsed = isImage && !hidden ? parseImageContent(message.content) : null;
+	const imageOnly = isImage && !hidden && !parsed?.caption;
 
 	return (
 		<div className={`d-flex mb-2 ${fromMe ? "justify-content-end" : "justify-content-start"}`}>
@@ -32,8 +37,10 @@ export default function MessageBubble({ message, fromMe, formatTime }: MessageBu
 			)}
 
 			<div>
-				<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"} ${imageOnly ? "bubble-image" : ""} ${isImage && !imageOnly ? "bubble-with-image" : ""}`}>
-					{isImage && parsed ? (
+				<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"} ${imageOnly ? "bubble-image" : ""} ${isImage && !imageOnly && !hidden ? "bubble-with-image" : ""}`}>
+					{hidden ? (
+						<span className="blocked-content" onClick={() => setRevealed(true)} style={{ cursor: "pointer" }}>Hidden content</span>
+					) : isImage && parsed ? (
 						<>
 							{parsed.caption && (
 								<div className="bubble-caption">{parsed.caption}</div>
