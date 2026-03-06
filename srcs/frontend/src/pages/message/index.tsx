@@ -11,6 +11,8 @@ import {
 	Plus,
 	X,
 	Image,
+	ShieldBan,
+	ShieldCheck,
 } from "lucide-react";
 import {
 	currentUserAtom,
@@ -24,6 +26,10 @@ import {
 	loadOlderMessagesAtom,
 	sendMessageAtom,
 	userFamily,
+	blockedUserIdsAtom,
+	fetchBlockedUsersAtom,
+	blockUserAtom,
+	unblockUserAtom,
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
 import AvatarUtil from "../../components/AvatarUtil";
@@ -83,6 +89,10 @@ export default function MessagesPage() {
 	const selectChat = useSetAtom(selectChatAtom);
 	const loadOlder = useSetAtom(loadOlderMessagesAtom);
 	const doSendMessage = useSetAtom(sendMessageAtom);
+	const blockedUserIds = useAtomValue(blockedUserIdsAtom);
+	const fetchBlockedUsers = useSetAtom(fetchBlockedUsersAtom);
+	const doBlockUser = useSetAtom(blockUserAtom);
+	const doUnblockUser = useSetAtom(unblockUserAtom);
 
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
@@ -90,6 +100,7 @@ export default function MessagesPage() {
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
+	const [showDropdown, setShowDropdown] = useState(false);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -101,6 +112,14 @@ export default function MessagesPage() {
 	const messages = messagesState?.messages ?? [];
 	const hasMore = messagesState?.hasMore ?? false;
 	const isLoading = messagesState?.loading ?? false;
+
+	// Close dropdown on outside click
+	useEffect(() => {
+		if (!showDropdown) return;
+		const handleClick = () => setShowDropdown(false);
+		document.addEventListener("click", handleClick);
+		return () => document.removeEventListener("click", handleClick);
+	}, [showDropdown]);
 
 	// Fetch chats on mount
 	useEffect(() => {
@@ -135,10 +154,14 @@ export default function MessagesPage() {
 		}
 	}, [messages.length, isLoading]);
 
-	// Reset initial load flag when chat changes
+	// Reset initial load flag and load blocked users when chat changes
 	useEffect(() => {
 		isInitialLoadRef.current = true;
-	}, [selectedChatId]);
+		if (selectedChatId) {
+			fetchBlockedUsers();
+		}
+		setShowDropdown(false);
+	}, [selectedChatId, fetchBlockedUsers]);
 
 	// Scroll to bottom when current user sends a message
 	useEffect(() => {
@@ -239,6 +262,20 @@ export default function MessagesPage() {
 		setImagePreview(null);
 		setImageError(null);
 	}, []);
+
+	const handleBlockUser = useCallback(async (userId: number) => {
+		try {
+			await doBlockUser(userId);
+			setShowDropdown(false);
+		} catch { /* silently fail */ }
+	}, [doBlockUser]);
+
+	const handleUnblockUser = useCallback(async (userId: number) => {
+		try {
+			await doUnblockUser(userId);
+			setShowDropdown(false);
+		} catch { /* silently fail */ }
+	}, [doUnblockUser]);
 
 	const getOtherUserId = (chat: ChatListItem): number => {
 		if (chat.type === "direct" && currentUser) {
@@ -362,8 +399,27 @@ export default function MessagesPage() {
 								</div>
 							</div>
 
-							<div className="d-flex gap-1">
-								<button className="icon-action"><MoreVertical size={17} className="icon-themed" /></button>
+							<div className="d-flex gap-1 position-relative">
+								<button className="icon-action" onClick={(e) => { e.stopPropagation(); setShowDropdown(prev => !prev); }}>
+									<MoreVertical size={17} className="icon-themed" />
+								</button>
+								{showDropdown && selectedChat.type === "direct" && (() => {
+									const otherUserId = getOtherUserId(selectedChat);
+									const isOtherBlocked = blockedUserIds.has(otherUserId);
+									return (
+										<div className="chat-dropdown-menu">
+											{isOtherBlocked ? (
+												<button className="chat-dropdown-item" onClick={() => handleUnblockUser(otherUserId)}>
+													<ShieldCheck size={15} /> Débloquer
+												</button>
+											) : (
+												<button className="chat-dropdown-item danger" onClick={() => handleBlockUser(otherUserId)}>
+													<ShieldBan size={15} /> Bloquer
+												</button>
+											)}
+										</div>
+									);
+								})()}
 							</div>
 						</div>
 
@@ -382,14 +438,19 @@ export default function MessagesPage() {
 								</div>
 							)}
 
-							{messages.map((msg) => (
-								<MessageBubble
-									key={msg.id}
-									message={msg}
-									fromMe={msg.authorId === currentUser?.id || msg.id < 0}
-									formatTime={formatTime}
-								/>
-							))}
+							{messages.map((msg) => {
+								const fromMe = msg.authorId === currentUser?.id || msg.id < 0;
+								const isMessageBlocked = !fromMe && blockedUserIds.has(msg.authorId);
+								return (
+									<MessageBubble
+										key={msg.id}
+										message={msg}
+										fromMe={fromMe}
+										formatTime={formatTime}
+										isBlocked={isMessageBlocked}
+									/>
+								);
+							})}
 							<div ref={bottomRef} />
 						</div>
 

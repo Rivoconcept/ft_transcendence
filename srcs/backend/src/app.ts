@@ -6,6 +6,7 @@ import invitationRoutes from "./routes/invitation.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import matchRoutes from "./routes/match.routes.js";
 import cardGameRoutes from "./routes/card-game.routes.js";
+import blockRoutes from "./routes/block.routes.js";
 
 const app: Express = express();
 
@@ -45,5 +46,6 @@ app.use("/api/invitations", invitationRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/card-games", cardGameRoutes);
+app.use("/api/blocks", blockRoutes);
 
 export default app;

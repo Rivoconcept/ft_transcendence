@@ -1,11 +1,13 @@
 import { AppDataSource } from "../database/data-source.js";
 import { Invitation, InvitationStatus } from "../database/entities/invitation.js";
+import { BlockedUser } from "../database/entities/blocked-user.js";
 import { User } from "../database/entities/user.js";
 import { socketService } from "../websocket.js";
 
 class InvitationService {
   private invitationRepository = AppDataSource.getRepository(Invitation);
   private userRepository = AppDataSource.getRepository(User);
+  private blockedUserRepository = AppDataSource.getRepository(BlockedUser);
 
   async sendInvitation(senderId: number, receiverUsername: string): Promise<Invitation> {
     const receiver = await this.userRepository.findOne({
@@ -18,6 +20,17 @@ class InvitationService {
 
     if (receiver.id === senderId) {
       throw new Error("Cannot send invitation to yourself");
+    }
+
+    // Vérifier si l'un des deux a bloqué l'autre
+    const block = await this.blockedUserRepository.findOne({
+      where: [
+        { blocker_id: senderId, blocked_id: receiver.id },
+        { blocker_id: receiver.id, blocked_id: senderId },
+      ],
+    });
+    if (block) {
+      throw new Error("Cannot send invitation: user is blocked");
     }
 
     // Vérifier si une invitation existe déjà (dans les deux sens)
@@ -190,10 +203,22 @@ class InvitationService {
       ],
     });
 
+    // Récupérer les utilisateurs bloqués (dans les deux sens)
+    const blocks = await this.blockedUserRepository.find({
+      where: [
+        { blocker_id: userId },
+        { blocked_id: userId },
+      ],
+    });
+
     const excludedIds = new Set<number>([userId]);
     for (const rel of existingRelations) {
       excludedIds.add(rel.sender_id);
       excludedIds.add(rel.receiver_id);
+    }
+    for (const block of blocks) {
+      excludedIds.add(block.blocker_id);
+      excludedIds.add(block.blocked_id);
     }
 
     // Requête pour les utilisateurs non-amis

@@ -5,6 +5,7 @@ import type { ChatMember } from "./chat-member.js";
 import type { Message } from "./message.js";
 import type { UserReaction } from "./user-reaction.js";
 import type { Match } from "./match.js";
+import type { BlockedUser } from "./blocked-user.js";
 
 @Entity()
 export class User {
@@ -46,4 +47,10 @@ export class User {
 
   @OneToMany("UserReaction", "user")
   reactions!: Relation<UserReaction>[];
+
+  @OneToMany("BlockedUser", "blocker")
+  blocked_users!: Relation<BlockedUser>[];
+
+  @OneToMany("BlockedUser", "blocked")
+  blocked_by!: Relation<BlockedUser>[];
 }

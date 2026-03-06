@@ -68,3 +68,13 @@ export {
 	createGroupChatAtom
 } from './chat.provider';
 export type { ChatMessagesState } from './chat.provider';
+
+// Block Provider
+export {
+	blockedUserIdsAtom,
+	blockedUsersLoadingAtom,
+	fetchBlockedUsersAtom,
+	blockUserAtom,
+	unblockUserAtom,
+	isUserBlockedAtom
+} from './block.provider';

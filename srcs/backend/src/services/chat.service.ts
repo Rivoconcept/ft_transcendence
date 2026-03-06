@@ -5,6 +5,7 @@ import { Message, MessageType } from "../database/entities/message.js";
 import { User } from "../database/entities/user.js";
 import { Reaction } from "../database/entities/reaction.js";
 import { UserReaction } from "../database/entities/user-reaction.js";
+import { BlockedUser } from "../database/entities/blocked-user.js";
 import { socketService } from "../websocket.js";
 import { randomBytes } from "crypto";
 
@@ -63,6 +64,7 @@ class ChatService {
   private messageRepository = AppDataSource.getRepository(Message);
   private userRepository = AppDataSource.getRepository(User);
   private userReactionRepository = AppDataSource.getRepository(UserReaction);
+  private blockedUserRepository = AppDataSource.getRepository(BlockedUser);
 
   private generateChannelId(): string {
     return randomBytes(8).toString("hex");
@@ -327,7 +329,7 @@ class ChatService {
       where: { chat_id: chatId },
     });
 
-    // Récupérer les messages avec pagination - sans relations
+    // Récupérer les messages avec pagination
     const messages = await this.messageRepository.find({
       where: { chat_id: chatId },
       order: { created_at: "DESC" },
@@ -410,6 +412,25 @@ class ChatService {
     const chat = await this.chatRepository.findOne({ where: { id: chatId } });
     if (!chat) {
       throw new Error("Chat not found");
+    }
+
+    // Vérifier le blocage dans les chats directs
+    if (chat.type === ChatType.DIRECT) {
+      const members = await this.chatMemberRepository.find({
+        where: { chat_id: chatId },
+      });
+      const otherMember = members.find(m => m.user_id !== userId);
+      if (otherMember) {
+        const block = await this.blockedUserRepository.findOne({
+          where: [
+            { blocker_id: userId, blocked_id: otherMember.user_id },
+            { blocker_id: otherMember.user_id, blocked_id: userId },
+          ],
+        });
+        if (block) {
+          throw new Error("Cannot send message: user is blocked");
+        }
+      }
     }
 
     const message = this.messageRepository.create({
