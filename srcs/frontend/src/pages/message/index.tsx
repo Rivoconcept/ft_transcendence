@@ -35,7 +35,7 @@ import { socketStore } from "../../store/socketStore";
 import { blockService } from "../../services/block.service";
 import AvatarUtil from "../../components/AvatarUtil";
 import CreateChatModal from "./CreateChatModal";
-import MessageBubble from "./MessageBubble";
+import MessageBubble from "../../components/message/MessageBubble";
 import type { ChatListItem } from "../../models";
 import "./message.css";
 
