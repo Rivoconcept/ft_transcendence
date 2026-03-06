@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -97,7 +97,7 @@ export default function MessagesPage() {
 
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
-	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+	const [_, setMobileView] = useState<"list" | "chat">("list");
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
@@ -108,12 +108,12 @@ export default function MessagesPage() {
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const topSentinelRef = useRef<HTMLDivElement>(null);
 	const prevScrollHeightRef = useRef<number>(0);
-	const isInitialLoadRef = useRef<boolean>(true);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const messages = messagesState?.messages ?? [];
 	const hasMore = messagesState?.hasMore ?? false;
 	const isLoading = messagesState?.loading ?? false;
+	const messagesReady = messagesState !== null && !isLoading;
 
 	// Close dropdown on outside click
 	useEffect(() => {
@@ -141,28 +141,34 @@ export default function MessagesPage() {
 			setShowCreateModal(true);
 		} else if (chatIdParam) {
 			const id = Number(chatIdParam);
-			if (!isNaN(id) && id !== selectedChatId) {
+			if (!isNaN(id)) {
 				selectChat(id);
 				setMobileView("chat");
 			}
 		}
-	}, [chatIdParam, selectChat, selectedChatId]);
+	}, [chatIdParam, selectChat]);
 
-	// Scroll to bottom on initial load
-	useEffect(() => {
-		if (isInitialLoadRef.current && messages.length > 0 && !isLoading) {
-			bottomRef.current?.scrollIntoView();
-			isInitialLoadRef.current = false;
+	// Scroll to bottom when messages become ready (initial load)
+	const hasScrolledRef = useRef(false);
+	useLayoutEffect(() => {
+		hasScrolledRef.current = false;
+	}, [selectedChatId]);
+
+	useLayoutEffect(() => {
+		if (messagesReady && !hasScrolledRef.current && messages.length > 0) {
+			const container = scrollContainerRef.current;
+			if (container) {
+				container.scrollTop = container.scrollHeight;
+			}
+			hasScrolledRef.current = true;
 		}
-	}, [messages.length, isLoading]);
+	}, [messagesReady, messages.length]);
 
-	// Reset initial load flag and load blocked users when chat changes
+	// Load blocked users when chat changes
 	useEffect(() => {
-		isInitialLoadRef.current = true;
 		setIsChatBlocked(false);
 		if (selectedChatId) {
 			fetchBlockedUsers();
-			// Check bidirectional block for direct chats
 			if (selectedChat?.type === "direct" && currentUser) {
 				const otherUserId = selectedChat.memberIds.find(id => id !== currentUser.id) ?? selectedChat.memberIds[0];
 				blockService.isBlockedMutual(otherUserId).then(({ blocked }) => {
@@ -175,6 +181,7 @@ export default function MessagesPage() {
 
 	// Scroll to bottom when current user sends a message
 	useEffect(() => {
+		if (!hasScrolledRef.current) return;
 		if (messages.length > 0) {
 			const lastMsg = messages[messages.length - 1];
 			if (lastMsg.authorId === currentUser?.id || lastMsg.id < 0) {
@@ -184,9 +191,10 @@ export default function MessagesPage() {
 	}, [messages.length, currentUser?.id]);
 
 	// Preserve scroll position after prepending older messages
-	useEffect(() => {
+	useLayoutEffect(() => {
+		if (!hasScrolledRef.current) return;
 		const container = scrollContainerRef.current;
-		if (!container || isInitialLoadRef.current) return;
+		if (!container) return;
 
 		const newScrollHeight = container.scrollHeight;
 		const diff = newScrollHeight - prevScrollHeightRef.current;
@@ -220,10 +228,9 @@ export default function MessagesPage() {
 	}, [selectedChatId, hasMore, isLoading, loadOlder]);
 
 	const handleSelectChat = useCallback((chatId: number) => {
-		selectChat(chatId);
 		navigate(`/messages/${chatId}`);
 		setMobileView("chat");
-	}, [selectChat, navigate]);
+	}, [navigate]);
 
 	const handleSend = useCallback(() => {
 		if (!selectedChatId) return;
@@ -436,7 +443,7 @@ export default function MessagesPage() {
 							</div>
 						</div>
 
-						<div className="msg-area" ref={scrollContainerRef}>
+						<div className="msg-area" ref={scrollContainerRef} key={selectedChatId}>
 							<div ref={topSentinelRef} style={{ height: 1 }} />
 
 							{isLoading && messages.length > 0 && (
