@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { blockService } from '../services/block.service';
+import { friendRelationsAtom } from './friend.provider';
 
 // Set of blocked user IDs
 export const blockedUserIdsAtom = atom<Set<number>>(new Set());
@@ -24,6 +25,9 @@ export const blockUserAtom = atom(null, async (get, set, userId: number) => {
 		await blockService.blockUser(userId);
 		const current = get(blockedUserIdsAtom);
 		set(blockedUserIdsAtom, new Set([...current, userId]));
+		// Remove from friends list
+		const relations = get(friendRelationsAtom);
+		set(friendRelationsAtom, relations.filter(r => r.friendId !== userId));
 	} catch (err: any) {
 		throw err;
 	}

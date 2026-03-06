@@ -35,7 +35,7 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked }
 			<div>
 				<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"} ${imageOnly ? "bubble-image" : ""} ${isImage && !imageOnly && !isBlocked ? "bubble-with-image" : ""}`}>
 					{isBlocked ? (
-						<span className="blocked-content">Contenu masqué</span>
+						<span className="blocked-content">Hidden content</span>
 					) : isImage && parsed ? (
 						<>
 							{parsed.caption && (

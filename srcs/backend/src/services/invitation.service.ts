@@ -22,15 +22,22 @@ class InvitationService {
       throw new Error("Cannot send invitation to yourself");
     }
 
-    // Vérifier si l'un des deux a bloqué l'autre
-    const block = await this.blockedUserRepository.findOne({
-      where: [
-        { blocker_id: senderId, blocked_id: receiver.id },
-        { blocker_id: receiver.id, blocked_id: senderId },
-      ],
+    // Vérifier si le destinataire a bloqué l'expéditeur
+    const blockedBySender = await this.blockedUserRepository.findOne({
+      where: { blocker_id: senderId, blocked_id: receiver.id },
     });
-    if (block) {
+    const blockedByReceiver = await this.blockedUserRepository.findOne({
+      where: { blocker_id: receiver.id, blocked_id: senderId },
+    });
+
+    // Si le destinataire a bloqué l'expéditeur, refuser
+    if (blockedByReceiver) {
       throw new Error("Cannot send invitation: user is blocked");
+    }
+
+    // Si l'expéditeur avait bloqué le destinataire, auto-débloquer
+    if (blockedBySender) {
+      await this.blockedUserRepository.remove(blockedBySender);
     }
 
     // Vérifier si une invitation existe déjà (dans les deux sens)

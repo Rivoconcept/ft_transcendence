@@ -239,13 +239,13 @@ export default function MessagesPage() {
 		if (!file) return;
 
 		if (!ALLOWED_TYPES.includes(file.type)) {
-			setImageError("Format non supporté. Utilisez JPEG, PNG, GIF ou WebP.");
+			setImageError("Unsupported format. Use JPEG, PNG, GIF or WebP.");
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
 
 		if (file.size > MAX_IMAGE_SIZE) {
-			setImageError("L'image ne doit pas dépasser 2 Mo.");
+			setImageError("Image must not exceed 2 MB.");
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
@@ -264,6 +264,7 @@ export default function MessagesPage() {
 	}, []);
 
 	const handleBlockUser = useCallback(async (userId: number) => {
+		if (!window.confirm('Are you sure you want to block this user?')) return;
 		try {
 			await doBlockUser(userId);
 			setShowDropdown(false);
@@ -410,11 +411,11 @@ export default function MessagesPage() {
 										<div className="chat-dropdown-menu">
 											{isOtherBlocked ? (
 												<button className="chat-dropdown-item" onClick={() => handleUnblockUser(otherUserId)}>
-													<ShieldCheck size={15} /> Débloquer
+													<ShieldCheck size={15} /> Unblock
 												</button>
 											) : (
 												<button className="chat-dropdown-item danger" onClick={() => handleBlockUser(otherUserId)}>
-													<ShieldBan size={15} /> Bloquer
+													<ShieldBan size={15} /> Block
 												</button>
 											)}
 										</div>
