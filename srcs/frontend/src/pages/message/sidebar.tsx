@@ -1,4 +1,5 @@
 import { useMessaging } from "./messagingTools"
+import { SearchBar } from "./sidebarTools"
 // import type { Conversation } from "."
 
 interface SidebarProps {
@@ -13,15 +14,15 @@ export default function Sidebar({ onSelectConversation }: SidebarProps) {
   )
 
   return (
-    <div className="msg-sidebar">
+    <div className="msg-sidebar" >
 
       {/* Recherche */}
-      <input
-        type="text"
-        placeholder="Rechercher..."
+
+      <SearchBar
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={setSearch}
       />
+
 
       {/* Liste des conversations */}
       <div>

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { chatService } from "./chatService"
-import { currentUser, type Conversation, type Message } from "./type"
+import { currentUser, type Conversation, type Message } from "./index"
 
 export const useMessaging = () => {
 

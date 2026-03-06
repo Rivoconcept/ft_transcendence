@@ -1,7 +1,7 @@
 import { useMessaging } from "./messagingTools"
 import MessageBubble, { MessageInput, headerMessage as HeaderMessage } from "./pannelTools"
-import { currentUser } from "./mockdata"
-import type { Conversation } from "./type"
+import { currentUser } from "."
+import type { Conversation } from "."
 
 interface ChatPanelProps {
   conversation: Conversation | null
@@ -13,7 +13,9 @@ export default function ChatPanel({ conversation }: ChatPanelProps) {
   if (!conversation) {
     return (
       <div>
-        <p>Sélectionne une conversation</p>
+        <div className="landing-page">
+          <p>Sélectionne une conversation</p>
+        </div>
       </div>
     )
   }
@@ -45,12 +47,11 @@ export default function ChatPanel({ conversation }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <MessageInput
-        value={input}
-        onChange={setInput}
-        onSend={sendMessage}
-      />
-
+          <MessageInput
+            value={input}
+            onChange={setInput}
+            onSend={sendMessage}
+          />
     </div>
   )
 }
