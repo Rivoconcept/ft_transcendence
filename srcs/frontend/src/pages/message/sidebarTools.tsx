@@ -43,8 +43,24 @@ export function ConvItem({ displayName,
                            conversation,
                            other,
                            isActive,
-                           isBlocked, onClick} : ConvItemProps)
-
-                           {
-                            
-                           }
+                           isBlocked, onClick} : ConvItemProps) {
+    return(
+        <div
+            className={`convo-iem d-flex align-item-center gap-2 px-3 py-2 ${isActive ? "active" : "inactive"}`}
+            onClick={onClick}
+        >
+            <div style={{ position: "relative" }}>
+                <div className="msg-avatar" style={{ background: "#64B5F6" }}>
+                  {displayName.slice(0, 2).toUpperCase()}
+                </div>
+                <span className={`status-dot ${other.isOnline ? "online-dot" : "offline-dot"}`} />
+            </div>
+            <div className="flex-grow-1 overflow-hidden">
+                <div>
+                    displayName
+                </div>
+                <div>conversation.lastMessage conversation. </div>
+            </div>
+        </div>
+    )                            
+}
