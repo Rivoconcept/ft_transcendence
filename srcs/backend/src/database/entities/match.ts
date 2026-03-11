@@ -1,3 +1,5 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/database/entities/match.ts
+
 import { Entity, PrimaryColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, type Relation } from "typeorm";
 import type { User } from "./user.js";
 import type { Participation } from "./participation.js";

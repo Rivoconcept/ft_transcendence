@@ -1,9 +1,10 @@
+// src/store/socketStore.ts
+
 import { io, Socket } from "socket.io-client";
-import type { createStore } from 'jotai';
+import type { createStore } from "jotai";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
 
-// Callback type for status updates
 type StatusUpdateCallback = (isOnline: boolean) => void;
 
 class SocketStore {
@@ -11,6 +12,7 @@ class SocketStore {
   private socket: Socket | null = null;
   private jotaiStore: ReturnType<typeof createStore> | null = null;
   private statusUpdateCallback: StatusUpdateCallback | null = null;
+  private authenticated = false;
 
   private constructor() {}
 
@@ -21,12 +23,10 @@ class SocketStore {
     return SocketStore.instance;
   }
 
-  // Set callback for status updates (called on connect/disconnect)
   setStatusUpdateCallback(callback: StatusUpdateCallback): void {
     this.statusUpdateCallback = callback;
   }
 
-  // Set Jotai store reference for atom updates
   setJotaiStore(store: ReturnType<typeof createStore>): void {
     this.jotaiStore = store;
   }
@@ -36,40 +36,46 @@ class SocketStore {
   }
 
   connect(): Socket {
-    if (this.socket?.connected) {
+    if (this.socket) {
       return this.socket;
     }
 
     this.socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
+      autoConnect: true,
     });
 
     this.socket.on("connect", () => {
       console.log("Socket.IO connecté:", this.socket?.id);
-      // Notify status update
       this.statusUpdateCallback?.(true);
     });
 
-    this.socket.on("welcome", (data: string) => {
-      console.log("Message reçu:", data);
+    this.socket.on("disconnect", (reason: string) => {
+      console.log("Socket.IO déconnecté:", reason);
+      this.statusUpdateCallback?.(false);
+      this.authenticated = false;
     });
 
     this.socket.on("connect_error", (err: Error) => {
       console.error("Socket.IO error:", err.message);
     });
 
-    this.socket.on("disconnect", (reason: string) => {
-      console.log("Socket.IO déconnecté:", reason);
-      // Notify status update
-      this.statusUpdateCallback?.(false);
-    });
-
     return this.socket;
   }
 
   connectAndAuth(token: string): void {
-    this.connect();
-    this.socket?.emit('auth', token);
+    const socket = this.connect();
+
+    if (this.authenticated) {
+      return;
+    }
+
+    socket.emit("auth", token);
+
+    socket.once("auth:success", () => {
+      console.log("Socket authentifié");
+      this.authenticated = true;
+    });
   }
 
   getSocket(): Socket | null {
@@ -88,6 +94,7 @@ class SocketStore {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.authenticated = false;
     }
   }
 

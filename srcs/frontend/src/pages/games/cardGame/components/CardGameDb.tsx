@@ -1,20 +1,31 @@
+// src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
 import apiService from "../../../../services/api.service";
+import type { GameMode } from "../cardAtoms/gameMode.atom";
+
+interface PlayerData {
+  id: number;
+  score: number;
+}
 
 interface CardGameDbProps {
-  finalScore: number;
-  isWin: boolean;
-  mode: "SINGLE" | "MULTI";
-  matchId?: string | null;
+  finalScore?: number;
+  isWin?: boolean;
+  mode: GameMode;
+  matchId?: string;
+  players?: PlayerData[];
+  winnerId?: number;
   isGameOver: boolean;
-  onSaved: () => void;
+  onSaved?: () => void;
 }
 
 export default function CardGameDb({
   finalScore,
   isWin,
   mode,
-  matchId = null,
+  matchId,
+  players,
+  winnerId,
   isGameOver,
   onSaved,
 }: CardGameDbProps) {
@@ -22,30 +33,44 @@ export default function CardGameDb({
   const hasPushedRef = useRef(false);
 
   useEffect(() => {
-    if (!isGameOver) return;
-    if (hasPushedRef.current) return;
+    if (!isGameOver || hasPushedRef.current) return;
 
     const saveGame = async () => {
       try {
         hasPushedRef.current = true;
 
-        await apiService.post("card-games", {
-          mode,
-          final_score: finalScore,
-          is_win: isWin,
-          match_id: matchId,
-        });
+        // MULTIPLAYER
+        if (mode === "MULTI" && players?.length) {
+          await Promise.all(
+            players.map(player =>
+              apiService.post("card-games", {
+                mode: "MULTI",
+                final_score: player.score,
+                is_win: player.id === winnerId,
+                match_id: matchId ?? null,
+              })
+            )
+          );
+        } 
+        // SINGLE PLAYER
+        else if (mode === "SINGLE") {
+          await apiService.post("card-games", {
+            mode: "SINGLE",
+            final_score: finalScore ?? 0,
+            is_win: isWin ?? false,
+            match_id: matchId ?? null,
+          });
+        }
 
-        onSaved();
+        if (onSaved) onSaved();
 
       } catch (error) {
-        console.error("Error saving game:", error);
+        console.error("Error saving card game:", error);
       }
     };
 
     void saveGame();
-
-  }, [isGameOver]);
+  }, [isGameOver, mode, players, winnerId, finalScore, isWin, matchId, onSaved]);
 
   return null;
 }

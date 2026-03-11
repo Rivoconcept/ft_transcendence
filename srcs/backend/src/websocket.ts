@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/websocket.ts
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { authService } from "./services/auth.service.js";
@@ -37,6 +38,7 @@ class SocketService {
       cors: {
         origin: allowedOrigins,
         methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,
       },
     });
@@ -93,7 +95,92 @@ class SocketService {
           console.log("Unauthenticated client disconnected:", socket.id);
         }
       });
+
+      socket.on("joinMatchRoom", async (matchId: string) => {
+        if (!socket.userId) {
+          console.log("joinMatchRoom refused: unauthenticated socket");
+          return;
+        }
+
+        const room = `match.${matchId}`;
+
+        // rejoindre uniquement cette socket
+        socket.join(room);
+
+        console.log(`${socket.username} joined ${room}`);
+
+        // récupérer les sockets dans la room
+        const sockets = await this.io?.in(room).fetchSockets();
+
+        const participants: { id: number; name: string; ready: boolean }[] = [];
+        const seen = new Set<number>();
+
+        sockets?.forEach((s: any) => {
+          if (s.userId && !seen.has(s.userId)) {
+            participants.push({
+              id: s.userId,
+              name: s.username,
+              ready: false,
+            });
+            seen.add(s.userId);
+          }
+        });
+
+        console.log("Participants lobby:", participants);
+
+        const creatorId = participants[0]?.id ?? socket.userId;
+
+        this.io?.to(room).emit("match:player-joined", {
+          participants,
+          creatorId,
+        });
+      });
+
+      socket.on("startMatch", async (data: { matchId: string }) => {
+        if (!socket.userId) {
+          socket.emit("error", { error: "Not authenticated" });
+          return;
+        }
+
+        const room = `match.${data.matchId}`;
+
+        // récupérer les sockets dans la room
+        const sockets = await this.io?.in(room).fetchSockets();
+
+        if (!sockets || sockets.length === 0) return;
+
+        // récupérer les joueurs uniques
+        const users = new Map<number, string>();
+
+        sockets.forEach((s: any) => {
+          if (!users.has(s.userId)) {
+            users.set(s.userId, s.username);
+          }
+        });
+
+        const participants = Array.from(users.keys());
+
+        // vérifier qu'il y a au moins 2 joueurs
+        if (participants.length < 2) {
+          socket.emit("error", { error: "Not enough players" });
+          return;
+        }
+
+        console.log(`Match ${data.matchId} started with players:`, participants);
+
+        // envoyer l'événement à tous les joueurs
+        this.io?.to(room).emit("match:started", {
+          matchId: data.matchId,
+          players: participants,
+        });
+      });
+
+
+
+
+
     });
+
 
     return this.io;
   }
