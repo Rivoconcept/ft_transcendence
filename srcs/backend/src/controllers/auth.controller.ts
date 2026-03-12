@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/auth.controller.ts
 import { Request, Response } from "express";
 import { authService } from "../services/auth.service.js";
 

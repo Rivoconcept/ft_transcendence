@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/user.controller.ts
 import { Response } from "express";
 import { userService } from "../services/user.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";

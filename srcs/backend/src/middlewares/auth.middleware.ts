@@ -1,3 +1,5 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/middlewares/auth.middleware.ts
+
 import { Request, Response, NextFunction } from "express";
 import { authService, JWTPayload } from "../services/auth.service.js";
 
@@ -18,7 +20,7 @@ export function authMiddleware(
   }
 
   const token = authHeader.split(" ")[1] ?? "";
-
+  
   try {
     const payload = authService.verifyToken(token);
     req.user = payload;

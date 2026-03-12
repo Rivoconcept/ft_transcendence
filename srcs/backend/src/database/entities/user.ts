@@ -1,3 +1,5 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/database/entities/user.ts
+
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, type Relation } from "typeorm";
 import type { Invitation } from "./invitation.js";
 import type { Participation } from "./participation.js";

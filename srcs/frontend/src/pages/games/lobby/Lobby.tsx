@@ -1,3 +1,5 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/lobby/Lobby.tsx
+
 import React, { useState } from 'react';
 import './Lobby.css';
 

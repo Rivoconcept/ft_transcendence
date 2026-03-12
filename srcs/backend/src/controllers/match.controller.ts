@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/match.controller.ts
 import { Response } from "express";
 import { matchService } from "../services/match.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";

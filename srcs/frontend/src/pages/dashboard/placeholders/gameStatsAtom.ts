@@ -1,3 +1,5 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/dashboard/placeholders/gameStatsAtom.ts
+
 import { atom } from 'jotai';
 
 export type GameType = 'diceGame' | 'kingOfDiamond' | 'cardGame';
