@@ -14,6 +14,9 @@ export class CardGame {
   @Column({ type: "enum", enum: CardGameMode, default: CardGameMode.SINGLE })
   mode!: CardGameMode;
 
+  @Column({ type: "varchar", length: 255, nullable: true })
+  player_name?: string; 
+
   @Column({ type: "int", default: 0 })
   final_score!: number;
 

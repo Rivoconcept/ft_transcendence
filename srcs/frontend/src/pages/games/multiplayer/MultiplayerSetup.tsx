@@ -1,22 +1,25 @@
-// /src/pages/games/multiplayer/MultiplayerSetup.tsx
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useSetAtom } from "jotai";
+import { playerNameAtom } from "./matchAtoms";
 
 export default function MultiplayerSetup(): React.JSX.Element {
   const { gameSlug } = useParams();
   const navigate = useNavigate();
 
-  const [isCreateRoom, setIsCreateRoom] = useState<boolean>(true);
-  const [roomName, setRoomName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const setPlayerName = useSetAtom(playerNameAtom);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  const [isCreateRoom, setIsCreateRoom] = useState<boolean>(true);
+  const [playerNameInput, setPlayerNameInput] = useState("");
+  const [roomName] = useState("");
+  const [roomCode, setRoomCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
   const USERNAME = import.meta.env.VITE_USERNAME;
   const PASSWORD = import.meta.env.VITE_PASSWORD;
 
-  // --- Mapping statique slug → game_id pour éviter les FK errors ---
   const gameMap: Record<string, number> = {
     "dice-game": 1,
     "king-of-diamond": 2,
@@ -28,110 +31,109 @@ export default function MultiplayerSetup(): React.JSX.Element {
     return gameMap[slug] || 1;
   };
 
-  // --- Fonction pour obtenir un token valide ---
   const getValidToken = async (): Promise<string> => {
-    let token = localStorage.getItem('token');
-
+    let token = localStorage.getItem("token");
     if (token) {
-      console.log('Token existant:', token);
       try {
         const res = await fetch(`${BACKEND_URL}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 200) return token;
-        console.log('Token expiré ou invalide, suppression...');
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       } catch {
-        console.log('Erreur lors de la vérification du token, suppression...');
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       }
     }
 
-    console.log('Login automatique avec', USERNAME);
     const loginRes = await fetch(`${BACKEND_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: USERNAME, password: PASSWORD }),
     });
 
-    if (!loginRes.ok) {
-      const text = await loginRes.text();
-      throw new Error(`Login automatique échoué: ${text}`);
-    }
+    if (!loginRes.ok) throw new Error("Login automatique échoué");
 
     const loginData = await loginRes.json();
     token = loginData.tokens?.accessToken;
-    if (!token) throw new Error('Impossible de récupérer le token après login automatique');
+    if (!token) throw new Error("Impossible de récupérer le token");
 
-    localStorage.setItem('token', token);
-    console.log('Nouveau token généré:', token);
+    localStorage.setItem("token", token);
     return token;
   };
 
-  // --- Créer une salle via backend ---
   const handleCreateRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError('');
+
+    if (!playerNameInput.trim()) {
+      setError("Veuillez entrer votre nom");
+      return;
+    }
+
     setLoading(true);
+    setError("");
 
     try {
       const token = await getValidToken();
       const game_id = getGameId(gameSlug);
 
       const response = await fetch(`${BACKEND_URL}/api/matches`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           is_private: false,
           set: 1,
           game_id,
-        }),
+          name: roomName,
+        }),           
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Erreur lors de la création de la salle');
-      }
+      if (!response.ok) throw new Error("Erreur création salle");
 
       const data = await response.json();
-      console.log('Salle créée:', data);
+
+      // stock nom joueur
+      setPlayerName(playerNameInput);
+
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error('Erreur handleCreateRoom:', err);
-      setError(err.message || 'Erreur lors de la création de la salle');
+      setError(err.message || "Erreur lors de la création de la salle");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Rejoindre une salle via backend ---
   const handleJoinRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError('');
+
+    if (!playerNameInput.trim()) {
+      setError("Veuillez entrer votre nom");
+      return;
+    }
+
     setLoading(true);
+    setError("");
 
     try {
       const token = await getValidToken();
 
       const response = await fetch(`${BACKEND_URL}/api/matches/${roomCode}`, {
-        method: 'GET',
+        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || 'Erreur lors de la récupération de la salle');
-      }
+      if (!response.ok) throw new Error("Salle introuvable");
 
       const data = await response.json();
-      console.log('Salle récupérée:', data);
+
+      // stock nom joueur
+      setPlayerName(playerNameInput);
+
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error('Erreur handleJoinRoom:', err);
-      setError(err.message || 'Erreur lors de la récupération de la salle');
+      setError(err.message || "Erreur lors de la récupération de la salle");
     } finally {
       setLoading(false);
     }
@@ -144,44 +146,35 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
         <div className="d-flex justify-content-center mb-4">
           <button
-            className={`btn me-2 ${isCreateRoom ? 'btn-success' : 'btn-outline-success'}`}
+            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(true)}
           >
             Créer Salle
           </button>
           <button
-            className={`btn ${!isCreateRoom ? 'btn-success' : 'btn-outline-success'}`}
+            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(false)}
           >
             Rejoindre Salle
           </button>
         </div>
 
+        <div className="mb-3">
+          <label className="form-label">Votre nom</label>
+          <input
+            className="form-control"
+            value={playerNameInput}
+            onChange={(e) => setPlayerNameInput(e.target.value)}
+            placeholder="Ex : Rivo"
+          />
+        </div>
+
         {error && <div className="alert alert-danger">{error}</div>}
 
         {isCreateRoom && (
           <form onSubmit={handleCreateRoom}>
-            <div className="mb-3">
-              <label className="form-label">Nom de la Salle :</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Ex: Room 1"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="mb-3 form-check">
-              <input type="checkbox" className="form-check-input" id="isOpen" defaultChecked />
-              <label className="form-check-label" htmlFor="isOpen">
-                Salle publique
-              </label>
-            </div>
-
             <button className="btn btn-success w-100" type="submit" disabled={loading}>
-              {loading ? 'Création...' : 'Créer Salle'}
+              {loading ? "Création..." : "Créer Salle"}
             </button>
           </form>
         )}
@@ -189,19 +182,16 @@ export default function MultiplayerSetup(): React.JSX.Element {
         {!isCreateRoom && (
           <form onSubmit={handleJoinRoom}>
             <div className="mb-3">
-              <label className="form-label">Code de la Salle :</label>
+              <label className="form-label">Code de la Salle</label>
               <input
-                type="text"
                 className="form-control"
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="Ex: ABCD"
-                required
+                placeholder="ABCD"
               />
             </div>
-
-            <button className="btn btn-success w-100" type="submit" disabled={loading}>
-              {loading ? 'Connexion...' : 'Rejoindre Salle'}
+            <button className="btn btn-success w-100" disabled={loading}>
+              {loading ? "Connexion..." : "Rejoindre Salle"}
             </button>
           </form>
         )}
