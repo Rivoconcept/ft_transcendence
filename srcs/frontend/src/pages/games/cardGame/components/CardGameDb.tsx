@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
 import apiService from "../../../../services/api.service";
 
@@ -26,16 +27,20 @@ export default function CardGameDb({
     if (!isGameOver || hasPushedRef.current) return;
 
     const saveGame = async () => {
+      if (!matchId) {
+        console.error("Cannot save game: matchId is missing");
+        return;
+      }
+
       try {
         hasPushedRef.current = true;
 
-        // Envoi du score avec le nom du joueur
         await apiService.post("card-games", {
           mode,
           final_score: finalScore,
           is_win: isWin,
           match_id: matchId,
-          player_name: player, // <-- ici on utilise le nom
+          player_name: player,
         });
 
         onSaved();

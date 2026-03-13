@@ -1,5 +1,4 @@
-// /home/hrv/Pictures/ft_transcendence/srcs/backend/src/controllers/card-game.controller.ts
-
+// /src/controllers/card-game.controller.ts
 import { Response } from "express";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
@@ -10,18 +9,33 @@ export async function createCardGame(
   res: Response
 ): Promise<void> {
   try {
-    const { mode, final_score, is_win, match_id } = req.body;
+    const { mode, final_score, is_win, match_id, player_name } = req.body;
 
+    // Vérifier que le mode est valide
     if (mode && !Object.values(CardGameMode).includes(mode)) {
       res.status(400).json({ error: "Invalid card game mode" });
       return;
     }
 
+    // Vérifier que match_id est fourni
+    if (!match_id) {
+      res.status(400).json({ error: "match_id is required" });
+      return;
+    }
+
+    // Vérifier que player_name est fourni
+    if (!player_name || player_name.trim() === "") {
+      res.status(400).json({ error: "player_name is required" });
+      return;
+    }
+
+    // Appel du service pour créer la partie
     const card = await cardGameService.createCardGame(req.user!.userId, {
       mode: mode as CardGameMode | undefined,
       final_score,
       is_win,
       match_id,
+      player_name,
     });
 
     res.status(201).json(card);
@@ -32,7 +46,7 @@ export async function createCardGame(
   }
 }
 
-// ✅ Réajout de la fonction getUserCardGames
+// Récupérer toutes les parties d'un utilisateur
 export async function getUserCardGames(
   req: AuthRequest,
   res: Response
