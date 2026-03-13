@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { socketStore } from "../../../store/socketStore";
 import { useAtomValue } from "jotai";
 import { playerNameAtom } from "./matchAtoms";
+import { currentUserAtom } from "../../../providers/user.provider";
+import { apiService } from "../../../services";
 
 interface Player {
   id: number;
@@ -13,15 +15,18 @@ interface Player {
 export default function MultiplayerLobby(): React.JSX.Element {
   const { gameSlug, roomId } = useParams();
   const navigate = useNavigate();
+
   const playerName = useAtomValue(playerNameAtom);
+  const currentUser = useAtomValue(currentUserAtom);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [isCreator, setIsCreator] = useState(false);
   const [me, setMe] = useState<Player | null>(null);
 
   useEffect(() => {
-    if (!roomId) return;
-    const token = localStorage.getItem("token");
+    if (!roomId || !currentUser) return;
+
+    const token = apiService.getToken();
     if (!token) {
       navigate(`/games/${gameSlug}/multiplayer/setup`);
       return;
@@ -33,6 +38,7 @@ export default function MultiplayerLobby(): React.JSX.Element {
 
     const joinRoom = () => {
       console.log("Join match room:", roomId);
+
       socket.emit("joinMatchRoom", {
         matchId: roomId,
         playerName,
@@ -42,15 +48,13 @@ export default function MultiplayerLobby(): React.JSX.Element {
     const handlePlayers = (data: { participants: Player[]; creatorId: number }) => {
       setPlayers(data.participants);
 
-      // Récupère userId correctement
-      const userIdStr = localStorage.getItem("userId");
-      if (!userIdStr) return; // stop si userId manquant
-      const userId = Number(userIdStr);
+      const userId = currentUser.id;
 
-      const currentPlayer = data.participants.find(p => p.id === userId) || null;
+      const currentPlayer =
+        data.participants.find((p) => p.id === userId) || null;
+
       setMe(currentPlayer);
 
-      // Détermine si c’est le créateur
       setIsCreator(data.creatorId === userId);
     };
 
@@ -69,10 +73,11 @@ export default function MultiplayerLobby(): React.JSX.Element {
       socket.off("match:player-joined", handlePlayers);
       socket.off("match:started", handleStart);
     };
-  }, [roomId, gameSlug, navigate, playerName]);
+  }, [roomId, gameSlug, navigate, playerName, currentUser]);
 
   const startGame = () => {
     const socket = socketStore.getSocket();
+
     if (socket && roomId) {
       socket.emit("startMatch", { matchId: roomId });
     }
@@ -84,6 +89,7 @@ export default function MultiplayerLobby(): React.JSX.Element {
         <h2 className="text-center mb-4">Lobby : {roomId}</h2>
 
         <h5>Joueurs ({players.length})</h5>
+
         <ul className="list-group mb-4">
           {players.map((player) => (
             <li
@@ -91,13 +97,18 @@ export default function MultiplayerLobby(): React.JSX.Element {
               className="list-group-item d-flex justify-content-between align-items-center"
             >
               {player.name} {me?.id === player.id && "(vous)"}
-              {player.ready && <span className="badge bg-success">Prêt</span>}
+
+              {player.ready && (
+                <span className="badge bg-success">Prêt</span>
+              )}
             </li>
           ))}
         </ul>
 
         {players.length === 0 && (
-          <div className="alert alert-warning text-center">En attente de joueurs...</div>
+          <div className="alert alert-warning text-center">
+            En attente de joueurs...
+          </div>
         )}
 
         {isCreator && players.length > 1 && (
@@ -107,7 +118,9 @@ export default function MultiplayerLobby(): React.JSX.Element {
         )}
 
         {!isCreator && players.length > 0 && (
-          <div className="alert alert-info text-center">En attente du créateur...</div>
+          <div className="alert alert-info text-center">
+            En attente du créateur...
+          </div>
         )}
       </div>
     </div>

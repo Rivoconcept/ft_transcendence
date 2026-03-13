@@ -162,7 +162,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
         finalScore={totalScoreCalculated}
         isWin={isWin}
         mode={mode}
-        matchId={roomId}
+        matchId={mode === "MULTI" ? roomId : null}
         isGameOver={isGameOverForPush && !hasFinalScore}
         onSaved={() => setHasFinalScore(true)}
       />
