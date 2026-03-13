@@ -1,3 +1,4 @@
+// /home/hrv/Pictures/ft_transcendence/srcs/frontend/src/providers/user.provider.ts
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { loadable } from 'jotai/utils';
