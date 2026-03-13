@@ -6,9 +6,12 @@ import { userService } from "./services/user.service.js";
 import { AppDataSource } from "./database/data-source.js";
 import { ChatMember } from "./database/entities/chat-member.js";
 
-interface AuthenticatedSocket extends Socket {
+export interface AuthenticatedSocket extends Socket {
   userId?: number;
   username?: string;
+  playerName?: string;
+  matchId?: string;
+  isReady?: boolean;
 }
 
 class SocketService {
@@ -96,45 +99,46 @@ class SocketService {
         }
       });
 
-      socket.on("joinMatchRoom", async (matchId: string) => {
-        if (!socket.userId) {
-          console.log("joinMatchRoom refused: unauthenticated socket");
-          return;
-        }
-
-        const room = `match.${matchId}`;
-
-        // rejoindre uniquement cette socket
-        socket.join(room);
-
-        console.log(`${socket.username} joined ${room}`);
-
-        // récupérer les sockets dans la room
-        const sockets = await this.io?.in(room).fetchSockets();
-
-        const participants: { id: number; name: string; ready: boolean }[] = [];
-        const seen = new Set<number>();
-
-        sockets?.forEach((s: any) => {
-          if (s.userId && !seen.has(s.userId)) {
-            participants.push({
-              id: s.userId,
-              name: s.username,
-              ready: false,
-            });
-            seen.add(s.userId);
+      socket.on(
+        "joinMatchRoom",
+        async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
+          if (!socket.userId) {
+            console.log("joinMatchRoom refused: unauthenticated socket");
+            return;
           }
-        });
 
-        console.log("Participants lobby:", participants);
+          const room = `match.${matchId}`;
 
-        const creatorId = participants[0]?.id ?? socket.userId;
+          socket.playerName = playerName || socket.username;
 
-        this.io?.to(room).emit("match:player-joined", {
-          participants,
-          creatorId,
-        });
-      });
+          socket.join(room);
+
+          console.log(`${socket.playerName} joined ${room}`);
+
+          const sockets = await this.io?.in(room).fetchSockets();
+
+          const participants: { id: number; name: string; ready: boolean }[] = [];
+          const seen = new Set<number>();
+
+          sockets?.forEach((s: any) => {
+            if (s.userId && !seen.has(s.userId)) {
+              participants.push({
+                id: s.userId,
+                name: s.playerName || s.username,
+                ready: false,
+              });
+              seen.add(s.userId);
+            }
+          });
+
+          const creatorId = participants[0]?.id ?? socket.userId;
+
+          this.io?.to(room).emit("match:player-joined", {
+            participants,
+            creatorId,
+          });
+        }
+      );
 
       socket.on("startMatch", async (data: { matchId: string }) => {
         if (!socket.userId) {

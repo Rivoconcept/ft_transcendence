@@ -1,5 +1,6 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/cardScenes/CardGameDashboard.tsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import PhaseButton from "../components/PhaseButton";
 import { useCardState } from "../context/CardContext";
 import { useCardGameState } from "../context/CardGameContext";
@@ -11,6 +12,7 @@ import { useAtom, useAtomValue } from "jotai";
 import { FinalScore, PlayerState } from "../cardAtoms/cardAtoms";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
 import CardGameDb from "../components/CardGameDb";
+import { playerNameAtom } from "../../multiplayer/matchAtoms";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -26,7 +28,9 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const [, setPlayerState] = useAtom(PlayerState);
   const mode = useAtomValue(gameModeAtom);
   const navigate = useNavigate();
-
+  const playerName = useAtomValue(playerNameAtom);
+  const { roomId } = useParams();
+  
   if (!mode) throw new Error("Game started without a selected mode");
 
   // -----------------------------
@@ -154,9 +158,11 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
       {/* Push DB une seule fois */}
       <CardGameDb
+        player={playerName}
         finalScore={totalScoreCalculated}
         isWin={isWin}
         mode={mode}
+        matchId={roomId}
         isGameOver={isGameOverForPush && !hasFinalScore}
         onSaved={() => setHasFinalScore(true)}
       />

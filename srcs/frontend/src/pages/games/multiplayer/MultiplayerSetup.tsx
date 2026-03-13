@@ -26,10 +26,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
     "card-game": 3,
   };
 
-  const getGameId = (slug: string | undefined): number => {
-    if (!slug) return 1;
-    return gameMap[slug] || 1;
-  };
+  const getGameId = (slug: string | undefined): number => gameMap[slug || ""] || 1;
 
   const getValidToken = async (): Promise<string> => {
     let token = localStorage.getItem("token");
@@ -58,12 +55,12 @@ export default function MultiplayerSetup(): React.JSX.Element {
     if (!token) throw new Error("Impossible de récupérer le token");
 
     localStorage.setItem("token", token);
+    localStorage.setItem("userId", String(loginData.user.id)); // stock userId
     return token;
   };
 
   const handleCreateRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-
     if (!playerNameInput.trim()) {
       setError("Veuillez entrer votre nom");
       return;
@@ -86,19 +83,21 @@ export default function MultiplayerSetup(): React.JSX.Element {
           is_private: false,
           set: 1,
           game_id,
-          name: roomName,
-        }),           
+          name: roomName || "Salle par défaut",
+          player_name: playerNameInput, // nom du créateur
+        }),
       });
 
-      if (!response.ok) throw new Error("Erreur création salle");
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Erreur création salle: ${text}`);
+      }
 
       const data = await response.json();
-
-      // stock nom joueur
       setPlayerName(playerNameInput);
-
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
+      console.error("Erreur création salle:", err);
       setError(err.message || "Erreur lors de la création de la salle");
     } finally {
       setLoading(false);
@@ -107,7 +106,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
   const handleJoinRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-
     if (!playerNameInput.trim()) {
       setError("Veuillez entrer votre nom");
       return;
@@ -124,15 +122,16 @@ export default function MultiplayerSetup(): React.JSX.Element {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error("Salle introuvable");
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Erreur récupération salle: ${text}`);
+      }
 
       const data = await response.json();
-
-      // stock nom joueur
       setPlayerName(playerNameInput);
-
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
+      console.error("Erreur récupération salle:", err);
       setError(err.message || "Erreur lors de la récupération de la salle");
     } finally {
       setLoading(false);
