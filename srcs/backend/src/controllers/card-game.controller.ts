@@ -1,5 +1,5 @@
 // /src/controllers/card-game.controller.ts
-import { Response } from "express";
+import { Response, Request } from "express";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
 import { cardGameService } from "../services/card-game.service.js";
@@ -60,3 +60,19 @@ export async function getUserCardGames(
     res.status(500).json({ error: message });
   }
 }
+
+
+// card-game.controller.ts
+
+export const getMatchResults = async (req: Request, res: Response) => {
+  try {
+    const { matchId } = req.params;
+
+    const results = await cardGameService.getMatchResults(matchId);
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error fetching match results:", error);
+    res.status(500).json({ error: "Failed to fetch match results" });
+  }
+};

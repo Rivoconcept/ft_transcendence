@@ -1,3 +1,4 @@
+// /home/rhanitra/Music/ft_transcendence/srcs/frontend/src/pages/games/GameList.tsx
 import React from 'react';
 import { useAtom } from 'jotai';
 import { gameModeAtom } from './cardGame/cardAtoms/gameMode.atom';

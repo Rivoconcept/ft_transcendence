@@ -40,12 +40,13 @@ import {
 	Dashboard,
 } from './pages';
 
-import CardGameResult from './pages/games/cardGame/components/CardGameResult';
+import CardGameResult from './pages/games/cardGame/components/CardGameResultSingle';
 import {
 	MultiplayerLobby,
 	MultiplayerSetup,
 	GameSetup
 } from './pages/games';
+import CardGameMultiResult from './pages/games/cardGame/components/CardGameResultMulti';
 
 // Types
 type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
@@ -414,15 +415,16 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-					<Route
-						path="/games/cardGame/result"
-						element={
-							<ProtectedRoute>
-								<CardGameResult />
-							</ProtectedRoute>
-						}
-					/>
+					<Route path="/games/cardGame/result" element={ 
+						<ProtectedRoute> 
+							<CardGameResult /> 
+						</ProtectedRoute> } />
 
+					<Route path="/games/cardGame/:roomId/result" element={
+						<ProtectedRoute> 
+							<CardGameMultiResult /> 
+						</ProtectedRoute> } />
+						
 					{/* Profile */}
 					<Route
 						path="/profile/me"
