@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, User, Users, LogOut, BarChart3, ChevronRight } from 'lucide-react';
+import { PrivacyPolicy, TermsOfService } from './Rules';
 
 interface NavigationProps {
 	username: string;
@@ -12,7 +13,7 @@ interface NavigationProps {
 export default function Navigation({ username, onLogout, theme, onThemeChange }: NavigationProps): React.JSX.Element {
 	const navigate = useNavigate();
 	const [activeModal, setActiveModal] = useState<
-		null | 'about' | 'tos' | 'rules' | 'dice' | 'king' | 'card'
+		null | 'about' | 'tos' | 'privacy' | 'rules' | 'dice' | 'king' | 'card'
 	>(null);
 
 	const handleLogout = () => {
@@ -43,6 +44,14 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 							<button
 								type="button"
 								className="about-modal__entry"
+								onClick={() => handleEntryClick('privacy')}
+							>
+								<span>Privacy Policy</span>
+								<ChevronRight size={16} />
+							</button>
+							<button
+								type="button"
+								className="about-modal__entry"
 								onClick={() => handleEntryClick('tos')}
 							>
 								<span>Terms of Service</span>
@@ -62,7 +71,26 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 			);
 		}
 
-		// Terms of Service final popup
+		if (activeModal === 'privacy') {
+			return (
+				<div className="about-overlay" onClick={closeAllModals}>
+					<div className="about-modal about-modal--wide" onClick={stopPropagation}>
+						<button
+							type="button"
+							className="about-modal__close"
+							onClick={closeAllModals}
+						>
+							×
+						</button>
+						<div className="about-modal__heading">Privacy Policy</div>
+						<div className="about-modal__body about-modal__body--scroll">
+							<PrivacyPolicy />
+						</div>
+					</div>
+				</div>
+			);
+		}
+
 		if (activeModal === 'tos') {
 			return (
 				<div className="about-overlay" onClick={closeAllModals}>
@@ -76,20 +104,7 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 						</button>
 						<div className="about-modal__heading">Terms of Service</div>
 						<div className="about-modal__body about-modal__body--scroll">
-							<p>
-								By using this platform, you agree to play fairly, respect other players,
-								and comply with all applicable laws and regulations.
-							</p>
-							<p>
-								You understand that your account and game data may be stored and processed
-								for the purpose of providing multiplayer features, matchmaking, security,
-								and improving the overall game experience.
-							</p>
-							<p>
-								You agree not to engage in cheating, harassment, or any behavior that
-								negatively impacts other users. Violations may result in suspension or
-								termination of your account.
-							</p>
+							<TermsOfService />
 						</div>
 					</div>
 				</div>
@@ -173,7 +188,6 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 			}
 		};
 
-		// Final game rule popups
 		return (
 			<div className="about-overlay" onClick={closeAllModals}>
 				<div className="about-modal about-modal--wide" onClick={stopPropagation}>

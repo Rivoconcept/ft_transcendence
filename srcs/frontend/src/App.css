@@ -747,3 +747,34 @@ body {
 .hidden {
 	display: none;
 }
+
+/*scrollbar*/
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-surface-alt);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color); 
+    border-radius: 20px;
+    border: 3px solid var(--bg-surface-alt);
+    transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: #4ade80 !important;
+    border: 2px solid var(--bg-surface-alt);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--bg-surface-alt);
+}
