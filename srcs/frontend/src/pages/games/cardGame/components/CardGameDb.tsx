@@ -28,10 +28,8 @@ export default function CardGameDb({
 
     const saveGame = async () => {
     const generateShortId = () => Math.random().toString(36).substring(2, 6);
-    const matchIdForPush =
-      mode === "MULTI"
-        ? matchId ?? ""
-        : generateShortId();
+    const matchIdForPush = mode === "MULTI" ? matchId ?? "" : generateShortId();
+    const playerNameForPush =  player || localStorage.getItem("username") || "solo";
 
       if (mode === "MULTI" && !matchIdForPush) {
         console.error("Cannot save multiplayer game: matchId is missing");
@@ -46,9 +44,8 @@ export default function CardGameDb({
           final_score: finalScore,
           is_win: isWin,
           match_id: matchIdForPush,
-          player_name: player,
+          player_name: playerNameForPush,
         });
-
         onSaved();
       } catch (error) {
         console.error("Error saving game:", error);

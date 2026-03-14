@@ -14,10 +14,11 @@ export interface AuthenticatedSocket extends Socket {
   isReady?: boolean;
 }
 
+
 class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
-
+  private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
   private constructor() {}
 
   static getInstance(): SocketService {
@@ -177,14 +178,40 @@ class SocketService {
           matchId: data.matchId,
           players: participants,
         });
+
       });
 
+      
+      // ------------------ PUBLISH RESULT ------------------
+      socket.on("publish_result", (data: { matchId: string; finalScore: number; playerName: string }) => {
+        if (!socket.userId) return;
 
+        const room = `match.${data.matchId}`;
 
+        if (!this.matchResults.has(data.matchId)) this.matchResults.set(data.matchId, []);
+        const results = this.matchResults.get(data.matchId)!;
 
+        // Ajouter ou remplacer le résultat du joueur
+        const existingIndex = results.findIndex(r => r.playerName === data.playerName);
+        if (existingIndex >= 0) results[existingIndex] = { playerName: data.playerName, finalScore: data.finalScore };
+        else results.push({ playerName: data.playerName, finalScore: data.finalScore });
 
+        // Vérifier si tous les joueurs ont publié
+        this.io?.in(room).fetchSockets().then(sockets => {
+          if (results.length === sockets.length) {
+            // Calculer le(s) gagnant(s)
+            let maxScore = Math.max(...results.map(r => r.finalScore));
+            const finalResults = results.map(r => ({ ...r, isWin: r.finalScore === maxScore }));
+
+            // Émettre le résultat final à tous
+            this.io?.to(room).emit("match:result", finalResults);
+
+            // Nettoyer la mémoire
+            this.matchResults.delete(data.matchId);
+          }
+        });
+      });
     });
-
 
     return this.io;
   }
