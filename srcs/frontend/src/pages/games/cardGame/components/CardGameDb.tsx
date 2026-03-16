@@ -1,6 +1,8 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
 import apiService from "../../../../services/api.service";
+import { useAtomValue } from "jotai";
+import { currentUserAtom } from "../../../../providers";
 
 interface CardGameDbProps {
   finalScore: number;
@@ -22,6 +24,7 @@ export default function CardGameDb({
   onSaved,
 }: CardGameDbProps) {
   const hasPushedRef = useRef(false);
+  const currentUser = useAtomValue(currentUserAtom);
 
   useEffect(() => {
     if (!isGameOver || hasPushedRef.current) return;
@@ -29,7 +32,7 @@ export default function CardGameDb({
     const saveGame = async () => {
     const generateShortId = () => Math.random().toString(36).substring(2, 6);
     const matchIdForPush = mode === "MULTI" ? matchId ?? "" : generateShortId();
-    const playerNameForPush =  player || localStorage.getItem("username") || "solo";
+    const playerNameForPush = player || currentUser?.username || "unknown";
 
       if (mode === "MULTI" && !matchIdForPush) {
         console.error("Cannot save multiplayer game: matchId is missing");
