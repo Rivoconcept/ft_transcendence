@@ -1,6 +1,8 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
+import { useSetAtom } from "jotai";
 import apiService from "../../../../services/api.service";
+import { appendGameHistoryAtom } from "../../../dashboard/atoms/dashboardData";
 
 interface CardGameDbProps {
   finalScore: number;
@@ -22,6 +24,7 @@ export default function CardGameDb({
   onSaved,
 }: CardGameDbProps) {
   const hasPushedRef = useRef(false);
+  const pushHistory = useSetAtom(appendGameHistoryAtom);
 
   useEffect(() => {
     if (!isGameOver || hasPushedRef.current) return;
@@ -47,6 +50,17 @@ export default function CardGameDb({
           is_win: isWin,
           match_id: matchIdForPush,
           player_name: player,
+        });
+
+        pushHistory({
+          gameType: "cardGame",
+          result: isWin ? "win" : "loss",
+          opponents: mode === "MULTI" ? ["Multiplayer match"] : ["Computer"],
+          isMultiplayer: mode === "MULTI",
+          meta: {
+            matchId: matchIdForPush,
+            finalScore,
+          },
         });
 
         onSaved();
