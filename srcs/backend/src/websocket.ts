@@ -19,7 +19,7 @@ class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
   private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): SocketService {
     if (!SocketService.instance) {
@@ -100,8 +100,7 @@ class SocketService {
         }
       });
 
-      socket.on(
-        "joinMatchRoom",
+      socket.on("joinMatchRoom",
         async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
           if (!socket.userId) {
             console.log("joinMatchRoom refused: unauthenticated socket");
@@ -137,6 +136,18 @@ class SocketService {
           this.io?.to(room).emit("match:player-joined", {
             participants,
             creatorId,
+          });
+          socket.on("kod:submit", async (data: { matchId: string; value: number }) => {
+            if (!socket.userId) {
+              socket.emit("error", { error: "Not authenticated" });
+              return;
+            }
+            try {
+              const { kodService } = await import("./services/Kod.service.js");
+              await kodService.submitChoice(socket.userId, data.matchId, data.value);
+            } catch (err: any) {
+              socket.emit("error", { error: err.message });
+            }
           });
         }
       );
@@ -181,7 +192,7 @@ class SocketService {
 
       });
 
-      
+
       // ------------------ PUBLISH RESULT ------------------
       socket.on("publish_result", (data: { matchId: string; finalScore: number; playerName: string }) => {
         if (!socket.userId) return;

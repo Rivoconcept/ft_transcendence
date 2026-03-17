@@ -143,18 +143,16 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
         <div className="d-flex justify-content-center mb-4">
           <button
-            className={`btn me-2 ${
-              isCreateRoom ? "btn-success" : "btn-outline-success"
-            }`}
+            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"
+              }`}
             onClick={() => setIsCreateRoom(true)}
           >
             Créer Salle
           </button>
 
           <button
-            className={`btn ${
-              !isCreateRoom ? "btn-success" : "btn-outline-success"
-            }`}
+            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"
+              }`}
             onClick={() => setIsCreateRoom(false)}
           >
             Rejoindre Salle

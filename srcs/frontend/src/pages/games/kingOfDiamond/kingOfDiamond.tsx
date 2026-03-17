@@ -1,80 +1,96 @@
-import React, { useState } from 'react';
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAtomValue } from "jotai";
+import { currentUserAtom } from "../../../providers/index";
+import { socketStore } from "../../../store/socketStore";
+import { apiService } from "../../../services/api.service";
 
-interface GameProps {
-	onBack: () => void;
-}
+import { KodProvider, kodPhaseAtom, kodRoundNumberAtom, kodErrorAtom } from "../../../providers/kod.provider";
+import { Scoreboard } from "./components/Scoreboard";
+import { SubmitPhase } from "./components/SubmitPhase";
+import { RevealPhase } from "./components/RevealPhase";
+import { GameOver } from "./components/GameOver";
 
-export default function kingOfDiamond({ onBack }: GameProps): React.JSX.Element {
-	const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-	const [submitted, setSubmitted] = useState<boolean>(false);
-
-	const handleSubmit = (): void => {
-		if (selectedNumber !== null) {
-			setSubmitted(true);
-		}
-	};
-
-	const handlePlayAgain = (): void => {
-		setSubmitted(false);
-		setSelectedNumber(null);
-	};
-
-	const numbers = Array.from({ length: 100 }, (_, i) => i + 1);
+// ─── Inner page (needs atoms already in scope) ────────────────────────────────
+function KingOfDiamondInner({ matchId }: { matchId: string }) {
+	const phase = useAtomValue(kodPhaseAtom);
+	const roundNumber = useAtomValue(kodRoundNumberAtom);
+	const error = useAtomValue(kodErrorAtom);
 
 	return (
-		<div className="game-container">
-			<div className="game-header">
-				<h2>king Of Diamond Game</h2>
-				<button className="back-btn" onClick={onBack}>Back</button>
+		<div className="container py-4" style={{ maxWidth: 760 }}>
+
+			{/* Header */}
+			<div className="d-flex align-items-center justify-content-between mb-3">
+				<h4 className="mb-0 d-flex align-items-center gap-2">
+					♦ <span>Roi de Carreaux</span>
+					{phase !== "over" && phase !== "waiting" && (
+						<span className="badge bg-secondary fw-normal fs-6">
+							Manche {roundNumber}
+						</span>
+					)}
+				</h4>
+				<span className="text-muted small font-monospace">{matchId}</span>
 			</div>
 
-			{!submitted ? (
-				<>
-					<div className="number-input-container">
-						<label>Select a number between 1 and 100:</label>
-						<div className="number-grid">
-							{numbers.map((num) => (
-								<button
-									key={num}
-									className={`number-btn ${selectedNumber === num ? 'selected' : ''}`}
-									onClick={() => setSelectedNumber(num)}
-								>
-									{num}
-								</button>
-							))}
-						</div>
-					</div>
+			{/* Error toast */}
+			{error && (
+				<div className="alert alert-danger py-2 small">{error}</div>
+			)}
 
-					{selectedNumber !== null && (
-						<div className="number-display">
-							{selectedNumber}
-						</div>
-					)}
+			<div className="row g-3">
 
-					<button
-						className="btn-primary"
-						onClick={handleSubmit}
-						disabled={selectedNumber === null}
-					>
-						Submit Number
-					</button>
-				</>
-			)
-				:
-				(
-					<div className="game-over-container">
-						<h2>Number Submitted!</h2>
-						<p>You selected: <strong>{selectedNumber}</strong></p>
-						<div className="button-group">
-							<button className="btn-primary" onClick={handlePlayAgain}>
-								Play Again
-							</button>
-							<button className="back-btn" onClick={onBack}>
-								Back to Games
-							</button>
-						</div>
-					</div>
-				)}
+				{/* Scoreboard */}
+				<div className="col-md-4">
+					<Scoreboard />
+				</div>
+
+				{/* Action area */}
+				<div className="col-md-8">
+					{phase === "waiting" && <WaitingPanel />}
+					{phase === "submitting" && <SubmitPhase matchId={matchId} />}
+					{phase === "revealing" && <RevealPhase />}
+					{phase === "over" && <GameOver />}
+				</div>
+
+			</div>
 		</div>
+	);
+}
+
+// ─── Waiting panel ────────────────────────────────────────────────────────────
+function WaitingPanel() {
+	return (
+		<div className="card">
+			<div className="card-body text-center py-5 text-muted">
+				<div className="spinner-border text-secondary mb-3" />
+				<p className="mb-0">En attente du démarrage…</p>
+			</div>
+		</div>
+	);
+}
+
+// ─── Page root — auth guard + socket connection + provider ───────────────────
+export default function KingOfDiamond() {
+	const { roomId } = useParams<{ roomId: string }>();
+	const navigate = useNavigate();
+	const currentUser = useAtomValue(currentUserAtom);
+
+	// Auth guard + ensure socket is connected
+	useEffect(() => {
+		if (!currentUser) { navigate("/login"); return; }
+
+		const token = apiService.getToken();
+		if (!token) { navigate("/login"); return; }
+
+		socketStore.connectAndAuth(token);
+	}, [currentUser, navigate]);
+
+	if (!roomId) return null;
+
+	return (
+		<KodProvider matchId={roomId}>
+			<KingOfDiamondInner matchId={roomId} />
+		</KodProvider>
 	);
 }

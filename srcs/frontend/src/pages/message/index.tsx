@@ -173,7 +173,7 @@ export default function MessagesPage() {
 				const otherUserId = selectedChat.memberIds.find(id => id !== currentUser.id) ?? selectedChat.memberIds[0];
 				blockService.isBlockedMutual(otherUserId).then(({ blocked }) => {
 					setIsChatBlocked(blocked);
-				}).catch(() => {});
+				}).catch(() => { });
 			}
 		}
 		setShowDropdown(false);
@@ -500,41 +500,41 @@ export default function MessagesPage() {
 								</span>
 							</div>
 						) : (
-						<div className="msg-input-area">
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept="image/jpeg,image/png,image/gif,image/webp"
-								hidden
-								onChange={handleImageSelect}
-							/>
-							<button className="icon-action" onClick={() => fileInputRef.current?.click()} title="Send image">
-								<Paperclip size={17} className="icon-themed" />
-							</button>
+							<div className="msg-input-area">
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept="image/jpeg,image/png,image/gif,image/webp"
+									hidden
+									onChange={handleImageSelect}
+								/>
+								<button className="icon-action" onClick={() => fileInputRef.current?.click()} title="Send image">
+									<Paperclip size={17} className="icon-themed" />
+								</button>
 
-							<textarea
-								className="msg-textarea"
-								rows={1}
-								placeholder="Type a message..."
-								value={input}
-								onChange={(e) => setInput(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-								}}
-							/>
+								<textarea
+									className="msg-textarea"
+									rows={1}
+									placeholder="Type a message..."
+									value={input}
+									onChange={(e) => setInput(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+									}}
+								/>
 
-							<button className="icon-action">
-								<Smile size={17} className="icon-themed" />
-							</button>
+								<button className="icon-action">
+									<Smile size={17} className="icon-themed" />
+								</button>
 
-							<button
-								className="send-btn-custom"
-								onClick={handleSend}
-								disabled={!input.trim() && !imagePreview}
-							>
-								<Send size={20} />
-							</button>
-						</div>
+								<button
+									className="send-btn-custom"
+									onClick={handleSend}
+									disabled={!input.trim() && !imagePreview}
+								>
+									<Send size={20} />
+								</button>
+							</div>
 						)}
 					</>
 				) : (

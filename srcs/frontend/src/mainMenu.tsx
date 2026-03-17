@@ -415,16 +415,16 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-					<Route path="/games/cardGame/result" element={ 
-						<ProtectedRoute> 
-							<CardGameResult /> 
-						</ProtectedRoute> } />
+					<Route path="/games/cardGame/result" element={
+						<ProtectedRoute>
+							<CardGameResult />
+						</ProtectedRoute>} />
 
 					<Route path="/games/cardGame/:roomId/result" element={
-						<ProtectedRoute> 
-							<CardGameMultiResult /> 
-						</ProtectedRoute> } />
-						
+						<ProtectedRoute>
+							<CardGameMultiResult />
+						</ProtectedRoute>} />
+
 					{/* Profile */}
 					<Route
 						path="/profile/me"
