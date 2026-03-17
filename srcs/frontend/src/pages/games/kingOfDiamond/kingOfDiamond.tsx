@@ -34,9 +34,7 @@ function KingOfDiamondInner({ matchId }: { matchId: string }) {
 			</div>
 
 			{/* Error toast */}
-			{error && (
-				<div className="alert alert-danger py-2 small">{error}</div>
-			)}
+			{error && (<div className="alert alert-danger py-2 small">{error}</div>)}
 
 			<div className="row g-3">
 

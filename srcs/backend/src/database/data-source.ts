@@ -15,6 +15,7 @@ import { Message } from "./entities/message.js";
 import { Reaction } from "./entities/reaction.js";
 import { UserReaction } from "./entities/user-reaction.js";
 import { BlockedUser } from "./entities/blocked-user.js";
+import { KodChoice, KodRound } from "./entities/KodRound.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -40,5 +41,7 @@ export const AppDataSource = new DataSource({
     Reaction,
     UserReaction,
     BlockedUser,
+    KodChoice,
+    KodRound
   ],
 } as DataSourceOptions);
