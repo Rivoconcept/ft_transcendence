@@ -1,12 +1,9 @@
-// /home/rhanitra/Music/ft_transcendence/srcs/frontend/src/pages/games/GameList.tsx
 import React from 'react';
-import { useAtom } from 'jotai';
-import { gameModeAtom } from './cardGame/cardAtoms/gameMode.atom';
 import { useNavigate } from 'react-router-dom';
 
 type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
 
-interface Game {
+export interface Game {
   id: GameId;
   name: string;
   description: string;
@@ -14,7 +11,6 @@ interface Game {
 }
 
 export default function GameList() {
-  const [mode, setMode] = useAtom(gameModeAtom);
   const navigate = useNavigate();
 
   const games: Game[] = [
@@ -38,27 +34,6 @@ export default function GameList() {
     },
   ];
 
-  const handlePlay = (game: Game) => {
-    // Si Card Game et mode non sélectionné
-    if (game.id === 'cardGame' && !mode) {
-      alert('Please select a game mode first!');
-      return;
-    }
-
-    // 🎯 CARD GAME
-    if (game.id === 'cardGame') {
-      if (mode === 'SINGLE') {
-        navigate(`/games/${game.id}/single`);
-      } else {
-        navigate(`/games/${game.id}/multiplayer/setup`);
-      }
-      return;
-    }
-
-    // 🎯 AUTRES JEUX (par défaut solo pour l’instant)
-    navigate(`/games/${game.id}/single`);
-  };
-
   return (
     <div className="game-list">
       {games.map(game => (
@@ -67,46 +42,13 @@ export default function GameList() {
           <h3>{game.name}</h3>
           <p>{game.description}</p>
 
-          {/* Mode selection uniquement pour Card Game */}
-          {game.id === 'cardGame' && (
-            <div className="btn-group btn-group-toggle mb-2">
-              <button
-                type="button"
-                className={`btn btn-outline-primary ${mode === 'SINGLE' ? 'active' : ''}`}
-                onClick={() => setMode('SINGLE')}
-              >
-                🧍 Single Player
-              </button>
-
-              <button
-                type="button"
-                className={`btn btn-outline-primary ${mode === 'MULTI' ? 'active' : ''}`}
-                onClick={() => setMode('MULTI')}
-              >
-                👥 Multiplayer
-              </button>
-            </div>
-          )}
-
-          {/* Bouton Play unique */}
           <div className="gameCardButton">
-            {game.id === 'cardGame' && (
-              <button
-                className="btn-primary"
-                onClick={() => handlePlay(game)}
-              >
-                ▶️ Play
-              </button>
-            )}
-
-            {game.id !== 'cardGame' && (
-              <button
-                className="btn-primary"
-                onClick={() => navigate(`/games/${game.id}/setup`)}
-              >
-                ▶️ Play
-              </button>
-            )}
+            <button
+              className="btn-primary"
+              onClick={() => navigate(`/games/${game.id}/setup`)}
+            >
+              ▶️ Play
+            </button>
           </div>
         </div>
       ))}
