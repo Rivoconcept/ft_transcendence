@@ -1,18 +1,4 @@
 services:
-  vault:
-    image: hashicorp/vault:1.15
-    container_name: vault-dev
-    environment:
-      VAULT_DEV_ROOT_TOKEN_ID: rrot
-      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
-    cap_add:
-      - IPC_LOCK
-    command: vault server -dev
-    ports:
-      - "8200:8200"
-    networks:
-      - transcendence-network
-
   frontend:
     build:
       context: ./frontend
@@ -47,11 +33,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-      VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: root
     depends_on:
       - postgres
-      - vault
     networks:
       - transcendence-network
 
