@@ -13,19 +13,6 @@ await loadSecrets();
 AppDataSource.initialize()
   .then(() => {
     console.log("Database connected");
-    socketService.init(httpServer);
-    httpServer.listen(PORT, () => {
-      console.log(`Backend running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-    process.exit(1);
-  });/**/ 
-
-AppDataSource.initialize()
-  .then(() => {
-    console.log("Database connected");
 
     socketService.init(httpServer);
 
