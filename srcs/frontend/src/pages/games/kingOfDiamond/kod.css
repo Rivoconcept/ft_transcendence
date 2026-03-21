@@ -1,0 +1,395 @@
+/* src/pages/games/kingOfDiamond/kod.css */
+
+.kod-dashboard {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  background: #0a0a0f;
+  color: #e8e4d8;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.kod-panel {
+  background: #12121a;
+  border: 1px solid #2a2a40;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+/* ── Typography ── */
+.kod-panel-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #d4a843;
+  text-align: center;
+  margin: 0;
+}
+.kod-round-badge {
+  background: #1a1a28;
+  border: 1px solid #2a2a40;
+  padding: 4px 16px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b6880;
+}
+.kod-hint {
+  font-size: 13px;
+  color: #6b6880;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+.kod-waiting {
+  font-size: 13px;
+  color: #6b6880;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0;
+}
+.kod-error {
+  color: #e05252;
+  font-size: 13px;
+  text-align: center;
+  margin: 0;
+}
+.kod-panel-icon {
+  color: #d4a843;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Buttons ── */
+.kod-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, transform 0.1s;
+}
+.kod-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.kod-btn:active:not(:disabled) { transform: translateY(0); }
+.kod-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.kod-btn-primary { background: #d4a843; color: #0a0a0f; }
+.kod-btn-primary:hover:not(:disabled) { background: #f0c060; }
+
+.kod-btn-secondary {
+  background: transparent;
+  border: 1px solid #2a2a40;
+  color: #6b6880;
+}
+.kod-btn-secondary:hover:not(:disabled) { border-color: #d4a843; color: #d4a843; }
+
+/* ── Input ── */
+.kod-value-display {
+  font-size: 64px;
+  font-weight: 900;
+  color: #d4a843;
+  line-height: 1;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+.kod-slider {
+  width: 100%;
+  accent-color: #d4a843;
+  cursor: pointer;
+  height: 4px;
+}
+.kod-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6b6880;
+  width: 100%;
+}
+.kod-number-input {
+  background: #0a0a0f;
+  border: 1px solid #2a2a40;
+  color: #e8e4d8;
+  font-size: 16px;
+  padding: 8px 12px;
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+.kod-number-input:focus { border-color: #d4a843; }
+
+/* ── Player list ── */
+.kod-players-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kod-player-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #1a1a28;
+  border: 1px solid #2a2a40;
+  font-size: 13px;
+  transition: opacity 0.3s;
+}
+.kod-player-row.eliminated { opacity: 0.4; }
+
+.kod-player-name {
+  flex: 1;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kod-player-name em {
+  font-style: normal;
+  font-size: 10px;
+  color: #d4a843;
+  background: rgba(212,168,67,0.1);
+  padding: 1px 5px;
+}
+.elim-tag {
+  font-size: 9px;
+  color: #e05252;
+  background: rgba(224,82,82,0.1);
+  padding: 1px 5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.kod-points-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 90px;
+}
+.kod-points-bar {
+  flex: 1;
+  height: 4px;
+  background: #2a2a40;
+  position: relative;
+  overflow: hidden;
+}
+.kod-points-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: #d4a843;
+  transition: width 0.5s ease;
+}
+.kod-points-fill.low  { background: #e05252; }
+.kod-points-fill.mid  { background: #e0a052; }
+
+.kod-player-points {
+  font-size: 12px;
+  color: #6b6880;
+  min-width: 32px;
+  text-align: right;
+}
+
+.kod-submitted-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2a2a40;
+  flex-shrink: 0;
+}
+.kod-submitted-dot.submitted {
+  background: #52c07a;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ── Progress bar ── */
+.kod-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #2a2a40;
+  position: relative;
+  overflow: hidden;
+}
+.kod-progress-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: #d4a843;
+  transition: width 0.4s ease;
+}
+
+/* ── Result ── */
+.kod-result-stats {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.kod-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #1a1a28;
+  border: 1px solid #2a2a40;
+  padding: 10px 14px;
+  min-width: 90px;
+}
+.kod-stat-label {
+  font-size: 10px;
+  color: #6b6880;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.kod-stat-value { font-size: 18px; font-weight: 700; }
+.kod-stat-value.gold  { color: #d4a843; }
+.kod-stat-value.green { color: #52c07a; }
+
+.kod-exact-badge {
+  background: rgba(212,168,67,0.1);
+  border: 1px solid #d4a843;
+  color: #d4a843;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  text-align: center;
+  width: 100%;
+  animation: flicker 2s ease-in-out infinite;
+}
+@keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.kod-choices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.kod-choice-chip {
+  background: #1a1a28;
+  border: 1px solid #2a2a40;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.kod-choice-chip.winner {
+  border-color: #d4a843;
+  background: rgba(212,168,67,0.07);
+}
+.chip-name  { font-size: 10px; color: #6b6880; }
+.chip-value { font-size: 22px; font-weight: 700; }
+.kod-choice-chip.winner .chip-value { color: #d4a843; }
+.chip-lost  { font-size: 11px; color: #e05252; }
+
+/* ── Spectator ── */
+.kod-spectator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(224,82,82,0.07);
+  border: 1px solid rgba(224,82,82,0.3);
+  padding: 12px 16px;
+  color: #e05252;
+  width: 100%;
+  font-size: 13px;
+}
+
+/* ── Modal ── */
+.kod-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.kod-modal {
+  background: #12121a;
+  border: 1px solid #2a2a40;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.kod-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2a2a40;
+  font-weight: 600;
+  color: #d4a843;
+  font-size: 14px;
+}
+.kod-modal-header button {
+  background: none;
+  border: 1px solid #2a2a40;
+  color: #6b6880;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+.kod-modal-header button:hover { border-color: #d4a843; color: #d4a843; }
+.kod-modal-body {
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.kod-history-round {
+  background: #1a1a28;
+  border: 1px solid #2a2a40;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kod-history-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6b6880;
+}
+.kod-history-header .gold { color: #d4a843; }
+.kod-history-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #6b6880;
+}
+.kod-history-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.kod-history-choice {
+  background: #0a0a0f;
+  border: 1px solid #2a2a40;
+  padding: 4px 10px;
+  font-size: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.kod-history-choice.winner { border-color: #d4a843; color: #d4a843; }
+
+/* ── Spinner ── */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

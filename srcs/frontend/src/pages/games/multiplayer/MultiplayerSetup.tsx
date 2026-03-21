@@ -1,9 +1,7 @@
 // src/pages/games/multiplayer/MultiplayerSetup.tsx
-
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAtomValue, useSetAtom } from "jotai";
-
 import { currentUserAtom } from "../../../providers/user.provider";
 import { playerNameAtom } from "./matchAtoms";
 import { apiService } from "../../../services";
@@ -20,17 +18,14 @@ export default function MultiplayerSetup(): React.JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   const gameMap: Record<string, number> = {
     "dice-game": 1,
     "king-of-diamond": 2,
     "card-game": 3,
   };
-
-  const getGameId = (slug: string | undefined): number =>
-    gameMap[slug || ""] || 1;
+  const getGameId = (slug: string | undefined) => gameMap[slug ?? ""] ?? 1;
 
   if (!currentUser) {
     return (
@@ -43,88 +38,66 @@ export default function MultiplayerSetup(): React.JSX.Element {
   }
 
   const playerName = currentUser.username;
+  const token = apiService.getToken();
 
-  const handleCreateRoom = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  // ── Create ──────────────────────────────────────────────────────────────────
+  // Creating a match auto-joins the creator — no extra /join needed.
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      const token = apiService.getToken();
+      if (!token) throw new Error("Token manquant");
 
-      if (!token) {
-        throw new Error("Token manquant. Veuillez vous reconnecter.");
-      }
-
-      console.log("TOKEN:", token);
-
-      const game_id = getGameId(gameSlug);
-
-      const response = await fetch(`${BACKEND_URL}/api/matches`, {
+      const res = await fetch(`${BACKEND_URL}/api/matches`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          is_private: false,
-          set: 1,
-          game_id,
-          player_name: playerName,
-        }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ is_private: false, set: 1, game_id: getGameId(gameSlug) }),
       });
+      if (!res.ok) throw new Error(await res.text());
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text);
-      }
-
-      const data = await response.json();
-
+      const data = await res.json();
       setPlayerName(playerName);
-
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Erreur création salle");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleJoinRoom = async (event: React.FormEvent) => {
-    event.preventDefault();
-
+  // ── Join ────────────────────────────────────────────────────────────────────
+  // IMPORTANT: must call POST /join to create the Participation row in DB.
+  // Without this the player has no score record and won't appear in the game.
+  const handleJoinRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
-      const token = apiService.getToken();
+      if (!token) throw new Error("Token manquant");
 
-      if (!token) {
-        throw new Error("Token manquant. Veuillez vous reconnecter.");
-      }
-
-      const response = await fetch(`${BACKEND_URL}/api/matches/${roomCode}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      // Step 1 — create Participation row
+      const joinRes = await fetch(`${BACKEND_URL}/api/matches/${roomCode}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text);
+      if (!joinRes.ok) {
+        const body = await joinRes.json().catch(() => ({}));
+        const msg: string = body?.error ?? "";
+        if (msg !== "You are already in this match") throw new Error(msg || "Impossible de rejoindre");
       }
 
-      const data = await response.json();
+      // Step 2 — fetch match for its id
+      const matchRes = await fetch(`${BACKEND_URL}/api/matches/${roomCode}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!matchRes.ok) throw new Error(await matchRes.text());
 
+      const data = await matchRes.json();
       setPlayerName(playerName);
-
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Erreur récupération salle");
+      setError(err.message || "Erreur rejoindre salle");
     } finally {
       setLoading(false);
     }
@@ -133,9 +106,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
   return (
     <div className="container mt-5">
       <div className="mx-auto" style={{ maxWidth: 500 }}>
-        <h2 className="text-center mb-4">
-          Multiplayer Setup : {gameSlug}
-        </h2>
+        <h2 className="text-center mb-4">Multiplayer Setup : {gameSlug}</h2>
 
         <div className="alert alert-info text-center">
           Connecté en tant que <strong>{playerName}</strong>
@@ -143,20 +114,13 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
         <div className="d-flex justify-content-center mb-4">
           <button
-            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"
-              }`}
+            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(true)}
-          >
-            Créer Salle
-          </button>
-
+          >Créer Salle</button>
           <button
-            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"
-              }`}
+            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(false)}
-          >
-            Rejoindre Salle
-          </button>
+          >Rejoindre Salle</button>
         </div>
 
         {error && <div className="alert alert-danger">{error}</div>}
@@ -180,7 +144,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
                 placeholder="ABCD"
               />
             </div>
-
             <button className="btn btn-success w-100" disabled={loading}>
               {loading ? "Connexion..." : "Rejoindre Salle"}
             </button>

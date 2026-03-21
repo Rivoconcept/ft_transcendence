@@ -1,3 +1,4 @@
+// src/pages/games/multiplayer/MultiplayerLobby.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socketStore } from "../../../store/socketStore";
@@ -11,6 +12,13 @@ interface Player {
   name: string;
   ready: boolean;
 }
+
+// Converts URL slug → camelCase route segment used in your router
+const SLUG_TO_ROUTE: Record<string, string> = {
+  "dice-game": "diceGame",
+  "king-of-diamond": "kingOfDiamond",
+  "card-game": "cardGame",
+};
 
 export default function MultiplayerLobby(): React.JSX.Element {
   const { gameSlug, roomId } = useParams();
@@ -37,48 +45,49 @@ export default function MultiplayerLobby(): React.JSX.Element {
     if (!socket) return;
 
     const joinRoom = () => {
-      console.log("Join match room:", roomId);
-
-      socket.emit("joinMatchRoom", {
-        matchId: roomId,
-        playerName,
-      });
+      socket.emit("joinMatchRoom", { matchId: roomId, playerName });
     };
 
-    const handlePlayers = (data: { participants: Player[]; creatorId: number }) => {
-      setPlayers(data.participants);
-
-      const userId = currentUser.id;
-
-      const currentPlayer =
-        data.participants.find((p) => p.id === userId) || null;
-
-      setMe(currentPlayer);
-
-      setIsCreator(data.creatorId === userId);
+    const handlePlayers = (data: { participants?: Player[]; creatorId: number }) => {
+      const participants = data.participants ?? [];
+      setPlayers(participants);
+      setMe(participants.find((p) => p.id === currentUser.id) ?? null);
+      setIsCreator(data.creatorId === currentUser.id);
     };
 
-    const handleStart = () => {
-      navigate(`/games/${gameSlug}/${roomId}/play`);
+    // Navigate helper — converts slug to the camelCase segment your router expects
+    const navigateToGame = () => {
+      const segment = SLUG_TO_ROUTE[gameSlug ?? ""] ?? gameSlug;
+      navigate(`/games/${segment}/${roomId}/play`);
     };
+
+    // For KoD: server emits "kod:game-started" (not "match:started")
+    // Both are handled so other games still work
+    const handleGenericStart = () => navigateToGame();
+    const handleKodStart = () => navigateToGame();
 
     if (socket.connected) joinRoom();
-
     socket.on("connect", joinRoom);
     socket.on("match:player-joined", handlePlayers);
-    socket.on("match:started", handleStart);
+    socket.on("match:started", handleGenericStart);
+    socket.on("kod:game-started", handleKodStart);
 
     return () => {
       socket.off("connect", joinRoom);
       socket.off("match:player-joined", handlePlayers);
-      socket.off("match:started", handleStart);
+      socket.off("match:started", handleGenericStart);
+      socket.off("kod:game-started", handleKodStart);
     };
   }, [roomId, gameSlug, navigate, playerName, currentUser]);
 
   const startGame = () => {
     const socket = socketStore.getSocket();
+    if (!socket || !roomId) return;
 
-    if (socket && roomId) {
+    if (gameSlug === "king-of-diamond") {
+      // Emits kod:game-started to the room → all clients navigate
+      socket.emit("kod:init", { matchId: roomId });
+    } else {
       socket.emit("startMatch", { matchId: roomId });
     }
   };
@@ -89,7 +98,6 @@ export default function MultiplayerLobby(): React.JSX.Element {
         <h2 className="text-center mb-4">Lobby : {roomId}</h2>
 
         <h5>Joueurs ({players.length})</h5>
-
         <ul className="list-group mb-4">
           {players.map((player) => (
             <li
@@ -97,10 +105,7 @@ export default function MultiplayerLobby(): React.JSX.Element {
               className="list-group-item d-flex justify-content-between align-items-center"
             >
               {player.name} {me?.id === player.id && "(vous)"}
-
-              {player.ready && (
-                <span className="badge bg-success">Prêt</span>
-              )}
+              {player.ready && <span className="badge bg-success">Prêt</span>}
             </li>
           ))}
         </ul>
