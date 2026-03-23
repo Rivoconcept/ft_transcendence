@@ -6,24 +6,8 @@ export async function loadSecrets(): Promise<void> {
   console.log('🔐 Loading secrets from Vault...');
 
   try {
-    // Stocker les secrets dans Vault
-    await fetch(`${VAULT_ADDR}/v1/secret/data/backend`, {
-      method: 'POST',
-      headers: {
-        'X-Vault-Token': VAULT_TOKEN,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        data: {
-          JWT_SECRET:     process.env.JWT_SECRET,
-          REFRESH_SECRET: process.env.REFRESH_SECRET,
-          POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
-        }
-      })
-    });
 
-    //Les relire depuis Vault
-    const res = await fetch(`${VAULT_ADDR}/v1/secret/data/backend`, {
+    const res = await fetch(`${VAULT_ADDR}/v1/secret/data/GameHub`, {
       headers: { 'X-Vault-Token': VAULT_TOKEN }
     });
 
@@ -32,7 +16,6 @@ export async function loadSecrets(): Promise<void> {
     const json = await res.json();
     const data = json.data.data;
 
-    //  Injecter en mémoire et supprimer les originaux
     process.env.JWT_SECRET        = data.JWT_SECRET;
     process.env.REFRESH_SECRET    = data.REFRESH_SECRET;
     process.env.POSTGRES_PASSWORD = data.POSTGRES_PASSWORD;
