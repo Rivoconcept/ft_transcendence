@@ -19,6 +19,10 @@ MODE ?= dev  # valeur par défaut = dev
 
 ifeq ($(MODE),prod)
   COMPOSE_FILE := -f ./srcs/docker-compose-prod.yml
+else ifeq ($(MODE),cybersec-dev) 
+  COMPOSE_FILE := -f ./srcs/docker-compose-dev-cybersec.yml
+else ifeq ($(MODE),cybersec-prod)
+  COMPOSE_FILE := -f ./srcs/docker-compose-prod-cybersec.yml
 else
   COMPOSE_FILE := -f ./srcs/docker-compose-dev.yml
 endif
@@ -119,6 +123,7 @@ cleandb:
 restart: down cleandb all
 
 fclean: down cleandb
+	docker volume rm srcs_vault-secrets 2>/dev/null || true
 	docker system prune -af
 	@echo "Cleanup done."
 
