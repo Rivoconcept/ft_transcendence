@@ -15,7 +15,6 @@ import { Message } from "./entities/message.js";
 import { Reaction } from "./entities/reaction.js";
 import { UserReaction } from "./entities/user-reaction.js";
 import { BlockedUser } from "./entities/blocked-user.js";
-import { KodWinner } from "./entities/KodRound.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -26,7 +25,7 @@ export const AppDataSource = new DataSource({
   database: process.env.POSTGRES_DB,
 
   synchronize: true, // ⚠️ OK pour dev uniquement
-  logging: false,
+  logging: true,
 
   entities: [
     User,
@@ -41,6 +40,5 @@ export const AppDataSource = new DataSource({
     Reaction,
     UserReaction,
     BlockedUser,
-    KodWinner
   ],
 } as DataSourceOptions);

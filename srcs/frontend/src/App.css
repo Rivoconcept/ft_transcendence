@@ -677,6 +677,12 @@ body {
 	z-index: 100;
 }
 
+.about-overlay--popover {
+	background-color: transparent;
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+
 .about-modal {
 	background-color: #111827;
 	color: #f9fafb;
@@ -686,6 +692,10 @@ body {
 	max-width: 480px;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 	position: relative;
+}
+
+.about-modal--popover {
+	max-width: 360px;
 }
 
 .about-modal--wide {

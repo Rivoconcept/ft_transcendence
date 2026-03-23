@@ -1,4 +1,4 @@
-// /src/controllers/card-game.controller.ts
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/card-game.controller.ts
 import { Response, Request } from "express";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
@@ -76,3 +76,24 @@ export const getMatchResults = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch match results" });
   }
 };
+
+
+export async function getLastSingleResult(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const result = await cardGameService.getLastSingleResult(req.user!.userId);
+
+    if (!result) {
+      res.status(404).json({ error: "No game result found" });
+      return;
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching last result:", error);
+    res.status(500).json({ error: "Failed to fetch last result" });
+  }
+}
+

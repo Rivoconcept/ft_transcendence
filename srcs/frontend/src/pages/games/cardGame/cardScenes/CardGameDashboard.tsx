@@ -84,8 +84,11 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   /* ------------------ SYNC JOTAI ------------------ */
   useEffect(() => {
     setFinalScore(totalScoreCalculated);
-    setPlayerState(isWin);
-  }, [totalScoreCalculated, isWin, setFinalScore, setPlayerState]);
+
+    if (mode === "SINGLE") {
+      setPlayerState(isWin);
+    }
+  }, [totalScoreCalculated, isWin, mode, setFinalScore, setPlayerState]);
 
   /* ------------------ FIN AUTOMATIQUE ------------------ */
   useEffect(() => {

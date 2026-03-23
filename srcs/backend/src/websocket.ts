@@ -5,7 +5,6 @@ import { authService } from "./services/auth.service.js";
 import { userService } from "./services/user.service.js";
 import { AppDataSource } from "./database/data-source.js";
 import { ChatMember } from "./database/entities/chat-member.js";
-import { kodGameManager } from "./services/KodGameManager.js";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -20,7 +19,7 @@ class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
   private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
-  private constructor() { }
+  private constructor() {}
 
   static getInstance(): SocketService {
     if (!SocketService.instance) {
@@ -101,55 +100,46 @@ class SocketService {
         }
       });
 
-      socket.on("joinMatchRoom", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
-        if (!socket.userId) {
-          console.log("joinMatchRoom refused: unauthenticated socket");
-          return;
-        }
-
-        const room = `match.${matchId}`;
-
-        socket.playerName = playerName || socket.username;
-
-        socket.join(room);
-
-        console.log(`${socket.playerName} joined ${room}`);
-
-        const sockets = await this.io?.in(room).fetchSockets();
-
-        const participants: { id: number; name: string; ready: boolean }[] = [];
-        const seen = new Set<number>();
-
-        sockets?.forEach((s: any) => {
-          if (s.userId && !seen.has(s.userId)) {
-            participants.push({
-              id: s.userId,
-              name: s.playerName || s.username,
-              ready: false,
-            });
-            seen.add(s.userId);
-          }
-        });
-
-        const creatorId = participants[0]?.id ?? socket.userId;
-
-        this.io?.to(room).emit("match:player-joined", {
-          participants,
-          creatorId,
-        });
-        socket.on("kod:submit", async (data: { matchId: string; value: number }) => {
+      socket.on(
+        "joinMatchRoom",
+        async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
           if (!socket.userId) {
-            socket.emit("error", { error: "Not authenticated" });
+            console.log("joinMatchRoom refused: unauthenticated socket");
             return;
           }
-          try {
-            const { kodService } = await import("./services/Kod.service.js");
-            await kodService.submitChoice(socket.userId, data.matchId, data.value);
-          } catch (err: any) {
-            socket.emit("error", { error: err.message });
-          }
-        });
-      });
+
+          const room = `match.${matchId}`;
+
+          socket.playerName = playerName || socket.username;
+
+          socket.join(room);
+
+          console.log(`${socket.playerName} joined ${room}`);
+
+          const sockets = await this.io?.in(room).fetchSockets();
+
+          const participants: { id: number; name: string; ready: boolean }[] = [];
+          const seen = new Set<number>();
+
+          sockets?.forEach((s: any) => {
+            if (s.userId && !seen.has(s.userId)) {
+              participants.push({
+                id: s.userId,
+                name: s.playerName || s.username,
+                ready: false,
+              });
+              seen.add(s.userId);
+            }
+          });
+
+          const creatorId = participants[0]?.id ?? socket.userId;
+
+          this.io?.to(room).emit("match:player-joined", {
+            participants,
+            creatorId,
+          });
+        }
+      );
 
       socket.on("startMatch", async (data: { matchId: string }) => {
         if (!socket.userId) {
@@ -191,97 +181,7 @@ class SocketService {
 
       });
 
-      // ─────────────────────────────────────────────────────────────────────────────
-      // ROI DE CARREAUX — paste this block inside io.on("connection", async (socket) => { ... })
-      // right after the existing "startMatch" handler.
-      // ─────────────────────────────────────────────────────────────────────────────
-
-      // ── kod:init — host starts the game ──────────────────────────────────────────
-      socket.on("kod:init", async (data: { matchId: string }) => {
-        if (!socket.userId) {
-          socket.emit("error", { error: "Not authenticated" });
-          return;
-        }
-
-        const { matchId } = data;
-        const room = `match.${matchId}`;
-
-        try {
-          // Init game — sets scores in DB, builds in-memory state
-          const players = await kodGameManager.initGame(matchId, socket.userId);
-
-          // Enrich player names from sockets currently in the room
-          const sockets = await this.io?.in(room).fetchSockets();
-          sockets?.forEach((s: any) => {
-            if (s.userId && s.playerName)
-              kodGameManager.setPlayerName(matchId, s.userId, s.playerName);
-          });
-
-          // Re-fetch enriched players
-          const enrichedPlayers = kodGameManager.getPlayers(matchId);
-
-          // Broadcast to the whole room:
-          // - navigate to game page
-          // - initial game state (players + round 1)
-          this.io?.to(room).emit("kod:game-started", {
-            matchId,
-            roundNumber: 1,
-            players: enrichedPlayers,
-          });
-
-          console.log(`[KoD] Game started in match ${matchId} with ${enrichedPlayers.length} players`);
-        } catch (err: any) {
-          console.error("[KoD] kod:init error:", err.message);
-          socket.emit("error", { error: err.message });
-        }
-      });
-
-      // ── kod:submit — player submits their secret number ──────────────────────────
-      socket.on("kod:submit", async (data: { matchId: string; value: number; playerName: string }) => {
-        if (!socket.userId) {
-          socket.emit("error", { error: "Not authenticated" });
-          return;
-        }
-
-        const { matchId, value, playerName } = data;
-        const room = `match.${matchId}`;
-        const name = playerName || socket.playerName || socket.username || `Player ${socket.userId}`;
-
-        try {
-          const { allSubmitted, result } = await kodGameManager.submitChoice(
-            matchId,
-            socket.userId,
-            name,
-            value,
-          );
-
-          // ACK to the submitter only (keeps value secret)
-          socket.emit("kod:choice-ack", { value });
-
-          // Tell the whole room someone submitted (no value revealed)
-          const players = kodGameManager.getPlayers(matchId);
-          this.io?.to(room).emit("kod:player-submitted", {
-            userId: socket.userId,
-            submittedCount: players.filter((p) => p.hasSubmitted).length,
-            totalActive: players.filter((p) => p.isActive).length,
-            players,        // updated hasSubmitted flags
-          });
-
-          // If all submitted → broadcast resolved result to everyone at once
-          if (allSubmitted && result) {
-            this.io?.to(room).emit("kod:round-result", result);
-
-            if (result.gameOver) {
-              // Clean up in-memory state after a short delay
-              setTimeout(() => kodGameManager.cleanup(matchId), 30_000);
-            }
-          }
-        } catch (err: any) {
-          console.error("[KoD] kod:submit error:", err.message);
-          socket.emit("error", { error: err.message });
-        }
-      });
-
+      
       // ------------------ PUBLISH RESULT ------------------
       socket.on("publish_result", (data: { matchId: string; finalScore: number; playerName: string }) => {
         if (!socket.userId) return;

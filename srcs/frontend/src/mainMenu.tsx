@@ -4,6 +4,7 @@ import { useAtomValue, useSetAtom, useStore } from 'jotai';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import "./pages/message/message.css"
+import { startOnlineSessionAtom, stopOnlineSessionAtom } from './pages/dashboard/atoms/dashboardData';
 
 import { Navigation } from './components';
 import { apiService } from './services';
@@ -268,6 +269,8 @@ export default function App(): React.JSX.Element {
 	const isLoading = useAtomValue(currentUserLoadingAtom);
 	const initCurrentUser = useSetAtom(initCurrentUserAtom);
 	const logout = useSetAtom(logoutAtom);
+	const startOnlineSession = useSetAtom(startOnlineSessionAtom);
+	const stopOnlineSession = useSetAtom(stopOnlineSessionAtom);
 	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('dark');
 
 	// Load token and fetch user on mount
@@ -290,6 +293,19 @@ export default function App(): React.JSX.Element {
 		else
 			document.documentElement.removeAttribute('data-theme');
 	}, [theme]);
+
+	// Online time tracking (client-side, per user)
+	useEffect(() => {
+		if (!user) return;
+
+		startOnlineSession();
+		const onBeforeUnload = () => stopOnlineSession();
+		window.addEventListener('beforeunload', onBeforeUnload);
+		return () => {
+			window.removeEventListener('beforeunload', onBeforeUnload);
+			stopOnlineSession();
+		};
+	}, [user, startOnlineSession, stopOnlineSession]);
 
 	const handleLogout = (): void => {
 		logout();
@@ -415,16 +431,16 @@ export default function App(): React.JSX.Element {
 							</ProtectedRoute>
 						}
 					/>
-					<Route path="/games/cardGame/result" element={
-						<ProtectedRoute>
-							<CardGameResult />
-						</ProtectedRoute>} />
+					<Route path="/games/cardGame/result" element={ 
+						<ProtectedRoute> 
+							<CardGameResult /> 
+						</ProtectedRoute> } />
 
 					<Route path="/games/cardGame/:roomId/result" element={
-						<ProtectedRoute>
-							<CardGameMultiResult />
-						</ProtectedRoute>} />
-
+						<ProtectedRoute> 
+							<CardGameMultiResult /> 
+						</ProtectedRoute> } />
+						
 					{/* Profile */}
 					<Route
 						path="/profile/me"

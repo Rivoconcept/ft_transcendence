@@ -21,15 +21,3 @@ export type {
 	InvitationCreate,
 	InvitationWithUser
 } from './invitation.model';
-
-export type {
-	KodPlayerState,
-	KodChoiceReveal,
-	KodRoundResult,
-	KodGameState,
-	KodPhase,
-	KodGameStartedPayload,
-	KodPlayerSubmittedPayload,
-	KodNextRoundPayload,
-	KodGameOverPayload,
-} from './kod.model'

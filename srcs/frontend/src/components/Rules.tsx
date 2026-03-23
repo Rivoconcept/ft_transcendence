@@ -218,3 +218,65 @@ export const TermsOfService: React.FC = () => {
     </div>
   );
 };
+
+export const DiceGameRules: React.FC = () => {
+  return (
+    <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+      <li style={{ marginBottom: 8 }}>🎲 You roll 3 dice.</li>
+      <li style={{ marginBottom: 8 }}>🎲 Add them up to get your <strong>Roll Total</strong>.</li>
+      <li>
+        🎲 Your <strong>Mod-9 Score</strong> is your Roll Total modulo 9 (the remainder after
+        dividing by 9).
+      </li>
+      <li>
+        🎲 Example: if you roll 5, 8, and 1, your Roll Total is 5 + 8 + 1 = 14, and your
+        Mod-9 Score is 14 % 9 = 5.
+      </li>
+      <li style={{ marginBottom: 8 }}>🎲 In multiplayer, the highest Mod-9 Score wins.</li>
+      <li>🎲 In single player, you win if your Roll Total is 27 or above.</li>
+    </ul>
+  );
+};
+
+export const KingOfDiamondRules: React.FC = () => {
+  return (
+    <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+      <li style={{ marginBottom: 8 }}>👑 Each player starts with 10 points.</li>
+      <li style={{ marginBottom: 8 }}>👑 The game is played in numerous rounds.</li>
+      <li style={{ marginBottom: 8 }}>👑 Every player participates while they still have points.</li>
+      <li>
+        👑 In each round, every player secretly chooses a number between 0 and 100. Then the
+        numbers are revealed at once. After that, the mean of all numbers is calculated and
+        multiplied by 0.8. The player with the number closest to the result is the victor.
+      </li>
+      <li>
+        👑 Example: if the revealed numbers are 10, 20, and 40, the mean is (10 + 20 + 40) / 3 =
+        23.33…, and the target is 23.33… × 0.8 = 18.66…. The closest pick wins the round.
+      </li>
+      <li>
+        👑 Every loser loses 1 point each round. A player is out when they no longer have points.
+      </li>
+      <li>
+        👑 The game ends when only one player (if there is) remains. They become the King Of
+        Diamond.
+      </li>
+    </ul>
+  );
+};
+
+export const CardGameRules: React.FC = () => {
+  return (
+    <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+      <li style={{ marginBottom: 8 }}>
+        🃏 Same rules as the Dice Game, but you draw 3 cards instead of rolling dice.
+      </li>
+      <li style={{ marginBottom: 8 }}>
+        🃏 Card values are: A = 1, 1 = 1, 2 = 2, …, J = 11, Q = 12, K = 13.
+      </li>
+      <li>
+        🃏 Example: if you get 5, 8 and A, your Roll Total is 5 + 8 + 1 = 14, and your Mod-9
+        Score is 14 % 9 = 5.
+      </li>
+    </ul>
+  );
+};

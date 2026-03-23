@@ -4,6 +4,7 @@ import { useSetAtom } from 'jotai';
 import { registerAtom, initCurrentUserAtom, logoutAtom } from '../../providers';
 import { apiService } from '../../services';
 import AvatarSelector from '../../components/AvatarSelector';
+import { TermsOfService } from '../../components/Rules';
 
 interface RegisterFormData {
     username: string;
@@ -218,20 +219,7 @@ export default function RegisterForm(): React.JSX.Element {
                                 lineHeight: 1.5
                             }}
                         >
-                            <p>
-                                By creating an account and using this service, you agree to play fairly,
-                                respect other players, and comply with all applicable laws and regulations.
-                            </p>
-                            <p>
-                                You understand that your account and game data may be stored and processed
-                                for the purpose of providing multiplayer features, matchmaking, and improving
-                                the overall game experience.
-                            </p>
-                            <p>
-                                You also agree not to engage in cheating, harassment, or any behavior that
-                                negatively impacts other users. Violation of these terms may result in
-                                suspension or termination of your account.
-                            </p>
+                            <TermsOfService />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                             <button

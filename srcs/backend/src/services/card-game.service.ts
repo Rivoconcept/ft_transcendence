@@ -1,3 +1,4 @@
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/card-game.service.ts
 import { AppDataSource } from "../database/data-source.js";
 import { CardGame } from "../database/entities/card-game.js";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
@@ -13,9 +14,8 @@ interface CreateCardGameDTO {
 class CardGameService {
   private repo = AppDataSource.getRepository(CardGame);
 
-  /**
-   * Crée une partie
-   */
+  // Crée une partie
+
   async createCardGame(userId: number, data: CreateCardGameDTO) {
     const card = this.repo.create({
       author_id: userId,
@@ -30,9 +30,8 @@ class CardGameService {
     return card;
   }
 
-  /**
-   * Récupère les parties d'un utilisateur
-   */
+  // Récupère les parties d'un utilisateur
+
   async getByUser(userId: number) {
     return this.repo.find({
       where: { author_id: userId },
@@ -40,13 +39,25 @@ class CardGameService {
     });
   }
 
-  /**
-   * Récupère les résultats d'un match (multiplayer)
-   */
+  // Récupère les résultats d'un match (multiplayer)
+
   async getMatchResults(matchId: string) {
     return this.repo.find({
       where: { match_id: matchId },
       order: { final_score: "DESC" },
+      select: ["player_name", "final_score", "is_win"],
+    });
+  }
+
+  // Récupère la dernière partie SINGLE d'un utilisateur
+
+  async getLastSingleResult(userId: number) {
+    return this.repo.findOne({
+      where: {
+        author_id: userId,
+        mode: CardGameMode.SINGLE,
+      },
+      order: { created_at: "DESC" },
       select: ["player_name", "final_score", "is_win"],
     });
   }

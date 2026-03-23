@@ -65,19 +65,13 @@ export async function joinMatch(req: AuthRequest, res: Response): Promise<void> 
 
     const match = await matchService.joinMatch(req.user!.userId, id);
     res.json(match);
-
-    console.log('request :', req.body)
-    console.log('response :', match);
-
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to join match";
     if (message === "Match not found") {
       res.status(404).json({ error: message });
       return;
     }
-    if (message === "Match is already over"
-      || message === "Match is not open for joining"
-      || message === "You are already in this match") {
+    if (message === "Match is already over" || message === "Match is not open for joining" || message === "You are already in this match") {
       res.status(400).json({ error: message });
       return;
     }

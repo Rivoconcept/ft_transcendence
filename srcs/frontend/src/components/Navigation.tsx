@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, User, Users, LogOut, BarChart3, ChevronRight } from 'lucide-react';
-import { PrivacyPolicy, TermsOfService } from './Rules';
+import { CardGameRules, DiceGameRules, KingOfDiamondRules, PrivacyPolicy, TermsOfService } from './Rules';
 
 interface NavigationProps {
 	username: string;
@@ -15,6 +15,40 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 	const [activeModal, setActiveModal] = useState<
 		null | 'about' | 'tos' | 'privacy' | 'rules' | 'dice' | 'king' | 'card'
 	>(null);
+	const aboutButtonRef = useRef<HTMLButtonElement | null>(null);
+	const [aboutPopoverPos, setAboutPopoverPos] = useState<{ top: number; left: number } | null>(null);
+
+	const computeAboutPopoverPos = () => {
+		const el = aboutButtonRef.current;
+		if (!el) return;
+
+		const rect = el.getBoundingClientRect();
+		const maxWidth = 360;
+		const viewportPadding = 12;
+		const top = rect.bottom + 8;
+		const left = Math.min(rect.left, window.innerWidth - maxWidth - viewportPadding);
+		setAboutPopoverPos({ top, left: Math.max(viewportPadding, left) });
+	};
+
+	useEffect(() => {
+		if (activeModal !== 'about') return;
+
+		computeAboutPopoverPos();
+		const onReflow = () => computeAboutPopoverPos();
+		window.addEventListener('resize', onReflow);
+		window.addEventListener('scroll', onReflow, true);
+		return () => {
+			window.removeEventListener('resize', onReflow);
+			window.removeEventListener('scroll', onReflow, true);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeModal]);
+
+	const openAboutPopover = () => {
+		setActiveModal('about');
+		// Compute right away for snappy open; effect will also run.
+		queueMicrotask(() => computeAboutPopoverPos());
+	};
 
 	const handleLogout = () => {
 		onLogout();
@@ -36,9 +70,14 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 
 		// About menu
 		if (activeModal === 'about') {
+			const popoverStyle = aboutPopoverPos ? { position: 'fixed' as const, top: aboutPopoverPos.top, left: aboutPopoverPos.left } : undefined;
 			return (
-				<div className="about-overlay" onClick={closeAllModals}>
-					<div className="about-modal" onClick={stopPropagation}>
+				<div className="about-overlay about-overlay--popover" onClick={closeAllModals}>
+					<div
+						className="about-modal about-modal--popover"
+						style={popoverStyle}
+						onClick={stopPropagation}
+					>
 						<div className="about-modal__heading">About</div>
 						<div className="about-modal__list">
 							<button
@@ -154,33 +193,21 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 					return (
 						<>
 							<div className="about-modal__heading">Dice Game rules</div>
-							<p>
-								Roll dice to reach or exceed the target score before your opponent while
-								managing risk. High rolls move you quickly, but some combinations may
-								impose penalties or let your opponent catch up.
-							</p>
+							<DiceGameRules />
 						</>
 					);
 				case 'king':
 					return (
 						<>
 							<div className="about-modal__heading">King of Diamond rules</div>
-							<p>
-								Compete to capture and protect the King of Diamonds. Play cards
-								strategically to gain advantage, block opponents, and secure the king while
-								managing your remaining hand.
-							</p>
+							<KingOfDiamondRules />
 						</>
 					);
 				case 'card':
 					return (
 						<>
 							<div className="about-modal__heading">Card Game rules</div>
-							<p>
-								Build high-scoring combinations across multiple rounds. Use your hand and
-								table cards efficiently, adapt to the phase objectives, and plan ahead to
-								maximize points while denying strong plays to your opponents.
-							</p>
+							<CardGameRules />
 						</>
 					);
 				default:
@@ -247,7 +274,8 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 				<button
 					type="button"
 					className="nav-link nav-link--button"
-					onClick={() => setActiveModal('about')}
+					onClick={openAboutPopover}
+					ref={aboutButtonRef}
 				>
 					About
 				</button>
