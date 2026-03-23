@@ -5,6 +5,8 @@ import { authService } from "./services/auth.service.js";
 import { userService } from "./services/user.service.js";
 import { AppDataSource } from "./database/data-source.js";
 import { ChatMember } from "./database/entities/chat-member.js";
+import { matchService } from "./services/match.service.js";
+import { kodGameManager } from "./services/KodGameManager.js";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -19,7 +21,7 @@ class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
   private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): SocketService {
     if (!SocketService.instance) {
@@ -50,6 +52,8 @@ class SocketService {
     this.io.on("connection", async (socket: AuthenticatedSocket) => {
       console.log("Client connected:", socket.id);
 
+      //----------------- Auth specific logic -----------------
+
       socket.on("auth", async (token: string) => {
         try {
           const payload = authService.verifyToken(token);
@@ -70,22 +74,6 @@ class SocketService {
         }
       });
 
-      // Rejoindre une room de chat spécifique
-      socket.on("chat:join", (channelId: string) => {
-        if (!socket.userId) {
-          socket.emit("error", { error: "Not authenticated" });
-          return;
-        }
-        socket.join(`chat.${channelId}`);
-        console.log(`User ${socket.username} joined chat room chat.${channelId}`);
-      });
-
-      // Quitter une room de chat
-      socket.on("chat:leave", (channelId: string) => {
-        socket.leave(`chat.${channelId}`);
-        console.log(`User ${socket.username} left chat room chat.${channelId}`);
-      });
-
       socket.on("disconnect", async (reason) => {
         console.log(`Socket ${socket.id} disconnect reason: ${reason}`);
         if (socket.userId) {
@@ -100,89 +88,128 @@ class SocketService {
         }
       });
 
-      socket.on(
-        "joinMatchRoom",
-        async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
-          if (!socket.userId) {
-            console.log("joinMatchRoom refused: unauthenticated socket");
-            return;
-          }
-
-          const room = `match.${matchId}`;
-
-          socket.playerName = playerName || socket.username;
-
-          socket.join(room);
-
-          console.log(`${socket.playerName} joined ${room}`);
-
-          const sockets = await this.io?.in(room).fetchSockets();
-
-          const participants: { id: number; name: string; ready: boolean }[] = [];
-          const seen = new Set<number>();
-
-          sockets?.forEach((s: any) => {
-            if (s.userId && !seen.has(s.userId)) {
-              participants.push({
-                id: s.userId,
-                name: s.playerName || s.username,
-                ready: false,
-              });
-              seen.add(s.userId);
-            }
-          });
-
-          const creatorId = participants[0]?.id ?? socket.userId;
-
-          this.io?.to(room).emit("match:player-joined", {
-            participants,
-            creatorId,
-          });
+      //----------------- Chat specific logic -----------------
+      socket.on("chat:join", (channelId: string) => {
+        if (!socket.userId) {
+          socket.emit("error", { error: "Not authenticated" });
+          return;
         }
-      );
+        socket.join(`chat.${channelId}`);
+        console.log(`User ${socket.username} joined chat room chat.${channelId}`);
+      });
 
-      socket.on("startMatch", async (data: { matchId: string }) => {
+      socket.on("chat:leave", (channelId: string) => {
+        socket.leave(`chat.${channelId}`);
+        console.log(`User ${socket.username} left chat room chat.${channelId}`);
+      });
+
+      //----------------- match specific logic -----------------
+      socket.on("joinMatchRoom", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
+        if (!socket.userId) {
+          console.log("joinMatchRoom refused: unauthenticated socket");
+          return;
+        }
+
+        const room = `match.${matchId}`;
+
+        socket.playerName = playerName || socket.username;
+        socket.join(room);
+
+        console.log(`${socket.playerName} joined ${room}`);
+
+        const sockets = await this.io?.in(room).fetchSockets();
+        const participants: { id: number; name: string; ready: boolean }[] = [];
+        const seen = new Set<number>();
+
+        sockets?.forEach((s: any) => {
+          if (s.userId && !seen.has(s.userId)) {
+            participants.push({
+              id: s.userId,
+              name: s.playerName || s.username,
+              ready: false,
+            });
+            seen.add(s.userId);
+          }
+        });
+
+        try {
+          await matchService.joinMatch(socket.userId, matchId)
+        } catch (err: any) {
+          socket.emit("error", { error: err.message });
+        };
+
+        console.log("");
+        console.log("--> Updated player list:", participants);
+        console.log("");
+
+        const creatorId = participants[0]?.id ?? socket.userId;
+        this.io?.to(room).emit("match:player-joined", {
+          participants,
+          creatorId,
+        });
+      });
+
+      socket.on("startMatch", async (data: { matchId: string, gameSlug: string }) => {
         if (!socket.userId) {
           socket.emit("error", { error: "Not authenticated" });
           return;
         }
 
+        console.log("-------------------- game ", data.matchId, " started --------------------");
+
+        // mettre à jour le statut du match et vérifier les conditions de démarrage
+        try {
+          await matchService.startMatch(socket.userId, data.matchId);
+          console.log("matchService inited : ", data.matchId);
+        } catch (err: any) {
+          socket.emit("error", { error: err.message });
+        }
+
+
         const room = `match.${data.matchId}`;
 
         // récupérer les sockets dans la room
         const sockets = await this.io?.in(room).fetchSockets();
-
         if (!sockets || sockets.length === 0) return;
 
         // récupérer les joueurs uniques
         const users = new Map<number, string>();
-
         sockets.forEach((s: any) => {
-          if (!users.has(s.userId)) {
+          if (!users.has(s.userId))
             users.set(s.userId, s.username);
-          }
         });
 
-        const participants = Array.from(users.keys());
 
-        // vérifier qu'il y a au moins 2 joueurs
+        // Start the match
+        const participants = Array.from(users.keys());
         if (participants.length < 2) {
           socket.emit("error", { error: "Not enough players" });
           return;
         }
-
         console.log(`Match ${data.matchId} started with players:`, participants);
-
-        // envoyer l'événement à tous les joueurs
         this.io?.to(room).emit("match:started", {
           matchId: data.matchId,
           players: participants,
         });
 
+        // Start kod game
+        try {
+          if (data.gameSlug == "kingOfDiamond") {
+            let kodPlayers = await matchService.initKodGame(socket.userId, data.matchId);
+            this.io?.to(room).emit("kod:initialized", {
+              matchId: data.matchId,
+              players: kodPlayers
+            });
+            console.log("KOD game inited: ", kodPlayers);
+          }
+        } catch (err: any) {
+          socket.emit("error", { error: err.message });
+        }
+
+        console.log("");
+        console.log("");
       });
 
-      
-      // ------------------ PUBLISH RESULT ------------------
       socket.on("publish_result", (data: { matchId: string; finalScore: number; playerName: string }) => {
         if (!socket.userId) return;
 
@@ -211,6 +238,39 @@ class SocketService {
           }
         });
       });
+
+      //----------------- Kod game specific logic -----------------
+
+      socket.on("kod:init", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
+        if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
+        try {
+          // Enrich the initiator's name before init broadcasts
+          socket.playerName = playerName || socket.username;
+          const players = await matchService.initKodGame(socket.userId, matchId);
+          // Enrich names from all sockets currently in the room
+          const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
+          sockets?.forEach((s: any) => {
+            if (s.userId && s.playerName) kodGameManager.setPlayerName(matchId, s.userId, s.playerName);
+          });
+        } catch (err: any) {
+          socket.emit("error", { error: err.message });
+        }
+      });
+
+      socket.on("kod:submit", async ({ matchId, value }: { matchId: string; value: number }) => {
+        if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
+        try {
+          await matchService.submitKodChoice(
+            socket.userId,
+            matchId,
+            socket.playerName || socket.username || `Player ${socket.userId}`,
+            value,
+          );
+        } catch (err: any) {
+          socket.emit("error", { error: err.message });
+        }
+      });
+
     });
 
     return this.io;
@@ -224,9 +284,8 @@ class SocketService {
         relations: ["chat"],
       });
 
-      for (const membership of memberships) {
+      for (const membership of memberships)
         socket.join(`chat.${membership.chat.channel_id}`);
-      }
 
       console.log(`User joined ${memberships.length} chat rooms`);
     } catch (error) {

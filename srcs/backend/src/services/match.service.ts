@@ -1,5 +1,7 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/match.service.ts
 import { AppDataSource } from "../database/data-source.js";
+import { KodRound, KodWinner } from "../database/entities/KodRound.js";
+import { kodGameManager, type KodPlayer, type KodRoundResult } from "./KodGameManager.js";
 import { Match } from "../database/entities/match.js";
 import { Participation } from "../database/entities/participation.js";
 import { socketService } from "../websocket.js";
@@ -26,6 +28,8 @@ interface MatchItem {
 class MatchService {
   private matchRepository = AppDataSource.getRepository(Match);
   private participationRepository = AppDataSource.getRepository(Participation);
+  private kodRoundRepository = AppDataSource.getRepository(KodRound);
+  private kodRepository = AppDataSource.getRepository(KodWinner);
 
   private async generateUniqueId(): Promise<string> {
     const maxAttempts = 10;
@@ -172,27 +176,26 @@ class MatchService {
       score: 0,
     });
 
-    await this.participationRepository.save(participation);
-
-    // Faire rejoindre l'utilisateur à la room du match
-    socketService.joinMatchRoom(userId, matchId);
-
     // Récupérer tous les participants
+    await this.participationRepository.save(participation);
     const participations = await this.participationRepository.find({
       where: { match_id: matchId },
     });
-
     const participantIds = participations.map((p) => p.user_id);
 
+    // Faire rejoindre l'utilisateur à la room du match
+    // socketService.joinMatchRoom(userId, matchId);
+
     // Notifier tous les participants
-    const io = socketService.getIO();
-    if (io) {
-      io.to(`match.${matchId}`).emit("match:player-joined", {
-        matchId,
-        userId,
-        participantIds,
-      });
-    }
+    /** this is already handle in websocket */
+    // const io = socketService.getIO();
+    // if (io) {
+    //   io.to(`match.${matchId}`).emit("match:player-joined", {
+    //     matchId,
+    //     userId,
+    //     participantIds,
+    //   });
+    // }
 
     return {
       id: match.id,
@@ -525,6 +528,149 @@ class MatchService {
       participantId: userId,
     };
   }
+
+  //----------------- Kod game specific logic -----------------
+
+  async initKodGame(userId: number, matchId: string): Promise<KodPlayer[]> {
+    const match = await this.matchRepository.findOne({ where: { id: matchId } });
+    if (!match) throw new Error("Match not found");
+    if (match.author_id !== userId) throw new Error("Only the match creator can start the game");
+    if (match.match_over) throw new Error("Match is already over");
+
+    const participations = await this.participationRepository.find({
+      where: { match_id: matchId },
+    });
+    if (participations.length < 2) throw new Error("Need at least 2 players");
+
+    // Reset DB scores to STARTING_POINTS
+    for (const p of participations) p.score = 10;
+    await this.participationRepository.save(participations);
+
+    match.is_open = false;
+    match.current_set = 1;
+    await this.matchRepository.save(match);
+
+    // Delegate pure logic to the manager
+    const players = kodGameManager.initGame(matchId, participations.map(p => p.user_id));
+
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`match.${matchId}`).emit("kod:initialized", { matchId, players });
+    }
+
+    return players;
+  }
+
+  async submitKodChoice(
+    userId: number,
+    matchId: string,
+    playerName: string,
+    value: number,
+  ): Promise<{ allSubmitted: boolean; result: KodRoundResult | null }> {
+    // Validate against DB (match exists, not over)
+    const match = await this.matchRepository.findOne({ where: { id: matchId } });
+    if (!match) throw new Error("Match not found");
+    if (match.match_over) throw new Error("Match is already over");
+
+    const participation = await this.participationRepository.findOne({
+      where: { user_id: userId, match_id: matchId },
+    });
+    if (!participation) throw new Error("You are not a participant in this match");
+
+    // Enrich name in manager (player may have changed their display name)
+    kodGameManager.setPlayerName(matchId, userId, playerName);
+
+    const { allSubmitted, result } = kodGameManager.submitChoice(matchId, userId, playerName, value);
+
+    const io = socketService.getIO();
+
+    if (!allSubmitted) {
+      // Notify others that this player submitted (without revealing the value)
+      if (io) {
+        io.to(`match.${matchId}`).emit("kod:choice-submitted", { matchId, userId });
+      }
+      return { allSubmitted: false, result: null };
+    }
+
+    // All submitted — persist the round and update scores in DB
+    await this._persistKodRound(matchId, result!);
+
+    if (result!.gameOver) {
+      // Persist winner summary
+      await this.kodRepository.save(
+        this.kodRepository.create({
+          match_id: matchId,
+          winner_user_id: result!.gameWinnerId!,
+          winner_name: result!.gameWinnerName!,
+          remaining_points: result!.players.find(p => p.userId === result!.gameWinnerId)?.points ?? 0,
+          total_rounds: result!.roundNumber,
+        }),
+      );
+
+      // Mark match as over
+      match.match_over = true;
+      await this.matchRepository.save(match);
+
+      if (io) {
+        io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
+        io.to(`match.${matchId}`).emit("kod:game-over", {
+          matchId,
+          winnerId: result!.gameWinnerId,
+          winnerName: result!.gameWinnerName,
+        });
+        result!.players.forEach(p => socketService.leaveMatchRoom(p.userId, matchId));
+      }
+
+      kodGameManager.cleanup(matchId);
+    } else {
+      if (io) {
+        io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
+      }
+    }
+
+    return { allSubmitted: true, result };
+  }
+
+  private async _persistKodRound(matchId: string, result: KodRoundResult): Promise<void> {
+    // Save the round record
+    await this.kodRoundRepository.save(
+      this.kodRoundRepository.create({
+        match_id: matchId,
+        round_number: result.roundNumber,
+        average: result.average,
+        target: result.target,
+        target_rounded: result.targetRounded,
+        winner_user_id: result.winnerId,
+        winner_name: result.winnerName,
+        is_exact_hit: result.isExactHit,
+        choices: result.choices.map(c => ({
+          userId: c.userId,
+          playerName: c.playerName,
+          value: c.value,
+          pointsLost: c.pointsLost,
+        })),
+      }),
+    );
+
+    // Sync scores back to Participation table
+    for (const player of result.players) {
+      await this.participationRepository.update(
+        { user_id: player.userId, match_id: matchId },
+        { score: player.points },
+      );
+    }
+  }
+
+  // Expose round history (add a route GET /:id/rounds)
+  async getKodRounds(matchId: string): Promise<KodRound[]> {
+    return this.kodRoundRepository.find({
+      where: { match_id: matchId },
+      order: { round_number: "ASC" },
+    });
+  }
+
+  //------------------------------------------------------------
+
 }
 
 export const matchService = new MatchService();

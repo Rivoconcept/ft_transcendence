@@ -41,13 +41,14 @@ export async function getMatchById(req: AuthRequest, res: Response): Promise<voi
     }
 
     const match = await matchService.getMatchById(id);
-
     if (!match) {
       res.status(404).json({ error: "Match not found" });
       return;
     }
+    // const joined_match = await matchService.joinMatch(req.user!.userId, id);
 
     res.json(match);
+
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get match";
     res.status(500).json({ error: message });
@@ -64,7 +65,13 @@ export async function joinMatch(req: AuthRequest, res: Response): Promise<void> 
     }
 
     const match = await matchService.joinMatch(req.user!.userId, id);
+
+    console.log("");
+    console.log(`User ${req.user!.userId} joined match ${id}`);
+    console.log("");
+
     res.json(match);
+
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to join match";
     if (message === "Match not found") {
