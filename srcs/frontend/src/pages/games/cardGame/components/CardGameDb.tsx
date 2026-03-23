@@ -1,7 +1,8 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import apiService from "../../../../services/api.service";
+import { currentUserAtom } from "../../../../providers";
 import { appendGameHistoryAtom } from "../../../dashboard/atoms/dashboardData";
 
 interface CardGameDbProps {
@@ -24,6 +25,7 @@ export default function CardGameDb({
   onSaved,
 }: CardGameDbProps) {
   const hasPushedRef = useRef(false);
+  const currentUser = useAtomValue(currentUserAtom);
   const pushHistory = useSetAtom(appendGameHistoryAtom);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function CardGameDb({
           final_score: finalScore,
           is_win: isWin,
           match_id: matchIdForPush,
-          player_name: player,
+          player_name: player || currentUser?.username || "unknown",
         });
 
         pushHistory({

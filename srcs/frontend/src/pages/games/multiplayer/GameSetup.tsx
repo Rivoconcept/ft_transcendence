@@ -93,7 +93,7 @@ export default function GameSetup(): React.JSX.Element {
 
             <div className="card-body text-center">
 
-              <p className="lead">{game.description}</p>
+              <div className="lead">{game.description}</div>
 
               <hr />
 
