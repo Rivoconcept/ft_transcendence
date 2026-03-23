@@ -8,6 +8,19 @@ import { currentUserAtom } from "../../../providers/user.provider";
 import { playerNameAtom } from "./matchAtoms";
 import { apiService } from "../../../services";
 
+interface MatchItem {
+  id: string;
+  set: number;
+  current_set: number;
+  authorId: number;
+  gameId: number | null;
+  is_open: boolean;
+  is_private: boolean;
+  match_over: boolean;
+  created_at: Date;
+  participantIds: number[];
+}
+
 export default function MultiplayerSetup(): React.JSX.Element {
   const { gameSlug } = useParams();
   const navigate = useNavigate();
@@ -20,17 +33,13 @@ export default function MultiplayerSetup(): React.JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-
   const gameMap: Record<string, number> = {
     "dice-game": 1,
     "king-of-diamond": 2,
     "card-game": 3,
   };
 
-  const getGameId = (slug: string | undefined): number =>
-    gameMap[slug || ""] || 1;
+  const getGameId = (slug: string | undefined): number => gameMap[slug || ""] || 1;
 
   if (!currentUser) {
     return (
@@ -51,40 +60,18 @@ export default function MultiplayerSetup(): React.JSX.Element {
     setError("");
 
     try {
-      const token = apiService.getToken();
-
-      if (!token) {
-        throw new Error("Token manquant. Veuillez vous reconnecter.");
-      }
-
-      console.log("TOKEN:", token);
-
       const game_id = getGameId(gameSlug);
 
-      const response = await fetch(`${BACKEND_URL}/api/matches`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          is_private: false,
-          set: 1,
-          game_id,
-          player_name: playerName,
-        }),
+      const data = await apiService.post<MatchItem>("/matches", {
+        is_private: false,
+        set: 1,
+        game_id,
+        player_name: playerName,
       });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text);
-      }
-
-      const data = await response.json();
-
       setPlayerName(playerName);
-
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
+
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Erreur création salle");
@@ -93,38 +80,29 @@ export default function MultiplayerSetup(): React.JSX.Element {
     }
   };
 
+  // Joining: POST /matches/:id/join, NOT GET /matches/:id
   const handleJoinRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-
     setLoading(true);
     setError("");
-
     try {
-      const token = apiService.getToken();
-
-      if (!token) {
-        throw new Error("Token manquant. Veuillez vous reconnecter.");
+      const code = roomCode.trim().toUpperCase();
+      if (code.length !== 4) {
+        setError("Room code must be 4 characters");
+        return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/api/matches/${roomCode}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // check the match if exists
+      await apiService.get<MatchItem>(`/matches/${code}`);
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text);
-      }
-
-      const data = await response.json();
+      // Then join it
+      // joining is handeld by socket "joinMatchRoom"
 
       setPlayerName(playerName);
+      navigate(`/games/${gameSlug}/multiplayer/lobby/${code}`);
 
-      navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Erreur récupération salle");
+      setError(err.message || "Failed to join room");
     } finally {
       setLoading(false);
     }
@@ -143,18 +121,14 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
         <div className="d-flex justify-content-center mb-4">
           <button
-            className={`btn me-2 ${
-              isCreateRoom ? "btn-success" : "btn-outline-success"
-            }`}
+            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(true)}
           >
             Créer Salle
           </button>
 
           <button
-            className={`btn ${
-              !isCreateRoom ? "btn-success" : "btn-outline-success"
-            }`}
+            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(false)}
           >
             Rejoindre Salle

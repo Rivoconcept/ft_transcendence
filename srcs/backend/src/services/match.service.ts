@@ -553,10 +553,10 @@ class MatchService {
     // Delegate pure logic to the manager
     const players = kodGameManager.initGame(matchId, participations.map(p => p.user_id));
 
-    const io = socketService.getIO();
-    if (io) {
-      io.to(`match.${matchId}`).emit("kod:initialized", { matchId, players });
-    }
+    // const io = socketService.getIO();
+    // if (io) {
+    //   io.to(`match.${matchId}`).emit("kod:initialized", { matchId, players });
+    // }
 
     return players;
   }
