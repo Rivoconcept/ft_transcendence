@@ -7,6 +7,9 @@ import app from "./app.js";
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
+import { loadSecrets } from "./vault.js";
+await loadSecrets();
+
 AppDataSource.initialize()
   .then(() => {
     console.log("Database connected");
@@ -21,3 +24,5 @@ AppDataSource.initialize()
     console.error("Database connection failed:", error);
     process.exit(1);
   });
+
+  
