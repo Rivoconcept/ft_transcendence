@@ -150,13 +150,9 @@ class SocketService {
       });
 
       socket.on("startMatch", async (data: { matchId: string, gameSlug: string }) => {
-        if (!socket.userId) {
-          socket.emit("error", { error: "Not authenticated" });
-          return;
-        }
+        if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
 
         console.log("-------------------- game ", data.matchId, " started --------------------");
-
         // mettre à jour le statut du match et vérifier les conditions de démarrage
         try {
           await matchService.startMatch(socket.userId, data.matchId);
@@ -164,7 +160,6 @@ class SocketService {
         } catch (err: any) {
           socket.emit("error", { error: err.message });
         }
-
 
         const room = `match.${data.matchId}`;
 
@@ -179,7 +174,6 @@ class SocketService {
             users.set(s.userId, s.username);
         });
 
-
         // Start the match
         const participants = Array.from(users.keys());
         if (participants.length < 2) {
@@ -192,19 +186,19 @@ class SocketService {
           players: participants,
         });
 
-        // Start kod game
-        try {
-          if (data.gameSlug == "kingOfDiamond") {
-            let kodPlayers = await matchService.initKodGame(socket.userId, data.matchId);
-            this.io?.to(room).emit("kod:initialized", {
-              matchId: data.matchId,
-              players: kodPlayers
-            });
-            console.log("KOD game inited: ", kodPlayers);
-          }
-        } catch (err: any) {
-          socket.emit("error", { error: err.message });
-        }
+        // // Start kod game
+        // try {
+        //   if (data.gameSlug == "kingOfDiamond") {
+        //     let kodPlayers = await matchService.initKodGame(socket.userId, data.matchId);
+        //     this.io?.to(room).emit("kod:initialized", {
+        //       matchId: data.matchId,
+        //       players: kodPlayers
+        //     });
+        //     console.log("KOD game inited: ", kodPlayers);
+        //   }
+        // } catch (err: any) {
+        //   socket.emit("error", { error: err.message });
+        // }
 
         console.log("");
         console.log("");
@@ -244,14 +238,19 @@ class SocketService {
       socket.on("kod:init", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
-          // Enrich the initiator's name before init broadcasts
-          socket.playerName = playerName || socket.username;
-          const players = await matchService.initKodGame(socket.userId, matchId);
           // Enrich names from all sockets currently in the room
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
           sockets?.forEach((s: any) => {
             if (s.userId && s.playerName) kodGameManager.setPlayerName(matchId, s.userId, s.playerName);
           });
+
+          let kodPlayers = await matchService.initKodGame(socket.userId, matchId);
+          this.io?.to(`match.${matchId}`).emit("kod:initialized", {
+            matchId: matchId,
+            players: kodPlayers
+          });
+          console.log("KOD game inited: ", kodPlayers);
+
         } catch (err: any) {
           socket.emit("error", { error: err.message });
         }

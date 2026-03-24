@@ -111,6 +111,9 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 		socket.on('kod:game-over', onGameOver);
 		socket.on('error', onError);
 
+		// Each client requests their own initialization once mounted
+		socket.emit('kod:init', { matchId });
+
 		return () => {
 			socket.off('kod:initialized', onInitialized);
 			socket.off('kod:choice-submitted', onChoiceSubmitted);
