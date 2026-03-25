@@ -43,12 +43,12 @@ class KodGameManager {
   private games = new Map<string, KodMatchState>();
 
   // Called by MatchService after it has validated the match and reset DB scores
-  initGame(matchId: string, participantIds: number[]): KodPlayer[] {
+  initGame(matchId: string, participants: { userId: number; playerName: string }[]): KodPlayer[] {
     const players = new Map<number, KodPlayer>();
-    for (const uid of participantIds) {
-      players.set(uid, {
-        userId: uid,
-        playerName: `Player ${uid}`, // MatchService enriches from socket data
+    for (const { userId, playerName } of participants) {
+      players.set(userId, {
+        userId,
+        playerName, // real name passed in directly
         points: STARTING_POINTS,
         isActive: true,
         hasSubmitted: false,

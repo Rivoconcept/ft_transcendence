@@ -25,6 +25,8 @@ interface MatchItem {
   participantIds: number[];
 }
 
+const STARTING_POINTS = 10;
+
 class MatchService {
   private matchRepository = AppDataSource.getRepository(Match);
   private participationRepository = AppDataSource.getRepository(Participation);
@@ -531,7 +533,11 @@ class MatchService {
 
   //----------------- Kod game specific logic -----------------
 
-  async initKodGame(userId: number, matchId: string): Promise<KodPlayer[]> {
+  async initKodGame(
+    userId: number,
+    matchId: string,
+    participants: { userId: number; playerName: string }[]
+  ): Promise<KodPlayer[]> {
     const match = await this.matchRepository.findOne({ where: { id: matchId } });
     if (!match) throw new Error("Match not found");
     if (match.author_id !== userId) throw new Error("Only the match creator can start the game");
@@ -543,21 +549,13 @@ class MatchService {
     if (participations.length < 2) throw new Error("Need at least 2 players");
 
     // Reset DB scores to STARTING_POINTS
-    for (const p of participations) p.score = 10;
+    for (const p of participations) p.score = STARTING_POINTS;
     await this.participationRepository.save(participations);
 
     match.is_open = false;
     match.current_set = 1;
     await this.matchRepository.save(match);
-
-    // Delegate pure logic to the manager
-    const players = kodGameManager.initGame(matchId, participations.map(p => p.user_id));
-
-    // const io = socketService.getIO();
-    // if (io) {
-    //   io.to(`match.${matchId}`).emit("kod:initialized", { matchId, players });
-    // }
-
+    const players = kodGameManager.initGame(matchId, participants);
     return players;
   }
 

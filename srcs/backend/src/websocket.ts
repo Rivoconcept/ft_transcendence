@@ -235,16 +235,26 @@ class SocketService {
 
       //----------------- Kod game specific logic -----------------
 
-      socket.on("kod:init", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
+      socket.on("kod:init", async ({ matchId }: { matchId: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
-          // Enrich names from all sockets currently in the room
+
+          // Build participants with real names from connected sockets
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
+          const seen = new Set<number>();
+          const participants: { userId: number; playerName: string }[] = [];
+
           sockets?.forEach((s: any) => {
-            if (s.userId && s.playerName) kodGameManager.setPlayerName(matchId, s.userId, s.playerName);
+            if (s.userId && !seen.has(s.userId)) {
+              participants.push({
+                userId: s.userId,
+                playerName: s.playerName || s.username || `Player ${s.userId}`,
+              });
+              seen.add(s.userId);
+            }
           });
 
-          let kodPlayers = await matchService.initKodGame(socket.userId, matchId);
+          let kodPlayers = await matchService.initKodGame(socket.userId, matchId, participants);
           this.io?.to(`match.${matchId}`).emit("kod:initialized", {
             matchId: matchId,
             players: kodPlayers
