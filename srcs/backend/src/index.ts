@@ -6,7 +6,7 @@ import app from "./app.js";
 import { Game } from "./database/entities/game.js";
 
 const httpServer = createServer(app);
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 async function seedGames() {
   const gameRepo = AppDataSource.getRepository(Game);
@@ -35,7 +35,7 @@ AppDataSource.initialize()
 
     socketService.init(httpServer);
 
-    httpServer.listen(PORT, () => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
       console.log(`Backend running on port ${PORT}`);
     });
   })
