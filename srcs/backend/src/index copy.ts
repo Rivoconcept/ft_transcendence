@@ -1,20 +1,21 @@
 import "reflect-metadata";
-import { loadSecrets } from "./vault.js";
-
-await loadSecrets();
-
-const { createServer } = await import("http");
-const { AppDataSource } = await import("./database/data-source.js");
-const { socketService } = await import("./websocket.js");
-const { default: app } = await import("./app.js");
+import { createServer } from "http";
+import { socketService } from "./websocket.js";
+import app from "./app.js";
 
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
+import { loadSecrets } from "./vault.js";
+await loadSecrets();
+import { AppDataSource } from "./database/data-source.js";
+
 AppDataSource.initialize()
   .then(() => {
     console.log("Database connected");
+
     socketService.init(httpServer);
+
     httpServer.listen(PORT, () => {
       console.log(`Backend running on port ${PORT}`);
     });
