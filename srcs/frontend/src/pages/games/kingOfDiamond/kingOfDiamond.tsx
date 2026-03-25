@@ -147,7 +147,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 				<button className="back-btn" onClick={onBack}>Back</button>
 			</div>
 
-			{error && (
+			{error && error !== "Only the match creator can start the game" && (
 				<div className="error-banner">
 					{error}
 					<button onClick={() => setError(null)}>✕</button>
