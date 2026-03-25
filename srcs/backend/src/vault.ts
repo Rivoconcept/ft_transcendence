@@ -19,7 +19,6 @@ export async function loadSecrets(): Promise<void> {
     process.env.JWT_SECRET        = data.JWT_SECRET;
     process.env.REFRESH_SECRET    = data.REFRESH_SECRET;
     process.env.POSTGRES_PASSWORD = data.POSTGRES_PASSWORD;
-
     console.log('✅ Secrets loaded from Vault');
 
   } catch (err) {
