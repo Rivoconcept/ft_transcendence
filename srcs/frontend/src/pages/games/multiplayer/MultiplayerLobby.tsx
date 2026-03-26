@@ -12,6 +12,19 @@ interface Player {
   ready: boolean;
 }
 
+interface MatchItem {
+  id: string;
+  set: number;
+  current_set: number;
+  authorId: number;
+  gameId: number | null;
+  is_open: boolean;
+  is_private: boolean;
+  match_over: boolean;
+  created_at: Date;
+  participantIds: number[];
+}
+
 export default function MultiplayerLobby(): React.JSX.Element {
   const { gameSlug, roomId } = useParams();
   const navigate = useNavigate();
@@ -21,10 +34,30 @@ export default function MultiplayerLobby(): React.JSX.Element {
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [isCreator, setIsCreator] = useState(false);
-  const [me, setMe] = useState<Player | null>(null);
+  const [matchLoaded, setMatchLoaded] = useState(false);
 
+  // Load match from DB on mount to get the real participant list and authorId
   useEffect(() => {
     if (!roomId || !currentUser) return;
+
+    // Build initial player list from DB participants
+    // Names will be enriched when match:player-joined fires
+    apiService.get<MatchItem>(`/matches/${roomId}`).then(match => {
+      setPlayers(
+        match.participantIds.map(id => ({
+          id,
+          name: id === currentUser.id ? playerName : `Player ${id}`,
+          ready: false,
+        }))
+      );
+      setIsCreator(match.authorId === currentUser.id);
+      setMatchLoaded(true);
+    }).catch(() => navigate(`/games/${gameSlug}/multiplayer/setup`));
+  }, [roomId, currentUser]);
+
+  // Socket setup — only after match is confirmed to exist
+  useEffect(() => {
+    if (!matchLoaded || !roomId || !currentUser) return;
 
     const token = apiService.getToken();
     if (!token) {
@@ -37,89 +70,89 @@ export default function MultiplayerLobby(): React.JSX.Element {
     if (!socket) return;
 
     const joinRoom = () => {
-      console.log("Join match room:", roomId);
-
-      socket.emit("joinMatchRoom", {
-        matchId: roomId,
-        playerName,
-      });
+      socket.emit("joinMatchRoom", { matchId: roomId, playerName });
     };
 
-    const handlePlayers = (data: { participants: Player[]; creatorId: number }) => {
+    // match:player-joined now carries the full participant list with names
+    // because the socket handler fetches all sockets in the room
+    const handlePlayersUpdate = (data: { participants: Player[] }) => {
+
+      console.log("");
+      console.log("--> Updated player list:", data.participants);
+      console.log("");
+
       setPlayers(data.participants);
-
-      const userId = currentUser.id;
-
-      const currentPlayer =
-        data.participants.find((p) => p.id === userId) || null;
-
-      setMe(currentPlayer);
-
-      setIsCreator(data.creatorId === userId);
     };
 
     const handleStart = () => {
       navigate(`/games/${gameSlug}/${roomId}/play`);
     };
 
-    if (socket.connected) joinRoom();
+    const handleError = ({ error }: { error: string }) => {
+      console.error("Socket error:", error);
+    };
 
+    if (socket.connected) joinRoom();
     socket.on("connect", joinRoom);
-    socket.on("match:player-joined", handlePlayers);
+    socket.on("match:player-joined", handlePlayersUpdate);
     socket.on("match:started", handleStart);
+    socket.on("error", handleError);
 
     return () => {
       socket.off("connect", joinRoom);
-      socket.off("match:player-joined", handlePlayers);
+      socket.off("match:player-joined", handlePlayersUpdate);
       socket.off("match:started", handleStart);
+      socket.off("error", handleError);
     };
-  }, [roomId, gameSlug, navigate, playerName, currentUser]);
+  }, [matchLoaded, roomId, gameSlug, navigate, playerName, currentUser]);
 
-  const startGame = () => {
+  const startGame = async () => {
     const socket = socketStore.getSocket();
-
     if (socket && roomId) {
-      socket.emit("startMatch", { matchId: roomId });
+      socket.emit("startMatch", { matchId: roomId, gameSlug: gameSlug });
     }
   };
+
+  // const me = players.find(p => p.id === currentUser?.id);
 
   return (
     <div className="container mt-5">
       <div className="card shadow p-4 mx-auto" style={{ maxWidth: 500 }}>
         <h2 className="text-center mb-4">Lobby : {roomId}</h2>
-
-        <h5>Joueurs ({players.length})</h5>
+        {/* <h5>Players ({players.length})</h5> */}
 
         <ul className="list-group mb-4">
-          {players.map((player) => (
+          {players.map(player => (
             <li
               key={player.id}
               className="list-group-item d-flex justify-content-between align-items-center"
             >
-              {player.name} {me?.id === player.id && "(vous)"}
-
-              {player.ready && (
-                <span className="badge bg-success">Prêt</span>
-              )}
+              <span>
+                {player.name}
+                {player.id === currentUser?.id && " (you)"}
+                {player.id === players.find(p => isCreator && p.id === currentUser?.id)?.id && (
+                  <span className="badge bg-secondary ms-2">host</span>
+                )}
+              </span>
             </li>
           ))}
         </ul>
 
         {players.length === 0 && (
           <div className="alert alert-warning text-center">
-            En attente de joueurs...
+            Waiting for players…
           </div>
         )}
 
         {isCreator && players.length > 1 && (
           <button className="btn btn-success w-100" onClick={startGame}>
-            Lancer le jeu
+            Start game
           </button>
         )}
 
-        {!isCreator && players.length > 0 && (
+        {!isCreator && (
           <div className="alert alert-info text-center">
-            En attente du créateur...
+            Waiting for the host to start…
           </div>
         )}
       </div>
