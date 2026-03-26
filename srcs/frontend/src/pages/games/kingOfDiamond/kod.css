@@ -24,7 +24,7 @@
   --border-input:   #2a2a4a;
   --border-error:   #a32d2d;
   --border-elim:    rgba(163, 45, 45, 0.267);
-  --border-num:     #1e1e2a;
+  --border-num:     #323246;
   --border-header:  #1a1a2a;
 
   --gold:           #c9a84c;
@@ -303,7 +303,7 @@
   }
 
   .kod-selection-display__placeholder {
-    color: var(--border-input);
+    color: var(--text-secondary);
     font-size: 15px;
     letter-spacing: 2px;
   }
