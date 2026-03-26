@@ -10,6 +10,7 @@ cat > /tmp/servers.json <<EOF
       "Port": ${DB_PORT},
       "MaintenanceDB": "${POSTGRES_DB}",
       "Username": "${POSTGRES_USER}",
+      "
       "SSLMode": "prefer"
     }
   }

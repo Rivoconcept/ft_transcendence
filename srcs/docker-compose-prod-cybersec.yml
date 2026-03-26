@@ -1,4 +1,38 @@
 services:
+  vault-init:
+    image: hashicorp/vault:1.15
+    container_name: vault-init
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
+    volumes:
+      - vault-secrets:/run/secrets
+      - ./.env.vault:/vault/vault-init:ro
+      - ./vault/init.sh:/vault/init.sh:ro
+    command: sh /vault/init.sh
+    depends_on:
+      vault:
+        condition: service_healthy
+    networks:
+      - transcendence-network
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -dev
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "VAULT_ADDR=http://127.0.0.1:8200 vault status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   postgres:
     image: postgres:16
     container_name: postgres
@@ -13,10 +47,17 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/POSTGRES_PASSWORD
     volumes:
       - ${DATA_PATH}/db_data:/var/lib/postgresql/data
-    secrets:
-      - POSTGRES_PASSWORD
+      - vault-secrets:/run/secrets:ro
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
     networks:
       - transcendence-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -31,9 +72,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
     depends_on:
-      - postgres
-    secrets:
-      - POSTGRES_PASSWORD
+      postgres:
+        condition: service_healthy
     networks:
       - transcendence-network
     ports:
@@ -54,18 +94,15 @@ services:
       - ../secrets/certs:/etc/ssl/private/
     ports:
       - "5173:5173"
-    
+      
 
 volumes:
   db_data:
     external: true
   site_data:
     external: true
+  vault-secrets:
 
 networks:
   transcendence-network:
     driver: bridge
-
-secrets:
-  POSTGRES_PASSWORD:
-    file: ../secrets/POSTGRES_PASSWORD.txt
