@@ -464,7 +464,6 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 								{submittedCount}/{activePlayers.length}
 							</span>
 						</div>
-
 						{renderPlayerGrid(false)}
 					</div>
 				)}
