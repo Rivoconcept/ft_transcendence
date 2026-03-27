@@ -1,6 +1,8 @@
 import { useAtomValue, useSetAtom } from "jotai";
+import { socketStore } from "../../store/socketStore";
 import { 
     currentUserAtom,
+    selectChatAtom,
     blockedUserIdsAtom,
     fetchBlockedUsersAtom,
     selectedChatAtom,
@@ -10,10 +12,18 @@ import {
     fetchChatListAtom
 } from "../../providers";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import {
+    useState,
+    useParams,
+    useEffect
+} from "react";
 import type { ChatListItem } from "../../models";
 
 export const useChat = () => {
+
+    const { chatId: chatIdParam } = useParams<{ chatId?: string }>();
+
+    const selectChat = useSetAtom(selectChatAtom);
 
     const navigate = useNavigate();
     const currentUser = useAtomValue(currentUserAtom);
@@ -25,7 +35,9 @@ export const useChat = () => {
     const chatsLoading = useAtomValue(chatListLoadingAtom);
     const fetchChats = useSetAtom(fetchChatListAtom);
 
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [_, setMobileView] = useState<"list" | "chat">("list");
+    
     const formatTime = (dateStr: string) => {
 		return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 	};
@@ -36,6 +48,30 @@ export const useChat = () => {
 		}
 		return chat.memberIds[0];
 	};
+    // Fetch chats on mount
+    useEffect(() => {
+        fetchChats();
+    }, [fetchChats]);
+
+    // Join socket rooms when chat list changes
+    useEffect(() => {
+        chats.forEach(chat => {
+            socketStore.emit("chat:join", { channelId: chat.channel_id });
+        });
+    }, [chats]);
+
+    // Handle URL param chatId or "create"
+    useEffect(() => {
+        if (chatIdParam === "create") {
+            setShowCreateModal(true);
+        } else if (chatIdParam) {
+            const id = Number(chatIdParam);
+            if (!isNaN(id)) {
+                selectChat(id);
+                setMobileView("chat");
+            }
+        }
+    }, [chatIdParam, selectChat]);
 
     return {
         navigate,
@@ -48,6 +84,7 @@ export const useChat = () => {
         formatTime,
         getOtherUserId,
         chats,
+        showCreateModal,
         chatsLoading,
         fetchChats
     }

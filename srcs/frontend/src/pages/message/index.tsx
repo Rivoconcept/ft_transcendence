@@ -397,10 +397,10 @@ export default function MessagesPage() {
 
 			{/* Chat Panel */}
 			<main className="msg-chat-panel">
-				{selectedChat ? (
-					<>
-						<div className="msg-chat-header d-flex align-items-center gap-2 px-3 py-2">
+				{select<div className="msg-chat-header d-flex align-items-center gap-2 px-3 py-2">
 							<button className="icon-action back-btn" onClick={() => { setMobileView("list"); navigate("/messages"); }}>
+						edChat ? (
+					<>
 								<ArrowLeft size={18} className="icon-themed" />
 							</button>
 

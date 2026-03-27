@@ -1,18 +1,15 @@
 import { useChat } from "./useChat";
 import { useSetAtom, useAtomValue } from "jotai";
-import { socketStore } from "../../store/socketStore";
 import { blockService } from "../../services/block.service";
 import {
     useState,
     useRef,
     useEffect,
     useLayoutEffect,
-    useCallback,
-    useParams
+    useCallback
 } from "react";
 import { 
     selectedChatMessagesAtom,
-    selectChatAtom,
     loadOlderMessagesAtom,
     sendMessageAtom,
     blockedUserIdsAtom,
@@ -21,20 +18,16 @@ import {
  } from "../../providers";
 
 export const useChatPanel = () => {
-    const { chatId: chatIdParam } = useParams<{ chatId?: string }>();
 
-    const { currentUser, selectedChat, selectedChatId, setMobileView, fetchChats, fetchBlockedUsers } = useChat();
+    const { currentUser, selectedChat, selectedChatId, fetchBlockedUsers } = useChat();
 
     const messagesState = useAtomValue(selectedChatMessagesAtom);
-    const selectChat = useSetAtom(selectChatAtom);
     const loadOlder = useSetAtom(loadOlderMessagesAtom);
     const doSendMessage = useSetAtom(sendMessageAtom);
     const blockedUserIds = useAtomValue(blockedUserIdsAtom);
     const doBlockUser = useSetAtom(blockUserAtom);
     const doUnblockUser = useSetAtom(unblockUserAtom);
-
     const [input, setInput] = useState("");
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [imageError, setImageError] = useState<string | null>(null);
     const [isChatBlocked, setIsChatBlocked] = useState(false);
@@ -59,31 +52,6 @@ export const useChatPanel = () => {
         document.addEventListener("click", handleClick);
         return () => document.removeEventListener("click", handleClick);
     }, [showDropdown]);
-
-    // Fetch chats on mount
-    useEffect(() => {
-        fetchChats();
-    }, [fetchChats]);
-
-    // Join socket rooms when chat list changes
-    useEffect(() => {
-        chats.forEach(chat => {
-            socketStore.emit("chat:join", { channelId: chat.channel_id });
-        });
-    }, [chats]);
-
-    // Handle URL param chatId or "create"
-    useEffect(() => {
-        if (chatIdParam === "create") {
-            setShowCreateModal(true);
-        } else if (chatIdParam) {
-            const id = Number(chatIdParam);
-            if (!isNaN(id)) {
-                selectChat(id);
-                setMobileView("chat");
-            }
-        }
-    }, [chatIdParam, selectChat]);
 
     // Scroll to bottom when messages become ready (initial load)
     const hasScrolledRef = useRef(false);
@@ -231,15 +199,8 @@ export const useChatPanel = () => {
 	}, [doUnblockUser]);
 
     return {
-        messagesState,
-        selectChat,
-        loadOlder,
-        doSendMessage,
         blockedUserIds,
         fetchBlockedUsers,
-        doBlockUser,
-        doUnblockUser,
-        showCreateModal,
         imageError,
         isChatBlocked,
         cancelImagePreview,
