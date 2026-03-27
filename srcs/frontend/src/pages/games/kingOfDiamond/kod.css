@@ -273,7 +273,7 @@
 
   &:hover {
     background: #1a1a2e;
-    border-color: #3a3a6a;
+    border-color: #4b4b8b;
     color: #d8d8f4;
   }
 
@@ -303,7 +303,7 @@
   }
 
   .kod-selection-display__placeholder {
-    color: var(--border-input);
+    color: var(--text-secondary);
     font-size: 15px;
     letter-spacing: 2px;
   }

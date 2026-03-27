@@ -435,7 +435,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 						</div>
 
 						<button
-							className="kod-btn--primary"
+							className="kod-btn--gold"
 							onClick={handleSubmit}
 							disabled={selectedNumber === null}
 						>
