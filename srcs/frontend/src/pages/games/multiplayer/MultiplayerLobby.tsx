@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socketStore } from "../../../store/socketStore";
-import { useAtomValue } from "jotai";
-import { playerNameAtom } from "./matchAtoms";
+import { useAtomValue, useSetAtom } from "jotai";
+import { playerNameAtom, isCreatorAtom } from "./matchAtoms";
 import { currentUserAtom } from "../../../providers/user.provider";
 import { apiService } from "../../../services";
 
@@ -31,10 +31,12 @@ export default function MultiplayerLobby(): React.JSX.Element {
 
   const playerName = useAtomValue(playerNameAtom);
   const currentUser = useAtomValue(currentUserAtom);
+  const setIsCreatorAtom = useSetAtom(isCreatorAtom);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [isCreator, setIsCreator] = useState(false);
   const [matchLoaded, setMatchLoaded] = useState(false);
+  const hasJoinedRef = useRef(false);
 
   // Load match from DB on mount to get the real participant list and authorId
   useEffect(() => {
@@ -55,6 +57,11 @@ export default function MultiplayerLobby(): React.JSX.Element {
     }).catch(() => navigate(`/games/${gameSlug}/multiplayer/setup`));
   }, [roomId, currentUser]);
 
+  // Sync isCreator to the atom so it's available in CardGameDashboard
+  useEffect(() => {
+    setIsCreatorAtom(isCreator);
+  }, [isCreator, setIsCreatorAtom]);
+
   // Socket setup — only after match is confirmed to exist
   useEffect(() => {
     if (!matchLoaded || !roomId || !currentUser) return;
@@ -65,11 +72,16 @@ export default function MultiplayerLobby(): React.JSX.Element {
       return;
     }
 
+    // Reset hasJoinedRef when roomId changes
+    hasJoinedRef.current = false;
+
     socketStore.connectAndAuth(token);
     const socket = socketStore.getSocket();
     if (!socket) return;
 
     const joinRoom = () => {
+      if (hasJoinedRef.current) return;
+      hasJoinedRef.current = true;
       socket.emit("joinMatchRoom", { matchId: roomId, playerName });
     };
 
@@ -93,12 +105,15 @@ export default function MultiplayerLobby(): React.JSX.Element {
     };
 
     if (socket.connected) joinRoom();
-    socket.on("connect", joinRoom);
+    socket.once("connect", joinRoom);
     socket.on("match:player-joined", handlePlayersUpdate);
     socket.on("match:started", handleStart);
     socket.on("error", handleError);
 
     return () => {
+      hasJoinedRef.current = false;
+      // Leave the match room before unmounting
+      socket.emit("leaveMatchRoom", { matchId: roomId });
       socket.off("connect", joinRoom);
       socket.off("match:player-joined", handlePlayersUpdate);
       socket.off("match:started", handleStart);

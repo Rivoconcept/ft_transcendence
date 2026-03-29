@@ -149,6 +149,27 @@ class SocketService {
         });
       });
 
+      socket.on("leaveMatchRoom", async ({ matchId }: { matchId: string }) => {
+        if (!socket.userId) return;
+
+        const room = `match.${matchId}`;
+        socket.leave(room);
+
+        try {
+          // Remove user participation from the DB only if they're no longer in the match room
+          const roomSockets = await this.io?.in(room).fetchSockets();
+          const stillInRoom = roomSockets?.some((s: any) => s.userId === socket.userId);
+
+          if (!stillInRoom) {
+            await matchService.leaveMatch(socket.userId, matchId);
+          }
+        } catch (err: any) {
+          console.error("Error leaving match:", err);
+        }
+
+        console.log(`${socket.playerName || socket.username} left ${room}`);
+      });
+
       socket.on("startMatch", async (data: { matchId: string, gameSlug: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
 

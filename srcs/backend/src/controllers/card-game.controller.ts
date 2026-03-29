@@ -97,3 +97,15 @@ export async function getLastSingleResult(
   }
 }
 
+export async function finishMatch(req: Request, res: Response) {
+  const { matchId } = req.params;
+
+  try {
+    await cardGameService.finishMatch(matchId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Finish match error:", err);
+    res.status(500).json({ error: "Failed to finish match" });
+  }
+}
+

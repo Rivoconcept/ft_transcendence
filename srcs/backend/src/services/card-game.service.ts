@@ -61,6 +61,28 @@ class CardGameService {
       select: ["player_name", "final_score", "is_win"],
     });
   }
+
+  async finishMatch(matchId: string) {
+    // reset
+    await this.repo.query(`
+      UPDATE card_game
+      SET is_win = false
+      WHERE match_id = $1
+    `, [matchId]);
+
+    // winner(s)
+    await this.repo.query(`
+      UPDATE card_game
+      SET is_win = true
+      WHERE match_id = $1
+      AND final_score = (
+        SELECT MAX(final_score)
+        FROM card_game
+        WHERE match_id = $1
+      )
+    `, [matchId]);
+  }
+  
 }
 
 export const cardGameService = new CardGameService();

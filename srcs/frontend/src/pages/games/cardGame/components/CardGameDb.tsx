@@ -46,24 +46,32 @@ export default function CardGameDb({
       try {
         hasPushedRef.current = true;
 
+        // For MULTI mode, let the backend determine is_win based on finishMatch
+        // For SINGLE mode, use the frontend calculation
+        const shouldDetermineWinBackend = mode === "MULTI";
+        
         await apiService.post("card-games", {
           mode,
           final_score: finalScore,
-          is_win: isWin,
+          is_win: shouldDetermineWinBackend ? false : isWin,
           match_id: matchIdForPush,
           player_name: player || currentUser?.username || "unknown",
         });
 
-        pushHistory({
-          gameType: "cardGame",
-          result: isWin ? "win" : "loss",
-          opponents: mode === "MULTI" ? ["Multiplayer match"] : ["Computer"],
-          isMultiplayer: mode === "MULTI",
-          meta: {
-            matchId: matchIdForPush,
-            finalScore,
-          },
-        });
+        // Only push local history for SINGLE mode
+        // For MULTI, rely on the backend-determined results via finishMatch
+        if (!shouldDetermineWinBackend) {
+          pushHistory({
+            gameType: "cardGame",
+            result: isWin ? "win" : "loss",
+            opponents: mode === "MULTI" ? ["Multiplayer match"] : ["Computer"],
+            isMultiplayer: mode === "MULTI",
+            meta: {
+              matchId: matchIdForPush,
+              finalScore,
+            },
+          });
+        }
 
         onSaved();
       } catch (error) {

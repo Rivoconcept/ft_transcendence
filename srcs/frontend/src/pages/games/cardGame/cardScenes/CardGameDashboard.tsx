@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PhaseButton from "../components/PhaseButton";
 import { useCardState } from "../context/CardContext";
@@ -11,8 +11,9 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { FinalScore, PlayerState, TIME_LIMIT, timeLeftAtom } from "../cardAtoms/cardAtoms";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
 import CardGameDb from "../components/CardGameDb";
-import { playerNameAtom } from "../../multiplayer/matchAtoms";
+import { playerNameAtom, isCreatorAtom } from "../../multiplayer/matchAtoms";
 import { socketStore } from "../../../../websocket";
+import apiService from "../../../../services/api.service";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -32,9 +33,11 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
   const mode = useAtomValue(gameModeAtom);
   const playerName = useAtomValue(playerNameAtom);
+  const isCreator = useAtomValue(isCreatorAtom);
 
   const navigate = useNavigate();
   const { roomId } = useParams();
+  const hasCalledFinishMatchRef = useRef(false);
 
   if (!mode) throw new Error("Game started without a selected mode");
 
@@ -98,6 +101,27 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       setPhase(Phase.SHOW_RESULT);
     }
   }, [timeLeft, totalScoreCalculated, scores.length, setPhase]);
+
+  /* ------------------ FINISH MATCH (Multiplayer) ------------------ */
+  useEffect(() => {
+    console.log("finishMatch check:", { isCreator, mode, roomId, timeLeft, hasCalled: hasCalledFinishMatchRef.current });
+    
+    if (!isCreator || mode !== "MULTI" || !roomId || hasCalledFinishMatchRef.current) return;
+
+    if (timeLeft <= 0) {
+      console.log("Calling finishMatch for match:", roomId);
+      hasCalledFinishMatchRef.current = true;
+      const finishMatchAsync = async () => {
+        try {
+          await apiService.post(`card-games/match/${roomId}/finish`, {});
+          console.log("Match finished successfully");
+        } catch (error) {
+          console.error("Error finishing match:", error);
+        }
+      };
+      void finishMatchAsync();
+    }
+  }, [timeLeft, isCreator, mode, roomId]);
 
   /* ------------------ PUSH DB ------------------ */
   const isGameOverForPush =
@@ -170,7 +194,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       </div>
 
       <div className="cardButton">
-        <PhaseButton phase={phase} onClick={onButtonClick} />
+        <PhaseButton phase={phase} onClick={onButtonClick}/>
       </div>
 
       <CardGameDb
