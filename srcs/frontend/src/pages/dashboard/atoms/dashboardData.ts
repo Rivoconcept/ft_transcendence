@@ -1,8 +1,7 @@
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
-import { atomWithStorage, loadable } from 'jotai/utils';
+import { atomWithStorage } from 'jotai/utils';
 import { currentUserAtom } from '../../../providers/user.provider';
-import type { User } from '../../../models';
 import { friendsListAtom } from '../../../providers/friend.provider';
 import { apiService } from '../../../services';
 
@@ -118,19 +117,37 @@ interface CardGameApiRow {
 	author_id: number;
 }
 
-const _remoteCardGamesFamily = atomFamily((userId: number) =>
+const _remoteCardGamesFamily = atomFamily((_userId: number) =>
 	atom(async () => {
-		// Backend enforces auth; userId is used only for caching key.
+		// atomFamily(_userId) creates a separate cached atom per user
+		// Backend enforces auth and returns only the current user's card games
 		const rows = await apiService.get<CardGameApiRow[]>('card-games');
-		return rows
-			.map((r) => {
+		
+		return Promise.all(
+			rows.map(async (r) => {
 				const ts = Date.parse(r.created_at);
+				
+				let opponents: string[] = ['Computer'];
+				
+				// For multiplayer matches, fetch real opponent names
+				if (r.mode === 'MULTI' && r.match_id) {
+					try {
+						const matchResults = await apiService.get<Array<{ player_name: string }>>(`card-games/match/${r.match_id}`);
+						opponents = matchResults
+							.filter(p => p.player_name !== r.player_name)
+							.map(p => p.player_name);
+					} catch (err) {
+						console.error(`Failed to fetch opponents for match ${r.match_id}:`, err);
+						opponents = ['Multiplayer match'];
+					}
+				}
+				
 				return {
 					id: `card-remote-${r.id}`,
 					gameType: 'cardGame' as const,
 					user: r.player_name ?? 'You',
 					result: (r.is_win ? 'win' : 'loss') as GameResultKind,
-					opponents: r.mode === 'MULTI' ? ['Multiplayer match'] : ['Computer'],
+					opponents,
 					isMultiplayer: r.mode === 'MULTI',
 					timestamp: Number.isFinite(ts) ? ts : Date.now(),
 					meta: {
@@ -139,23 +156,35 @@ const _remoteCardGamesFamily = atomFamily((userId: number) =>
 					},
 				} satisfies GameHistoryEntry;
 			})
-			.sort((a, b) => b.timestamp - a.timestamp);
+		).then(entries => entries.sort((a, b) => b.timestamp - a.timestamp));
 	})
 );
 
-export const remoteCardGamesAtom = atom((get) => {
+export const remoteCardGamesAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
-	if (!currentUser) return { state: 'hasData', data: [] as GameHistoryEntry[] } as const;
-	return get(loadable(_remoteCardGamesFamily(currentUser.id)));
+	if (!currentUser) return [] as GameHistoryEntry[];
+	
+	try {
+		const result = await get(_remoteCardGamesFamily(currentUser.id));
+		return result;
+	} catch (err) {
+		console.error("Failed to fetch remote card games:", err);
+		return [] as GameHistoryEntry[];
+	}
 });
 
-export const gameHistoryAtom = atom((get) => {
+export const gameHistoryAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 
 	const local = get(_gameHistoryByUserAtomFamily(currentUser.id));
-	const remoteLoadable = get(remoteCardGamesAtom);
-	const remote = remoteLoadable.state === 'hasData' ? remoteLoadable.data : [];
+	
+	let remote: GameHistoryEntry[] = [];
+	try {
+		remote = await get(remoteCardGamesAtom);
+	} catch (err) {
+		console.error("Failed to get remote card games:", err);
+	}
 
 	// Merge + dedupe by id
 	const map = new Map<string, GameHistoryEntry>();
@@ -174,8 +203,8 @@ export interface GameResult {
 export type StatsFilter = 'overall' | GameType;
 export const gameStatsFilterAtom = atom<StatsFilter>('overall');
 
-export const gameStatsAtom = atom((get) => {
-	const history = get(gameHistoryAtom);
+export const gameStatsAtom = atom(async (get) => {
+	const history = await get(gameHistoryAtom);
 	return history.map(
 		(h) =>
 			({

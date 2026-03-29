@@ -95,7 +95,13 @@ class MatchService {
       participantIds: [userId],
     };
   }
-
+  async leaveMatch(userId: number, matchId: string): Promise<void> {
+    // Remove the user's participation from the match
+    await this.participationRepository.delete({
+      user_id: userId,
+      match_id: matchId,
+    });
+  }
   async discoverMatches(gameId?: number): Promise<MatchItem[]> {
     // Seulement les matchs publics, ouverts et non terminés
     const whereClause: Record<string, unknown> = {
@@ -162,14 +168,11 @@ class MatchService {
       throw new Error("Match is not open for joining");
     }
 
-    // Vérifier si l'utilisateur est déjà participant
-    const existingParticipation = await this.participationRepository.findOne({
-      where: { user_id: userId, match_id: matchId },
+    // Delete any existing participation (in case of reconnection/multiple joins)
+    await this.participationRepository.delete({
+      user_id: userId,
+      match_id: matchId,
     });
-
-    if (existingParticipation) {
-      throw new Error("You are already in this match");
-    }
 
     // Ajouter le participant
     const participation = this.participationRepository.create({

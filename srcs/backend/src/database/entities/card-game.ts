@@ -6,7 +6,7 @@ import type { User } from "./user.js";
 import { CardGameMode } from "../enum/cardGameModeEnum.js";
 
 
-@Entity()
+@Entity("card_game")
 export class CardGame {
   @PrimaryGeneratedColumn()
   id!: number;

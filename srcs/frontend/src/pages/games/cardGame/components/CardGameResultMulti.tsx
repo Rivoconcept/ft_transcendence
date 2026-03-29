@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAtomValue } from "jotai";
 import apiService from "../../../../services/api.service";
 import { socketStore } from "../../../../websocket";
 import { isCreatorAtom } from "../../multiplayer/matchAtoms";
@@ -15,20 +16,18 @@ export default function CardGameMultiResult() {
     const navigate = useNavigate();
     const [results, setResults] = useState<GameResult[]>([]);
     const socket = socketStore.getSocket();
+    const isCreator = useAtomValue(isCreatorAtom);
 
     useEffect(() => {
     const fetchResults = async () => {
         try {
             const data: GameResult[] = await apiService.get(`card-games/match/${roomId}`);
+            setResults(data);
 
-            const sorted = data.sort((a, b) => b.final_score - a.final_score);
-
-            setResults(sorted);
-
-            if (isCreatorAtom && socket) {
+            if (isCreator && socket) {
                 socket.emit("match:results", {
                 matchId: roomId,
-                results: sorted
+                results: data
                 });
             }
 
@@ -38,7 +37,7 @@ export default function CardGameMultiResult() {
     };
 
     if (roomId) fetchResults();
-    }, [roomId]);
+    }, [roomId, isCreator, socket]);
 
     const handleBackHome = () => {
     navigate("/games");
@@ -48,6 +47,7 @@ export default function CardGameMultiResult() {
     <div className="container mt-5">
 
       <h2 className="mb-4 text-center">Match Result</h2>
+
         <table className="table table-striped table-bordered text-center">
         <thead style={{ backgroundColor: "#343a40", color: "white" }}>
             {/* ligne du header colorée */}
@@ -60,11 +60,9 @@ export default function CardGameMultiResult() {
         </thead>
 
         <tbody>
-            {results
-            .sort((a, b) => b.final_score - a.final_score) // tri décroissant
-            .map((r, i) => {
-                // le gagnant = premier élément après tri
-                const isWinner = i === 0;
+            {results.map((r, i) => {
+                // is_win vient de la base de données après finishMatch du créateur
+                const isWinner = r.is_win;
 
                 return (
                 <tr
