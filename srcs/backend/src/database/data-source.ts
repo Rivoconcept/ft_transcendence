@@ -16,6 +16,7 @@ import { Reaction } from "./entities/reaction.js";
 import { UserReaction } from "./entities/user-reaction.js";
 import { BlockedUser } from "./entities/blocked-user.js";
 import { KodWinner, KodRound } from "./entities/KodRound.js";
+import { UserOnlineTime } from "./entities/user-online-time.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -43,5 +44,6 @@ export const AppDataSource = new DataSource({
     BlockedUser,
     KodWinner,
     KodRound,
+    UserOnlineTime,
   ],
 } as DataSourceOptions);

@@ -1,10 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { currentUserAtom, updateCurrentUserAtom } from '../../../providers';
+import { gameHistoryAtom } from '../../../pages/dashboard/atoms/dashboardData';
 import AvatarUtil from '../../../components/AvatarUtil';
 import AvatarSelector from '../../../components/AvatarSelector';
 
+function ProfileStats(): React.JSX.Element {
+	const gameHistory = useAtomValue(gameHistoryAtom);
+
+	const totalGames = gameHistory.length;
+	const wins = gameHistory.filter((g) => g.result === 'win').length;
+	const losses = gameHistory.filter((g) => g.result === 'loss').length;
+	const playerSince = gameHistory.length > 0
+		? new Date(gameHistory[gameHistory.length - 1].timestamp).getFullYear()
+		: new Date().getFullYear();
+
+	return (
+		<>
+			<p style={{ color: '#666' }}>Player since {playerSince}</p>
+			<div className="profile-stats">
+				<div className="stat-card">
+					<h3>{totalGames}</h3>
+					<p>Games Played</p>
+				</div>
+				<div className="stat-card">
+					<h3>{wins}</h3>
+					<p>Wins</p>
+				</div>
+				<div className="stat-card">
+					<h3>{losses}</h3>
+					<p>Losses</p>
+				</div>
+			</div>
+		</>
+	);
+}
+
 export default function ProfilePage(): React.JSX.Element {
+	const navigate = useNavigate();
 	const user = useAtomValue(currentUserAtom);
 	const updateCurrentUser = useSetAtom(updateCurrentUserAtom);
 	const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -90,23 +124,10 @@ export default function ProfilePage(): React.JSX.Element {
 					) : (
 						<h2>{user.username}</h2>
 					)}
-					<p style={{ color: '#666' }}>Player since 2024</p>
+					<Suspense fallback={<p style={{ color: '#666' }}>Loading profile...</p>}>
+						<ProfileStats />
+					</Suspense>
 					{error && <p style={{ color: '#ef4444', marginTop: '0.5rem', marginBottom: 0 }}>{error}</p>}
-				</div>
-			</div>
-
-			<div className="profile-stats">
-				<div className="stat-card">
-					<h3>12</h3>
-					<p>Games Played</p>
-				</div>
-				<div className="stat-card">
-					<h3>8</h3>
-					<p>Wins</p>
-				</div>
-				<div className="stat-card">
-					<h3>4</h3>
-					<p>Losses</p>
 				</div>
 			</div>
 
@@ -118,7 +139,10 @@ export default function ProfilePage(): React.JSX.Element {
 					</button>
 				</div>
 			) : (
-				<button className="btn-secondary" onClick={startEditing}>Edit Profile</button>
+				<div style={{ display: 'flex', gap: '0.75rem' }}>
+					<button className="btn-secondary" onClick={startEditing}>Edit Profile</button>
+					<button className="btn-secondary" onClick={() => navigate('/dashboard')}>See Dashboard</button>
+				</div>
 			)}
 		</div>
 	);

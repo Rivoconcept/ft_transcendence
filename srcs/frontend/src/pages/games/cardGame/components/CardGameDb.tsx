@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
 import apiService from "../../../../services/api.service";
 import { currentUserAtom } from "../../../../providers";
-import { appendGameHistoryAtom } from "../../../dashboard/atoms/dashboardData";
 
 interface CardGameDbProps {
   finalScore: number;
@@ -26,7 +25,6 @@ export default function CardGameDb({
 }: CardGameDbProps) {
   const hasPushedRef = useRef(false);
   const currentUser = useAtomValue(currentUserAtom);
-  const pushHistory = useSetAtom(appendGameHistoryAtom);
 
   useEffect(() => {
     if (!isGameOver || hasPushedRef.current) return;
@@ -57,22 +55,6 @@ export default function CardGameDb({
           match_id: matchIdForPush,
           player_name: player || currentUser?.username || "unknown",
         });
-
-        // Only push local history for SINGLE mode
-        // For MULTI, rely on the backend-determined results via finishMatch
-        if (!shouldDetermineWinBackend) {
-          pushHistory({
-            gameType: "cardGame",
-            result: isWin ? "win" : "loss",
-            opponents: mode === "MULTI" ? ["Multiplayer match"] : ["Computer"],
-            isMultiplayer: mode === "MULTI",
-            meta: {
-              matchId: matchIdForPush,
-              finalScore,
-            },
-          });
-        }
-
         onSaved();
       } catch (error) {
         console.error("Error saving game:", error);

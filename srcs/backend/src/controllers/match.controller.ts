@@ -248,13 +248,3 @@ export async function updateScore(req: AuthRequest, res: Response): Promise<void
     res.status(500).json({ error: message });
   }
 }
-
-export async function getUserHistory(req: AuthRequest, res: Response): Promise<void> {
-  try {
-    const history = await matchService.getUserHistory(req.user!.userId);
-    res.json(history);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch user history";
-    res.status(500).json({ error: message });
-  }
-}

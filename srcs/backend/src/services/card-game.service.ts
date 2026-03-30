@@ -83,25 +83,6 @@ class CardGameService {
         WHERE match_id = $1
       )
     `, [matchId]);
-
-    // Get the winner and update Match record
-    const winners = await this.repo.find({
-      where: { match_id: matchId, is_win: true },
-    });
-
-    if (winners.length > 0) {
-      const winner = winners[0];
-      const match = await this.matchRepository.findOne({
-        where: { id: matchId },
-      });
-
-      if (match) {
-        match.winner_id = winner.author_id;
-        match.game_type = 'cardGame';
-        match.match_over = true;
-        await this.matchRepository.save(match);
-      }
-    }
   }
   
 }
