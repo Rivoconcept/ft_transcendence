@@ -71,5 +71,6 @@ app.use("/api/card-games", cardGameRoutes);
 app.use("/api/blocks", blockRoutes);
 app.use("/api/user-online-time", userOnlineTimeRoutes);
 app.use("/api/kod-games", kodRoutes);
+app.use("/api/user-online-time", userOnlineTimeRoutes);
 
 export default app;

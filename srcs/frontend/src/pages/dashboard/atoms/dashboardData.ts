@@ -232,7 +232,7 @@ const _remoteKodGamesFamily = atomFamily((_userId: number) =>
 				if (r.mode === 'MULTI' && r.match_id) {
 					try {
 						const matchResults = await apiService.get<Array<{ player_name: string }>>(
-							`kod-gamess/match/${r.match_id}`
+							`kod-games/match/${r.match_id}`
 						);
 						opponents = matchResults
 							.filter((p) => p.player_name !== r.player_name)
