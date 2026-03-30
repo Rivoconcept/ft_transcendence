@@ -10,6 +10,7 @@ import {
   setVisibility,
   endMatch,
   updateScore,
+  getUserHistory,
 } from "../controllers/match.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -20,6 +21,9 @@ router.post("/", authMiddleware, createMatch);
 
 // Découvrir les matchs publics ouverts
 router.get("/discover", authMiddleware, discoverMatches);
+
+// Récupérer l'historique des matchs de l'utilisateur
+router.get("/user/history", authMiddleware, getUserHistory);
 
 // Récupérer un match par ID (4 caractères)
 router.get("/:id", authMiddleware, getMatchById);

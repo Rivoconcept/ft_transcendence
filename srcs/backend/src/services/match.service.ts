@@ -608,8 +608,10 @@ class MatchService {
         }),
       );
 
-      // Mark match as over
+      // Mark match as over and set winner
       match.match_over = true;
+      match.winner_id = result!.gameWinnerId!;
+      match.game_type = 'kingOfDiamond';
       await this.matchRepository.save(match);
 
       if (io) {
@@ -668,6 +670,51 @@ class MatchService {
       where: { match_id: matchId },
       order: { round_number: "ASC" },
     });
+  }
+
+  // Get user's match history with all participants
+  async getUserHistory(userId: number) {
+    // Get all finished matches where the user participated
+    const participations = await this.participationRepository.find({
+      where: { user_id: userId },
+      relations: ['match'],
+    });
+
+    const finishedMatches = participations
+      .filter(p => p.match.match_over)
+      .map(p => p.match);
+
+    if (finishedMatches.length === 0) {
+      return [];
+    }
+
+    // Get all participations for these matches (to know who played with whom)
+    const matchIds = finishedMatches.map(m => m.id);
+    const allParticipations = await this.participationRepository.find({
+      where: matchIds.map(id => ({ match_id: id })),
+      relations: ['user'],
+    });
+
+    // Group participations by match
+    const participationsByMatch = new Map<string, any[]>();
+    allParticipations.forEach(p => {
+      const existing = participationsByMatch.get(p.match_id) ?? [];
+      existing.push({
+        userId: p.user_id,
+        userName: p.user?.username || 'Unknown',
+      });
+      participationsByMatch.set(p.match_id, existing);
+    });
+
+    // Build history entries
+    return finishedMatches.map(match => ({
+      id: match.id,
+      matchId: match.id,
+      gameType: match.game_type || null,
+      winnerId: match.winner_id || null,
+      createdAt: match.created_at.toISOString(),
+      participants: participationsByMatch.get(match.id) ?? [],
+    }));
   }
 
   //------------------------------------------------------------

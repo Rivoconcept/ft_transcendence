@@ -1,6 +1,7 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/card-game.service.ts
 import { AppDataSource } from "../database/data-source.js";
 import { CardGame } from "../database/entities/card-game.js";
+import { Match } from "../database/entities/match.js";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
 
 interface CreateCardGameDTO {
@@ -13,6 +14,7 @@ interface CreateCardGameDTO {
 
 class CardGameService {
   private repo = AppDataSource.getRepository(CardGame);
+  private matchRepository = AppDataSource.getRepository(Match);
 
   // Crée une partie
 
@@ -81,6 +83,25 @@ class CardGameService {
         WHERE match_id = $1
       )
     `, [matchId]);
+
+    // Get the winner and update Match record
+    const winners = await this.repo.find({
+      where: { match_id: matchId, is_win: true },
+    });
+
+    if (winners.length > 0) {
+      const winner = winners[0];
+      const match = await this.matchRepository.findOne({
+        where: { id: matchId },
+      });
+
+      if (match) {
+        match.winner_id = winner.author_id;
+        match.game_type = 'cardGame';
+        match.match_over = true;
+        await this.matchRepository.save(match);
+      }
+    }
   }
   
 }

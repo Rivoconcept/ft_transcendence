@@ -39,6 +39,12 @@ export class Match {
   @Column({ default: false })
   match_over!: boolean;
 
+  @Column({ type: "int", nullable: true })
+  winner_id!: number | null;
+
+  @Column({ type: "varchar", length: 50, nullable: true })
+  game_type!: string | null;
+
   @CreateDateColumn()
   created_at!: Date;
 

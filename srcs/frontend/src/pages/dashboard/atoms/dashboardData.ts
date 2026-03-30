@@ -240,8 +240,6 @@ export const remoteKodGamesAtom = atom(async (get) => {
 	}
 });
 
-// ===== Merged game history (card + kod + local) =====
-
 export const gameHistoryAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
@@ -250,7 +248,7 @@ export const gameHistoryAtom = atom(async (get) => {
 
 	let remoteCard: GameHistoryEntry[] = [];
 	let remoteKod: GameHistoryEntry[] = [];
-
+	
 	try {
 		remoteCard = await get(remoteCardGamesAtom);
 	} catch (err) {
@@ -268,7 +266,6 @@ export const gameHistoryAtom = atom(async (get) => {
 	for (const entry of [...remoteCard, ...remoteKod, ...local]) {
 		map.set(entry.id, entry);
 	}
-
 	return safeSortDescByTimestamp(Array.from(map.values()));
 });
 
