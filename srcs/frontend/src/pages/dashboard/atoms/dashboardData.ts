@@ -122,13 +122,13 @@ const _remoteCardGamesFamily = atomFamily((_userId: number) =>
 		// atomFamily(_userId) creates a separate cached atom per user
 		// Backend enforces auth and returns only the current user's card games
 		const rows = await apiService.get<CardGameApiRow[]>('card-games');
-		
+
 		return Promise.all(
 			rows.map(async (r) => {
 				const ts = Date.parse(r.created_at);
-				
+
 				let opponents: string[] = ['Computer'];
-				
+
 				// For multiplayer matches, fetch real opponent names
 				if (r.mode === 'MULTI' && r.match_id) {
 					try {
@@ -141,7 +141,7 @@ const _remoteCardGamesFamily = atomFamily((_userId: number) =>
 						opponents = ['Multiplayer match'];
 					}
 				}
-				
+
 				return {
 					id: `card-remote-${r.id}`,
 					gameType: 'cardGame' as const,
@@ -163,32 +163,112 @@ const _remoteCardGamesFamily = atomFamily((_userId: number) =>
 export const remoteCardGamesAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
-	
 	try {
-		const result = await get(_remoteCardGamesFamily(currentUser.id));
-		return result;
+		return await get(_remoteCardGamesFamily(currentUser.id));
 	} catch (err) {
-		console.error("Failed to fetch remote card games:", err);
+		console.error('Failed to fetch remote card games:', err);
 		return [] as GameHistoryEntry[];
 	}
 });
+
+// ===== Backend: KOD (King of Diamond) history =====
+
+interface KodGameApiRow {
+	id: number;
+	match_id: string;
+	is_win: boolean;
+	player_name: string;
+	remaining_points: number;
+	total_rounds: number;
+	created_at: string;
+	mode: 'SINGLE' | 'MULTI';
+}
+
+const _remoteKodGamesFamily = atomFamily((_userId: number) =>
+	atom(async () => {
+		const rows = await apiService.get<KodGameApiRow[]>('kod-games');
+
+		return Promise.all(
+			rows.map(async (r) => {
+				const ts = Date.parse(r.created_at);
+				let opponents: string[] = ['Computer'];
+
+				if (r.mode === 'MULTI' && r.match_id) {
+					try {
+						const matchResults = await apiService.get<Array<{ player_name: string }>>(
+							`kod-games/match/${r.match_id}`
+						);
+						opponents = matchResults
+							.filter((p) => p.player_name !== r.player_name)
+							.map((p) => p.player_name);
+					} catch (err) {
+						console.error(
+							`Failed to fetch KOD opponents for match ${r.match_id}:`,
+							err
+						);
+						opponents = ['Multiplayer match'];
+					}
+				}
+
+				return {
+					id: `kod-remote-${r.id}`,
+					gameType: 'kingOfDiamond' as const,
+					user: r.player_name,
+					result: (r.is_win ? 'win' : 'loss') as GameResultKind,
+					opponents,
+					isMultiplayer: r.mode === 'MULTI',
+					timestamp: Number.isFinite(ts) ? ts : Date.now(),
+					meta: {
+						matchId: r.match_id,
+						remainingPoints: r.remaining_points,  // KOD-specific
+						totalRounds: r.total_rounds,           // KOD-specific
+					},
+				} satisfies GameHistoryEntry;
+			})
+		).then((entries) => entries.sort((a, b) => b.timestamp - a.timestamp));
+	})
+);
+
+export const remoteKodGamesAtom = atom(async (get) => {
+	const currentUser = get(currentUserAtom);
+	if (!currentUser) return [] as GameHistoryEntry[];
+	try {
+		return await get(_remoteKodGamesFamily(currentUser.id));
+	} catch (err) {
+		console.error('Failed to fetch remote KOD games:', err);
+		return [] as GameHistoryEntry[];
+	}
+});
+
+// ===== Merged game history (card + kod + local) =====
 
 export const gameHistoryAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 
 	const local = get(_gameHistoryByUserAtomFamily(currentUser.id));
-	
-	let remote: GameHistoryEntry[] = [];
+
+	let remoteCard: GameHistoryEntry[] = [];
+	let remoteKod: GameHistoryEntry[] = [];
+
 	try {
-		remote = await get(remoteCardGamesAtom);
+		remoteCard = await get(remoteCardGamesAtom);
 	} catch (err) {
-		console.error("Failed to get remote card games:", err);
+		console.error('Failed to get remote card games:', err);
 	}
 
-	// Merge + dedupe by id
+	try {
+		remoteKod = await get(remoteKodGamesAtom);
+	} catch (err) {
+		console.error('Failed to get remote KOD games:', err);
+	}
+
+	// Merge and dedupe by id — remote takes precedence over local
 	const map = new Map<string, GameHistoryEntry>();
-	for (const r of [...remote, ...local]) map.set(r.id, r);
+	for (const entry of [...remoteCard, ...remoteKod, ...local]) {
+		map.set(entry.id, entry);
+	}
+
 	return safeSortDescByTimestamp(Array.from(map.values()));
 });
 
@@ -234,4 +314,3 @@ export const friendsAtom = atom((get) => {
 			}) satisfies FriendDashboardRow
 	);
 });
-

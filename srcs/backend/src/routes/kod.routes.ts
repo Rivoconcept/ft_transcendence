@@ -1,16 +1,20 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { initGame, submitChoice, getState } from "../controllers/kod.controller.js";
+import { getKodGames, getKodMatchParticipants } from "../controllers/kod.controller.js";
 
-const router = Router();
+const router: IRouter = Router();
 
 /**
- * POST   /api/kod/:matchId/init     — host starts the KoD game
- * POST   /api/kod/:matchId/submit   — player submits a number
- * GET    /api/kod/:matchId/state    — fetch current state (reconnect)
+ * GET /kod-games
+ * Returns the authenticated user's full KOD game history.
  */
-router.post("/:matchId/init", authMiddleware, initGame);
-router.post("/:matchId/submit", authMiddleware, submitChoice);
-router.get("/:matchId/state", authMiddleware, getState);
+router.get('/', authMiddleware, getKodGames);
+
+/**
+ * GET /kod-games/match/:match_id
+ * Returns all participant names for a given match (opponent resolution).
+ * NOTE: this route must be declared before any wildcard routes.
+ */
+router.get('/match/:match_id', authMiddleware, getKodMatchParticipants);
 
 export default router;

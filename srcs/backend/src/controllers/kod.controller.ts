@@ -1,56 +1,36 @@
-import { Response } from "express";
-import { AuthRequest } from "../middlewares/auth.middleware.js"; // your existing type
-import { kodService } from "../services/Kod.service.js";
+import { Response } from 'express';
+import { AuthRequest } from "../middlewares/auth.middleware.js";
+import { kodGamesService } from '../services/Kod.service.js';
 
-/**
- * POST /api/kod/:matchId/init
- * Called by the host after the lobby "start" flow.
- * Initialises scores to 10 and creates the first round.
- */
-export async function initGame(req: AuthRequest, res: Response): Promise<void> {
+export async function getKodGames(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const userId = req.user!.userId;
-    const matchId = req.params.matchId;
-    await kodService.initGame(userId, matchId);
-    res.status(200).json({ success: true });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
+    const userId: number = req.user!.userId;
+    const games = await kodGamesService.getKodGames(userId);
+    res.json(games);
+  } catch (err) {
+    console.error('[KodGamesController] getKodGames error:', err);
+    res.status(500).json({ message: 'Failed to fetch KOD game history' });
   }
 }
 
 /**
- * POST /api/kod/:matchId/submit
- * Body: { value: number }
- * A player submits their number for the current round.
+ * GET /kod-games/match/:match_id
+ * Returns all participants of a given KOD match (used by the frontend
+ * to resolve opponent names, mirroring card-games/match/:match_id).
  */
-export async function submitChoice(req: AuthRequest, res: Response): Promise<void> {
+export async function getKodMatchParticipants(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const userId = req.user!.userId;
-    const matchId = req.params.matchId;
-    const value = Number(req.body.value);
+    const { match_id } = req.params;
 
-    if (isNaN(value)) {
-      res.status(400).json({ success: false, message: "value must be a number" });
+    if (!match_id || match_id.length !== 4) {
+      res.status(400).json({ message: 'Invalid match_id' });
       return;
     }
 
-    await kodService.submitChoice(userId, matchId, value);
-    res.status(200).json({ success: true });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
-  }
-}
-
-/**
- * GET /api/kod/:matchId/state
- * Returns current game state (useful for reconnects).
- */
-export async function getState(req: AuthRequest, res: Response): Promise<void> {
-  try {
-    const matchId = req.params.matchId;
-    const state = await kodService.getState(matchId);
-    res.json({ success: true, data: state });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
+    const participants = await kodGamesService.getKodMatchParticipants(match_id);
+    res.json(participants);
+  } catch (err) {
+    console.error('[KodGamesController] getKodMatchParticipants error:', err);
+    res.status(500).json({ message: 'Failed to fetch match participants' });
   }
 }

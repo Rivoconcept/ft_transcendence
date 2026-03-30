@@ -112,8 +112,8 @@ export default function MultiplayerLobby(): React.JSX.Element {
 
     return () => {
       hasJoinedRef.current = false;
-      // Leave the match room before unmounting
-      socket.emit("leaveMatchRoom", { matchId: roomId });
+      // // Leave the match room before unmounting
+      // socket.emit("leaveMatchRoom", { matchId: roomId });
       socket.off("connect", joinRoom);
       socket.off("match:player-joined", handlePlayersUpdate);
       socket.off("match:started", handleStart);

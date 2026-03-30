@@ -1,9 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../providers';
 import { socketStore } from '../../../store/socketStore';
 import './kod.css';
+
+// ── Timeout configuration ────────────────────────────────────────────────────
+
+/** How long (ms) a player has to pick a number before 0 is auto-submitted. */
+const PICK_TIMEOUT_MS = 120_000;
+
+/** How long (ms) the result screen waits before automatically advancing. (invisible) */
+const RESULT_TIMEOUT_MS = 10_000;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -207,6 +215,22 @@ function HistoryPanel({ history, onClose }: { history: HistoryEntry[]; onClose: 
 	);
 }
 
+// ── Countdown ring ────────────────────────────────────────────────────────────
+
+interface CountdownRingProps {
+	remainingMs: number;
+}
+
+function CountdownRing({ remainingMs }: CountdownRingProps) {
+	const seconds = Math.ceil(remainingMs / 1000);
+	const isUrgent = seconds <= 5;
+	return (
+		<div className={`kod-countdown${isUrgent ? ' kod-countdown--urgent' : ''}`}>
+			<span className="kod-countdown__label">{seconds}</span>
+		</div>
+	);
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element {
@@ -227,8 +251,49 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 	const [showHistory, setShowHistory] = useState(false);
 	const [animatingLoss, setAnimatingLoss] = useState(false);
 
+	// Timer state
+	const [pickRemaining, setPickRemaining] = useState(PICK_TIMEOUT_MS);
+	const pickIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	const pickStartRef = useRef<number>(0);
+
+	const resultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	const socket = socketStore.getSocket();
 	const activePlayers = players.filter(p => p.isActive);
+
+	// ── Picking timer helpers ─────────────────────────────────────────────────
+
+	const clearPickTimer = useCallback(() => {
+		if (pickIntervalRef.current) {
+			clearInterval(pickIntervalRef.current);
+			pickIntervalRef.current = null;
+		}
+	}, []);
+
+	const startPickTimer = useCallback(() => {
+		clearPickTimer();
+		pickStartRef.current = Date.now();
+		setPickRemaining(PICK_TIMEOUT_MS);
+
+		pickIntervalRef.current = setInterval(() => {
+			const elapsed = Date.now() - pickStartRef.current;
+			const remaining = Math.max(0, PICK_TIMEOUT_MS - elapsed);
+			setPickRemaining(remaining);
+
+			if (remaining === 0) {
+				clearPickTimer();
+			}
+		}, 100);
+	}, [clearPickTimer]);
+
+	// ── Result timer helpers ──────────────────────────────────────────────────
+
+	const clearResultTimer = useCallback(() => {
+		if (resultTimeoutRef.current) {
+			clearTimeout(resultTimeoutRef.current);
+			resultTimeoutRef.current = null;
+		}
+	}, []);
 
 	// ── Socket listeners ──────────────────────────────────────────────────────
 
@@ -239,6 +304,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			setPlayers(initial);
 			setPhase('picking');
 			setSubmittedCount(0);
+			startPickTimer();
 		};
 
 		const onChoiceSubmitted = () => {
@@ -246,6 +312,8 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 		};
 
 		const onRoundResult = ({ result }: { result: RoundResult }) => {
+			clearPickTimer();
+
 			setHistory(prev => [...prev, {
 				roundNumber: result.roundNumber,
 				average: result.average,
@@ -271,6 +339,8 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 		};
 
 		const onGameOver = ({ winnerId, winnerName }: { winnerId: number; winnerName: string }) => {
+			clearPickTimer();
+			clearResultTimer();
 			setGameWinner({ id: winnerId, name: winnerName });
 			setPhase('ended');
 		};
@@ -291,13 +361,49 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			socket.off('kod:round-result', onRoundResult);
 			socket.off('kod:game-over', onGameOver);
 			socket.off('error', onError);
+			clearPickTimer();
+			clearResultTimer();
 		};
-	}, [socket, matchId, currentUserId]);
+	}, [socket, matchId, currentUserId, startPickTimer, clearPickTimer, clearResultTimer]);
+
+	// ── Auto-submit when pick timer expires ───────────────────────────────────
+
+	useEffect(() => {
+		if (phase !== 'picking') return;
+		if (pickRemaining > 0) return;
+
+		// Timer expired — auto-submit 0
+		const valueToSubmit = selectedNumber !== null ? selectedNumber : 0;
+		socketStore.emit('kod:submit', { matchId, value: valueToSubmit });
+		setPhase('submitted');
+		setError(null);
+		setPlayers(prev => prev.map(p =>
+			p.userId === currentUserId ? { ...p, hasSubmitted: true } : p
+		));
+		setSubmittedCount(1);
+		if (selectedNumber === null) setSelectedNumber(0);
+	}, [pickRemaining, phase, matchId, selectedNumber, currentUserId]);
+
+	// ── Auto-advance from result phase ────────────────────────────────────────
+
+	useEffect(() => {
+		if (phase !== 'result') {
+			clearResultTimer();
+			return;
+		}
+
+		resultTimeoutRef.current = setTimeout(() => {
+			handleNextRound();
+		}, RESULT_TIMEOUT_MS);
+
+		return () => clearResultTimer();
+	}, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Actions ───────────────────────────────────────────────────────────────
 
 	const handleSubmit = useCallback(() => {
 		if (selectedNumber === null) return;
+		clearPickTimer();
 		socketStore.emit('kod:submit', { matchId, value: selectedNumber });
 		setPhase('submitted');
 		setError(null);
@@ -305,14 +411,16 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			p.userId === currentUserId ? { ...p, hasSubmitted: true } : p
 		));
 		setSubmittedCount(1);
-	}, [matchId, selectedNumber, currentUserId]);
+	}, [matchId, selectedNumber, currentUserId, clearPickTimer]);
 
 	const handleNextRound = useCallback(() => {
+		clearResultTimer();
 		setSelectedNumber(null);
 		setLastResult(null);
 		setPhase('picking');
 		setPlayers(prev => prev.map(p => ({ ...p, hasSubmitted: false })));
-	}, []);
+		startPickTimer();
+	}, [clearResultTimer, startPickTimer]);
 
 	// ── Shared player grid ────────────────────────────────────────────────────
 
@@ -414,6 +522,10 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 				{/* ── Picking ──────────────────────────────────────────────── */}
 				{phase === 'picking' && (
 					<div className="phase-panel kod-numgrid">
+						<div className="kod-numgrid__timer-row">
+							<CountdownRing remainingMs={pickRemaining} />
+						</div>
+
 						<div className="kod-numgrid__grid">
 							{Array.from({ length: 101 }, (_, i) => i).map(num => (
 								<button
