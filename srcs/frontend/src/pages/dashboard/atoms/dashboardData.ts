@@ -222,7 +222,7 @@ interface KodGameApiRow {
 
 const _remoteKodGamesFamily = atomFamily((_userId: number) =>
 	atom(async () => {
-		const rows = await apiService.get<KodGameApiRow[]>('kod/');
+		const rows = await apiService.get<KodGameApiRow[]>('kod-games');
 
 		return Promise.all(
 			rows.map(async (r) => {
@@ -232,7 +232,7 @@ const _remoteKodGamesFamily = atomFamily((_userId: number) =>
 				if (r.mode === 'MULTI' && r.match_id) {
 					try {
 						const matchResults = await apiService.get<Array<{ player_name: string }>>(
-							`kod/match/${r.match_id}`
+							`kod-gamess/match/${r.match_id}`
 						);
 						opponents = matchResults
 							.filter((p) => p.player_name !== r.player_name)
