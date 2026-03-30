@@ -68,6 +68,6 @@ app.use("/api/chats", chatRoutes);
 app.use("/api/matches", matchRoutes);
 app.use("/api/card-games", cardGameRoutes);
 app.use("/api/blocks", blockRoutes);
-app.use("/api/kod", kodRoutes);
+app.use("/api/kod-games", kodRoutes);
 
 export default app;
