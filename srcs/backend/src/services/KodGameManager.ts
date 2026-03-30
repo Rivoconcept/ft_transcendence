@@ -136,11 +136,15 @@ class KodGameManager {
       choices.some(c => c.value === 0) &&
       choices.some(c => c.value === 100);
 
+    const isAllSameNumber = choices.every(c => c.value === choices[0].value);
+
     const choicesWithResult = choices.map(c => {
       const isWinner = c.userId === winnerId;
       let pointsLost = 0;
 
-      if (!isWinner) {
+      if (isAllSameNumber) {
+        pointsLost = 2; // everyone loses 2
+      } else if (!isWinner) {
         if (isTwoPlayerEdge && c.value === 0) pointsLost = 2;
         else if (isExactHit) pointsLost = 2;
         else pointsLost = 1;
