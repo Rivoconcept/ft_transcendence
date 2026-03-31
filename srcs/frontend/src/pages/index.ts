@@ -2,7 +2,7 @@
 export { AuthPage } from './auth';
 
 // Games
-export { GameList, DiceGame, kingOfDiamond, CardGamePage, StatusScreen } from './games';
+export { GameList, kingOfDiamond, CardGamePage, StatusScreen } from './games';
 
 // Profile
 export { ProfilePage, FriendsPage } from './profile';

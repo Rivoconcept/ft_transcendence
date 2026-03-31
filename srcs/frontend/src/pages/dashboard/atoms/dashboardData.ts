@@ -5,7 +5,7 @@ import { currentUserAtom } from '../../../providers/user.provider';
 import { friendsListAtom } from '../../../providers/friend.provider';
 import { apiService } from '../../../services';
 
-export type GameType = 'diceGame' | 'kingOfDiamond' | 'cardGame';
+export type GameType = 'kingOfDiamond' | 'cardGame';
 export type GameResultKind = 'win' | 'loss';
 
 export interface GameHistoryEntry {
@@ -284,7 +284,7 @@ export const gameHistoryAtom = atom(async (get) => {
 
 	let remoteCard: GameHistoryEntry[] = [];
 	let remoteKod: GameHistoryEntry[] = [];
-	
+
 	try {
 		remoteCard = await get(remoteCardGamesAtom);
 	} catch (err) {

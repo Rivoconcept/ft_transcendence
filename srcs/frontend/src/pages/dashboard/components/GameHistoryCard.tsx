@@ -12,8 +12,6 @@ export default function GameHistoryCard() {
 
   const getGameTypeName = (gameType: string) => {
     switch (gameType) {
-      case 'diceGame':
-        return 'Dice Game';
       case 'kingOfDiamond':
         return 'King of Diamond';
       case 'cardGame':
@@ -75,9 +73,9 @@ export default function GameHistoryCard() {
 
       {/* View full history link */}
       <div className="history-footer">
-        <a 
-          href="#" 
-          className="view-history-link" 
+        <a
+          href="#"
+          className="view-history-link"
           onClick={(e) => {
             e.preventDefault();
             setView('fullHistory');

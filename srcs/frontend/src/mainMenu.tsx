@@ -32,7 +32,6 @@ import {
 import {
 	AuthPage,
 	GameList,
-	DiceGame,
 	kingOfDiamond,
 	CardGamePage,
 	ProfilePage,
@@ -50,7 +49,7 @@ import {
 import CardGameMultiResult from './pages/games/cardGame/components/CardGameResultMulti';
 
 // Types
-type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
+type GameId = 'kingOfDiamond' | 'cardGame';
 
 // Protected Route Wrapper
 interface ProtectedRouteProps {
@@ -376,25 +375,6 @@ export default function App(): React.JSX.Element {
 					/>
 
 					{/* Games */}
-					<Route
-						path="/games/diceGame/:roomId/play"
-						// path="/games/diceGame"
-						element={
-							<ProtectedRoute>
-								<GameWrapper GameComponent={DiceGame} />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/games/diceGame/single"
-						// path="/games/diceGame"
-						element={
-							<ProtectedRoute>
-								<GameWrapper GameComponent={DiceGame} />
-							</ProtectedRoute>
-						}
-					/>
-
 					<Route
 						path="/games/kingOfDiamond/:roomId/play"
 						element={

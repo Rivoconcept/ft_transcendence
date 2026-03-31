@@ -126,7 +126,7 @@ body {
 }
 
 .nav-item {
-	margin: 0 0.5rem;
+	margin: 0.5rem 0.5rem;
 }
 
 .nav-link:hover {
@@ -404,8 +404,6 @@ body {
 	color: var(--app-text-primary);
 }
 
-/************ RESULT CARDS **************/
-
 .player-list{
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
@@ -458,154 +456,7 @@ body {
 	margin-top: 2rem;
 }
 
-
-/************ DICE GAME **************/
-
-.dice-container {
-	display: flex;
-	justify-content: center;
-	gap: 1rem;
-	margin: 3rem 0;
-}
-
-.dice {
-	width: 80px;
-	height: 80px;
-	background: var(--bg-surface);
-	border: 3px solid var(--primary-color);
-	border-radius: 12px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 2.5rem;
-	font-weight: bold;
-	color: var(--primary-color);
-	box-shadow: 0 4px 15px var(--shadow-primary);
-	animation: rollAnimation 0.5s ease;
-}
-
-@keyframes rollAnimation {
-	0%, 100% { transform: rotate(0deg); }
-	25% { transform: rotate(-10deg); }
-	75% { transform: rotate(10deg); }
-}
-
-.roll-btn {
-	width: 100%;
-	padding: 1rem;
-	background: var(--primary-color);
-	color: var(--app-text-on-primary);
-	border: none;
-	border-radius: 8px;
-	font-size: 1.1rem;
-	font-weight: 600;
-	cursor: pointer;
-	transition: all 0.2s;
-}
-
-.roll-btn:hover {
-	background: var(--primary-dark);
-	transform: scale(1.02);
-}
-
-.roll-btn:active {
-	transform: scale(0.98);
-}
-
-.roll-btn:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-
-/************ NUMBER GAME **************/
-
-.number-input-container {
-	margin: 2rem 0;
-}
-
-.number-input-container label {
-	display: block;
-	margin-bottom: 1rem;
-	color: var(--app-text-primary);
-	font-weight: 500;
-}
-
-.number-grid {
-	display: grid;
-	grid-template-columns: repeat(10, 1fr);
-	gap: 0.5rem;
-	margin-bottom: 1.5rem;
-}
-
-.number-btn {
-	padding: 0.75rem;
-	background: var(--bg-surface-alt);
-	color: var(--app-text-primary);
-	border: 2px solid var(--border-color);
-	border-radius: 6px;
-	font-size: 0.9rem;
-	font-weight: 600;
-	cursor: pointer;
-	transition: all 0.2s;
-}
-
-.number-btn:hover {
-	background: var(--bg-surface-hover);
-	transform: scale(1.05);
-}
-
-.number-btn.selected {
-	background: var(--primary-color);
-	color: var(--app-text-on-primary);
-	border-color: var(--primary-color);
-	box-shadow: 0 0 15px var(--shadow-primary);
-}
-
-.number-display {
-	text-align: center;
-	font-size: 3rem;
-	font-weight: bold;
-	color: var(--primary-color);
-	margin: 2rem 0;
-}
-
-.result-card {
-	background: var(--bg-surface-alt);
-	padding: 2rem;
-	border-radius: 8px;
-	margin-top: 2rem;
-	text-align: center;
-}
-
-.result-card h3 {
-	color: var(--app-text-primary);
-	margin-bottom: 1rem;
-}
-
-.result-card p {
-	color: var(--app-text-secondary);
-	font-size: 1.1rem;
-}
-
-/************ GAME OVER **************/
-
-.game-over-container {
-	text-align: center;
-	padding: 3rem 2rem;
-}
-
-.game-over-container h2 {
-	font-size: 2.5rem;
-	color: var(--primary-color);
-	margin-bottom: 1rem;
-}
-
-.game-over-container p {
-	font-size: 1.2rem;
-	color: var(--app-text-secondary);
-	margin-bottom: 2rem;
-}
+/**************************/
 
 .button-group {
 	display: flex;

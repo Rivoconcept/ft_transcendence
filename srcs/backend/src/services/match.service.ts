@@ -59,6 +59,9 @@ class MatchService {
       game_id: data?.game_id ?? null,
     });
 
+    let game = (match.game_id == 1) ? "Kod" : "game card";
+    console.log("---> Game : ", game);
+
     await this.matchRepository.save(match);
 
     // Ajouter le créateur comme participant

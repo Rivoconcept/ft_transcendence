@@ -5,7 +5,6 @@ import { exportToCSV, exportToPDF } from '../utils/exportStore';
 import '../Dashboard.scss';
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
-  { value: 'diceGame', label: 'Dice Game' },
   { value: 'kingOfDiamond', label: 'King of Diamond' },
   { value: 'cardGame', label: 'Card Game' },
 ];
@@ -17,8 +16,6 @@ export default function FullGameHistory() {
 
   const getGameTypeName = (gameType: string) => {
     switch (gameType) {
-      case 'diceGame':
-        return 'Dice Game';
       case 'kingOfDiamond':
         return 'King of Diamond';
       case 'cardGame':
@@ -132,7 +129,7 @@ export default function FullGameHistory() {
       Opponents: game.opponents.join(', '),
       Mode: game.isMultiplayer ? 'Multiplayer' : 'Single'
     }));
-    
+
     exportToCSV(dataToExport, 'Game_History_Export');
   };
 
@@ -148,7 +145,7 @@ export default function FullGameHistory() {
 
     exportToPDF('My Game History', headers, body, 'Game_History_Report');
   };
-  
+
   return (
     <div className="full-history-page">
       {/* Back Button */}
@@ -161,7 +158,7 @@ export default function FullGameHistory() {
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
-      
+
       <div className="history-container">
         <h1>Game History</h1>
 
@@ -170,7 +167,7 @@ export default function FullGameHistory() {
           <button onClick={handleExportCSV} className="export-btn">Export CSV</button>
           <button onClick={handleExportPDF} className="export-btn">Export PDF</button>
         </div>
-        
+
         <div className="history-layout">
           {/* Filter Panel */}
           <aside className="filter-panel">
@@ -181,10 +178,10 @@ export default function FullGameHistory() {
                   filters.opponentName.trim() ||
                   filters.dateRange.startDate ||
                   filters.dateRange.endDate) && (
-                  <button className="clear-filters-btn" onClick={clearFilters} title="Clear all filters">
-                    ✕
-                  </button>
-                )}
+                    <button className="clear-filters-btn" onClick={clearFilters} title="Clear all filters">
+                      ✕
+                    </button>
+                  )}
               </div>
 
               {/* Game Type Filter */}

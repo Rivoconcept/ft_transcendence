@@ -34,9 +34,8 @@ export default function MultiplayerSetup(): React.JSX.Element {
   const [error, setError] = useState("");
 
   const gameMap: Record<string, number> = {
-    "dice-game": 1,
-    "king-of-diamond": 2,
-    "card-game": 3,
+    "kingOfDiamond": 1,
+    "cardGame": 2,
   };
 
   const getGameId = (slug: string | undefined): number => gameMap[slug || ""] || 1;
@@ -61,6 +60,10 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
     try {
       const game_id = getGameId(gameSlug);
+
+      let game = (game_id == 2) ? "Kod" : "game card";
+
+      console.log("---> Creating match for game_id:", game);
 
       const data = await apiService.post<MatchItem>("/matches", {
         is_private: false,

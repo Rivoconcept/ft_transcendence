@@ -4,26 +4,6 @@ import { gameModeAtom } from "../cardGame/cardAtoms/gameMode.atom";
 import { useAtom } from "jotai";
 
 const gamesConfig = {
-  diceGame: {
-    name: '🎲 Dice Game',
-    description: (
-      <>
-        <p className="lead">
-          Roll three dice and try to get the highest score possible.
-        </p>
-        <p>
-          Each roll is a chance to improve your score. Will luck be on your side,
-          or will the dice betray you?
-        </p>
-        <p>
-          🎯 Aim for the highest total.<br />
-          🎲 Every roll counts.<br />
-          ⚡ Beat your previous scores!
-        </p>
-      </>
-    ),
-  },
-
   kingOfDiamond: {
     name: '#️⃣ King Of Diamond',
     description: (
@@ -53,7 +33,7 @@ const gamesConfig = {
         </p>
 
         <p>
-          Draw cards, accumulate points, and try to reach the perfect score 
+          Draw cards, accumulate points, and try to reach the perfect score
           <strong> without going over the limit</strong>. Each round is a risk:
           push your luck or play it safe?
         </p>

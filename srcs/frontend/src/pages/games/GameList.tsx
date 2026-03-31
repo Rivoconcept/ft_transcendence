@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type GameId = 'diceGame' | 'kingOfDiamond' | 'cardGame';
+type GameId = 'kingOfDiamond' | 'cardGame';
 
 export interface Game {
   id: GameId;
@@ -14,12 +14,6 @@ export default function GameList() {
   const navigate = useNavigate();
 
   const games: Game[] = [
-    {
-      id: 'diceGame',
-      name: 'Dice Game',
-      description: 'Roll three dice and test your luck! Get the highest score possible.',
-      icon: '🎲',
-    },
     {
       id: 'kingOfDiamond',
       name: 'King Of Diamond',

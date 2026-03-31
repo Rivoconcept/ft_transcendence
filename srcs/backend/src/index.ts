@@ -18,7 +18,6 @@ async function seedGames() {
   const count = await gameRepo.count();
   if (count === 0) {
     const games = gameRepo.create([
-      { name: "Dice Game" },
       { name: "King of Diamond" },
       { name: "Card Game" },
     ]);

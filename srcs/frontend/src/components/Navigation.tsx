@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, User, Users, LogOut, BarChart3, ChevronRight, MessageSquare, Gamepad2 } from 'lucide-react';
-import { CardGameRules, DiceGameRules, KingOfDiamondRules, PrivacyPolicy, TermsOfService } from './Rules';
+import { CardGameRules, KingOfDiamondRules, PrivacyPolicy, TermsOfService } from './Rules';
 
 interface NavigationProps {
 	username: string;
@@ -13,7 +13,7 @@ interface NavigationProps {
 export default function Navigation({ username, onLogout, theme, onThemeChange }: NavigationProps): React.JSX.Element {
 	const navigate = useNavigate();
 	const [activeModal, setActiveModal] = useState<
-		null | 'about' | 'tos' | 'privacy' | 'rules' | 'dice' | 'king' | 'card'
+		null | 'about' | 'tos' | 'privacy' | 'rules' | 'king' | 'card'
 	>(null);
 	const aboutButtonRef = useRef<HTMLButtonElement | null>(null);
 	const [aboutPopoverPos, setAboutPopoverPos] = useState<{ top: number; left: number } | null>(null);
@@ -166,14 +166,6 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 							<button
 								type="button"
 								className="about-modal__entry"
-								onClick={() => handleEntryClick('dice')}
-							>
-								<span>Dice Game</span>
-								<ChevronRight size={16} />
-							</button>
-							<button
-								type="button"
-								className="about-modal__entry"
 								onClick={() => handleEntryClick('king')}
 							>
 								<span>King of Diamond</span>
@@ -195,13 +187,6 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 
 		const renderRuleBody = () => {
 			switch (activeModal) {
-				case 'dice':
-					return (
-						<>
-							<div className="about-modal__heading">Dice Game rules</div>
-							<DiceGameRules />
-						</>
-					);
 				case 'king':
 					return (
 						<>
