@@ -608,7 +608,7 @@ class MatchService {
         }),
       );
 
-      // Mark match as over
+      // Mark match as over and set winner
       match.match_over = true;
       await this.matchRepository.save(match);
 
@@ -669,9 +669,6 @@ class MatchService {
       order: { round_number: "ASC" },
     });
   }
-
-  //------------------------------------------------------------
-
 }
 
 export const matchService = new MatchService();

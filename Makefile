@@ -122,6 +122,8 @@ cleandb:
 
 restart: down cleandb all
 
+reboot: down all
+
 fclean: down cleandb
 	docker system prune -af
 	@echo "Cleanup done."

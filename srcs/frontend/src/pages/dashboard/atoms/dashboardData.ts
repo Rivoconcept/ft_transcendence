@@ -32,14 +32,33 @@ function safeSortDescByTimestamp<T extends { timestamp: number }>(items: T[]): T
 	return [...items].sort((a, b) => b.timestamp - a.timestamp);
 }
 
-// ===== Client-side "real" tracking =====
-// We track session minutes in localStorage per userId.
+// ===== Client-side "real" tracking with backend sync =====
+// We track session minutes in localStorage per userId, but sync to backend
 // This is "real" app usage time, independent of backend support.
 const _sessionStartMsAtom = atom<number | null>(null);
 
 const _onlineTimeByUserAtomFamily = atomFamily((userId: number) =>
 	atomWithStorage<DailyOnlineTime[]>(`dashboard.onlineTime.v1.user.${userId}`, [])
 );
+
+// Fetch online time from backend
+const _remoteOnlineTimeFamily = atomFamily((userId: number) =>
+	atom(async () => {
+		try {
+			const rows = await apiService.get<DailyOnlineTime[]>('user-online-time');
+			return rows;
+		} catch (err) {
+			console.error('Failed to fetch remote online time:', err);
+			return [] as DailyOnlineTime[];
+		}
+	})
+);
+
+export const remoteOnlineTimeAtom = atom(async (get) => {
+	const currentUser = get(currentUserAtom);
+	if (!currentUser) return [] as DailyOnlineTime[];
+	return await get(_remoteOnlineTimeFamily(currentUser.id));
+});
 
 export const startOnlineSessionAtom = atom(null, (get, set) => {
 	const currentUser = get(currentUserAtom);
@@ -65,16 +84,33 @@ export const stopOnlineSessionAtom = atom(null, (get, set) => {
 		? existing.map((e) => (e.date === today ? { ...e, minutes: e.minutes + minutes } : e))
 		: [...existing, { date: today, minutes }];
 	set(keyAtom, next);
+
+	// Sync to backend
+	apiService.post('user-online-time/add', { date: today, minutes }).catch((err) => {
+		console.error('Failed to sync online time to backend:', err);
+	});
 });
 
-export const onlineTimeAtom = atom((get) => {
+export const onlineTimeAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [];
+
+	try {
+		// Try to fetch from backend first
+		const remoteTime = await get(remoteOnlineTimeAtom);
+		if (remoteTime && remoteTime.length > 0) {
+			return remoteTime;
+		}
+	} catch (err) {
+		console.warn('Failed to fetch remote online time, falling back to localStorage:', err);
+	}
+
+	// Fall back to localStorage data
 	return get(_onlineTimeByUserAtomFamily(currentUser.id));
 });
 
-export const playtimeAtom = atom((get) => {
-	const days = get(onlineTimeAtom);
+export const playtimeAtom = atom(async (get) => {
+	const days = await get(onlineTimeAtom);
 	return days.reduce((sum, d) => sum + d.minutes, 0);
 });
 
@@ -240,8 +276,6 @@ export const remoteKodGamesAtom = atom(async (get) => {
 	}
 });
 
-// ===== Merged game history (card + kod + local) =====
-
 export const gameHistoryAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
@@ -250,7 +284,7 @@ export const gameHistoryAtom = atom(async (get) => {
 
 	let remoteCard: GameHistoryEntry[] = [];
 	let remoteKod: GameHistoryEntry[] = [];
-
+	
 	try {
 		remoteCard = await get(remoteCardGamesAtom);
 	} catch (err) {
@@ -268,7 +302,6 @@ export const gameHistoryAtom = atom(async (get) => {
 	for (const entry of [...remoteCard, ...remoteKod, ...local]) {
 		map.set(entry.id, entry);
 	}
-
 	return safeSortDescByTimestamp(Array.from(map.values()));
 });
 

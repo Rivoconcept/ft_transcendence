@@ -148,7 +148,7 @@ export default function FullGameHistory() {
 
     exportToPDF('My Game History', headers, body, 'Game_History_Report');
   };
-
+  
   return (
     <div className="full-history-page">
       {/* Back Button */}

@@ -8,6 +8,7 @@ import matchRoutes from "./routes/match.routes.js";
 import cardGameRoutes from "./routes/card-game.routes.js";
 import blockRoutes from "./routes/block.routes.js";
 import kodRoutes from "./routes/kod.routes.js";
+import userOnlineTimeRoutes from "./routes/user-online-time.routes.js";
 
 const app: Express = express();
 
@@ -69,5 +70,6 @@ app.use("/api/matches", matchRoutes);
 app.use("/api/card-games", cardGameRoutes);
 app.use("/api/blocks", blockRoutes);
 app.use("/api/kod-games", kodRoutes);
+app.use("/api/user-online-time", userOnlineTimeRoutes);
 
 export default app;

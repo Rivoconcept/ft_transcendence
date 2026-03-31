@@ -1,6 +1,7 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/card-game.service.ts
 import { AppDataSource } from "../database/data-source.js";
 import { CardGame } from "../database/entities/card-game.js";
+import { Match } from "../database/entities/match.js";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
 
 interface CreateCardGameDTO {
@@ -13,6 +14,7 @@ interface CreateCardGameDTO {
 
 class CardGameService {
   private repo = AppDataSource.getRepository(CardGame);
+  private matchRepository = AppDataSource.getRepository(Match);
 
   // Crée une partie
 
