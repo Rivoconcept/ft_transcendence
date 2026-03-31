@@ -78,7 +78,7 @@ export const PrivacyPolicy: React.FC = () => {
 
       <section>
         <h2 style={styles.subHeader}>1. Data Collection & Purpose</h2>
-        <p>We collect minimal data to facilitate your experience on the GameHub project:</p>
+        <p>We collect minimal data to facilitate your experience on the ft_transcendence project:</p>
         <ul style={styles.list}>
           <li><strong>Identity:</strong> Username, Profile Picture, and Real Name (for verification).</li>
           <li><strong>Security:</strong> Custom Password (encrypted via <strong>bcrypt</strong>).</li>
@@ -113,7 +113,7 @@ export const PrivacyPolicy: React.FC = () => {
       </section>
 
       <footer style={styles.footer}>
-        <p>© 2026 GameHub Team - Built for [Course Name/School]</p>
+        <p>© 2026 Pong Team - Built for 42/ft_transcendence</p>
       </footer>
     </div>
   );
