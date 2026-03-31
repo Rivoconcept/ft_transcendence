@@ -84,8 +84,8 @@ function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
 interface LayoutProps {
 	user: User | null;
 	onLogout: () => void;
-	theme: 'default' | 'neon' | 'dark';
-	onThemeChange: (theme: 'default' | 'neon' | 'dark') => void;
+	theme: 'default' | 'dark';
+	onThemeChange: (theme: 'default' | 'dark') => void;
 	children: React.ReactNode;
 }
 
@@ -271,7 +271,7 @@ export default function App(): React.JSX.Element {
 	const logout = useSetAtom(logoutAtom);
 	const startOnlineSession = useSetAtom(startOnlineSessionAtom);
 	const stopOnlineSession = useSetAtom(stopOnlineSessionAtom);
-	const [theme, setTheme] = useState<'default' | 'neon' | 'dark'>('dark');
+	const [theme, setTheme] = useState<'default' | 'dark'>('dark');
 
 	// Load token and fetch user on mount
 	useEffect(() => {
@@ -286,9 +286,7 @@ export default function App(): React.JSX.Element {
 
 	// Theme effect
 	useEffect(() => {
-		if (theme === 'neon')
-			document.documentElement.setAttribute('data-theme', 'neon');
-		else if (theme === 'dark')
+		if (theme === 'dark')
 			document.documentElement.setAttribute('data-theme', 'dark');
 		else
 			document.documentElement.removeAttribute('data-theme');
