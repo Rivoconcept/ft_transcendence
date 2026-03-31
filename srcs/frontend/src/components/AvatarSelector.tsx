@@ -63,7 +63,7 @@ export default function AvatarSelector({ value, radius = 50, onChange }: AvatarS
                     }}
                 >
                     <img
-                        src={value || '/img/default-profile.webp'}
+                        src={value || '/img/avatar.png'}
                         style={{
                             width: '100%',
                             height: '100%',
