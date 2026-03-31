@@ -1,4 +1,5 @@
 import { useAtom } from 'jotai';
+import { useResetAtom } from 'jotai/utils';
 import OnlineTimeCard from './components/onlineTimeCard';
 import PlaytimeCard from './components/PlaytimeCard';
 import FriendsCard from './components/friendsCard';
@@ -7,9 +8,13 @@ import GameHistoryCard from './components/GameHistoryCard';
 import FullGameHistory from './components/FullGameHistory';
 import { dashboardViewAtom } from './services/dashboardNavigation';
 import './Dashboard.scss';
+import { useEffect } from 'react';
 
 export default function Dashboard() {
   const [view] = useAtom(dashboardViewAtom);
+  const resetView = useResetAtom(dashboardViewAtom);
+  
+  useEffect(() => resetView, [resetView]);
 
   if (view === 'fullHistory') {
     return <FullGameHistory />;

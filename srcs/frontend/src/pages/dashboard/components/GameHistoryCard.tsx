@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { gameHistoryAtom } from '../placeholders/gameHistoryAtom';
+import { gameHistoryAtom } from '../providers/gameHistoryAtom';
 import { dashboardViewAtom } from '../services/dashboardNavigation';
 import '../Dashboard.scss';
 

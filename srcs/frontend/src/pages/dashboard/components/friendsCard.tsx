@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { friendsAtom } from '../placeholders/friendsAtom';
+import { friendsAtom } from '../providers/friendsAtom';
 import * as Tooltip from '@radix-ui/react-tooltip'; 
 import '../Dashboard.scss';
 

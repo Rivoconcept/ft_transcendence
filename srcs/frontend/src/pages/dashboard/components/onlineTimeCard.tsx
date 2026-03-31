@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { onlineTimeAtom } from '../placeholders/timeAtom';
+import { onlineTimeAtom } from '../providers/timeAtom';
 import '../Dashboard.scss';
 
 // Optional: nicer month formatting

@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { gameHistoryAtom, type GameType } from '../placeholders/gameHistoryAtom';
+import { gameHistoryAtom, type GameType } from '../providers/gameHistoryAtom';
 import { dashboardViewAtom, historyFiltersAtom } from '../services';
 import { exportToCSV, exportToPDF } from '../utils/exportStore';
 import '../Dashboard.scss';

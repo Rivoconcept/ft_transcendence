@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts';
-import { gameStatsAtom, gameStatsFilterAtom} from '../placeholders/gameStatsAtom';
+import { gameStatsAtom, gameStatsFilterAtom} from '../providers/gameStatsAtom';
 import '../Dashboard.scss';
 
 export default function GameStatsCard() {

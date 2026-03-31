@@ -1,5 +1,5 @@
-import { atom } from 'jotai';
+import { atomWithReset } from 'jotai/utils';
 
 export type DashboardView = 'dashboard' | 'fullHistory';
 
-export const dashboardViewAtom = atom<DashboardView>('dashboard');
+export const dashboardViewAtom = atomWithReset<DashboardView>('dashboard');

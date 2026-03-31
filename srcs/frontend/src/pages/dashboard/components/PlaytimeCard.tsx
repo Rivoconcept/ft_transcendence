@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { playtimeAtom } from '../placeholders/timeAtom';
+import { playtimeAtom } from '../providers/timeAtom';
 import '../Dashboard.scss';
 
 function formatMinutes(minutes: number) {

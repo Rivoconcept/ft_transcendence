@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { GameType } from '../placeholders/gameHistoryAtom';
+import type { GameType } from '../providers/gameHistoryAtom';
 
 export interface HistoryFilters {
   gameTypes: GameType[];

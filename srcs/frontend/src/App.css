@@ -24,6 +24,10 @@
 	--shadow-md: rgba(0, 0, 0, 0.15);
 	--shadow-lg: rgba(0, 0, 0, 0.2);
 	--shadow-primary: rgba(102, 126, 234, 0.2);
+
+	--bg-text-primary: var(--app-text-primary);
+    --text-secondary: var(--app-text-secondary);
+    --text-on-primary: var(--app-text-on-primary);
 }
 
 /* Dark Theme */
@@ -52,6 +56,10 @@
 	--shadow-md: rgba(0, 0, 0, 0.4);
 	--shadow-lg: rgba(0, 0, 0, 0.5);
 	--shadow-primary: rgba(76, 81, 191, 0.4);
+
+	--bg-text-primary: var(--app-text-primary);
+    --text-secondary: var(--app-text-secondary);
+    --text-on-primary: var(--app-text-on-primary);
 }
 
 * {
