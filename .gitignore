@@ -1,5 +1,4 @@
 .env
-.env.vault
 secrets/
 data/
 node_modules/
