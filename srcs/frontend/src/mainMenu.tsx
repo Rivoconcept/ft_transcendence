@@ -58,7 +58,11 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
+	const loading = useAtomValue(currentUserLoadingAtom);
 
+	if (loading) {
+		return <></>;
+	}
 	if (!user) {
 		return <Navigate to="/" replace />;
 	}
@@ -229,6 +233,7 @@ function SocketListener(): null {
 				created_at: new Date().toISOString(),
 				lastMessageId: null,
 				lastMessageContent: null,
+				lastMessageType: null,
 				lastMessageDate: null,
 				memberIds: []
 			};
@@ -275,7 +280,6 @@ export default function App(): React.JSX.Element {
 	// Load token and fetch user on mount
 	useEffect(() => {
 		const init = async () => {
-			apiService.loadToken();
 			if (apiService.isAuthenticated()) {
 				await initCurrentUser();
 			}

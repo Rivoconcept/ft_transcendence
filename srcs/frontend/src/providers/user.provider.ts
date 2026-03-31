@@ -25,8 +25,8 @@ import {
 // Current authenticated user
 export const currentUserAtom = atom<User | null>(null);
 
-// Loading state for current user
-export const currentUserLoadingAtom = atom<boolean>(false);
+// Loading state for current user — starts true if a token exists to prevent premature redirect
+export const currentUserLoadingAtom = atom<boolean>(apiService.isAuthenticated());
 
 // === PRIVATE: Cache brut ===
 const _userCacheFamily = atomFamily(

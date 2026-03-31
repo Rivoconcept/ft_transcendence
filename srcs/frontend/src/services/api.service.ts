@@ -22,6 +22,7 @@ class ApiService {
 			},
 		});
 
+		this.loadToken();
 		this.setupInterceptors();
 	}
 
