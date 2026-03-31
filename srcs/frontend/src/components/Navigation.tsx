@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, User, Users, LogOut, BarChart3, ChevronRight } from 'lucide-react';
+import { Menu, User, Users, LogOut, BarChart3, ChevronRight, MessageSquare, Gamepad2 } from 'lucide-react';
 import { CardGameRules, DiceGameRules, KingOfDiamondRules, PrivacyPolicy, TermsOfService } from './Rules';
 
 interface NavigationProps {
@@ -263,12 +263,14 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 
 						<li className="nav-item">
 							<NavLink to="/messages" className="nav-link">
+								<MessageSquare size={16} className="me-1" />
 								Message
 							</NavLink>
 						</li>
 
 						<li className="nav-item">
 							<NavLink to="/games" className="nav-link">
+								<Gamepad2 size={16} className="me-1" />
 								Games
 							</NavLink>
 						</li>

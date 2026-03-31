@@ -24,10 +24,6 @@
 	--shadow-md: rgba(0, 0, 0, 0.15);
 	--shadow-lg: rgba(0, 0, 0, 0.2);
 	--shadow-primary: rgba(102, 126, 234, 0.2);
-
-	--bg-text-primary: var(--app-text-primary);
-    --text-secondary: var(--app-text-secondary);
-    --text-on-primary: var(--app-text-on-primary);
 }
 
 /* Dark Theme */
@@ -56,10 +52,6 @@
 	--shadow-md: rgba(0, 0, 0, 0.4);
 	--shadow-lg: rgba(0, 0, 0, 0.5);
 	--shadow-primary: rgba(76, 81, 191, 0.4);
-
-	--bg-text-primary: var(--app-text-primary);
-    --text-secondary: var(--app-text-secondary);
-    --text-on-primary: var(--app-text-on-primary);
 }
 
 * {
@@ -133,13 +125,17 @@ body {
 	gap: 0.5rem;
 }
 
+.nav-item {
+	margin: 0 0.5rem;
+}
+
 .nav-link:hover {
 	background: var(--bg-surface-hover);
 }
 
 .nav-link.active {
 	background: var(--primary-color);
-	color: var(--app-text-on-primary);
+	color: #e2e8f0 !important;
 }
 
 .nav-link--button {
@@ -150,6 +146,11 @@ body {
 
 .nav-link--button:hover {
 	background: var(--bg-surface-hover);
+}
+
+.form-check {
+	color: var(--app-text-primary);
+
 }
 
 .logout-btn {

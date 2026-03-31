@@ -53,7 +53,7 @@
   padding: 1rem;
   border-radius: 8px;
   background: var(--bg-surface);
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
 }
 
 /* Dashboard Card */
@@ -75,7 +75,7 @@
   margin-bottom: 12px;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
 }
 
 .kpi-value {
@@ -114,25 +114,25 @@
   display: flex;
   align-items: center;
   font-weight: 500;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
 }
 
 .status-text {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
 }
 
 .friends-total {
   font-weight: 600;
   margin-bottom: 8px;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   font-size: 1rem;
 }
 
 /* Tooltip */
 .tooltip-content {
   background: var(--bg-surface-alt);
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
@@ -169,18 +169,18 @@
   border-radius: 6px;
   border: 1px solid var(--border-color);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
     background: var(--bg-surface-hover);
-    color: var(--bg-text-primary);
+    color: var(--app-text-primary);
   }
 
   &.active {
     background: var(--primary-color);
-    color: var(--text-on-primary);
+    color: var(--app-text-on-primary);
     border-color: var(--primary-color);
   }
 }
@@ -197,7 +197,7 @@
 .winrate-text {
   font-size: 24px;
   font-weight: 600;
-  fill: var(--bg-text-primary);
+  fill: var(--app-text-primary);
 }
 
 .winrate-percentage {
@@ -208,7 +208,7 @@
 
 .winrate-label {
   font-size: 12px;
-  fill: var(--text-secondary);
+  fill: var(--app-text-secondary);
 }
 
 /* Game History */
@@ -248,7 +248,7 @@
 
 .game-type {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
   font-weight: 500;
 }
 
@@ -278,7 +278,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
 }
 
 .player-info {
@@ -290,12 +290,12 @@
 
   .label {
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--app-text-secondary);
     text-transform: uppercase;
   }
 
   .name {
-    color: var(--bg-text-primary);
+    color: var(--app-text-primary);
     font-weight: 500;
     word-break: break-word;
   }
@@ -306,7 +306,7 @@
 }
 
 .vs-text {
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
   font-size: 0.8rem;
   text-transform: uppercase;
   font-weight: 600;
@@ -332,7 +332,7 @@
   }
 
   &.disabled {
-    color: var(--text-secondary);
+    color: var(--app-text-secondary);
     cursor: not-allowed;
   }
 }
@@ -472,7 +472,7 @@
     margin-bottom: 2rem;
     font-size: 2rem;
     font-weight: 700;
-    color: var(--bg-text-primary);
+    color: var(--app-text-primary);
   }
 }
 
@@ -512,14 +512,14 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: var(--bg-text-primary);
+    color: var(--app-text-primary);
   }
 }
 
 .clear-filters-btn {
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
   cursor: pointer;
   font-size: 1.2rem;
   padding: 0;
@@ -544,7 +544,7 @@
 .filter-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -571,11 +571,11 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--text-secondary);
+    background: var(--app-text-secondary);
     border-radius: 3px;
 
     &:hover {
-      background: var(--bg-text-primary);
+      background: var(--app-text-primary);
     }
   }
 }
@@ -588,7 +588,7 @@
   padding: 0.5rem;
   border-radius: 4px;
   transition: all 0.2s;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   font-size: 0.9rem;
   user-select: none;
 
@@ -623,7 +623,7 @@
 
 .filter-date-label {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
 }
 
 .filter-date-input {
@@ -631,7 +631,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   background: var(--bg-surface-hover);
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   font-size: 0.9rem;
   transition: all 0.2s;
 
@@ -646,7 +646,7 @@
   }
 
   &::placeholder {
-    color: var(--text-secondary);
+    color: var(--app-text-secondary);
   }
 }
 
@@ -656,7 +656,7 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-surface-hover);
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   font-size: 0.9rem;
   transition: all 0.2s;
 
@@ -671,7 +671,7 @@
   }
 
   &::placeholder {
-    color: var(--text-secondary);
+    color: var(--app-text-secondary);
   }
 }
 
@@ -683,7 +683,7 @@
 
 .results-summary {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--app-text-secondary);
   margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
   background: var(--bg-surface-hover);
@@ -705,7 +705,7 @@
 
   p {
     font-size: 1.1rem;
-    color: var(--text-secondary);
+    color: var(--app-text-secondary);
     margin: 0;
   }
 }
@@ -746,7 +746,7 @@
 .date-header {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--primary-color);
   margin: 0;
@@ -886,7 +886,7 @@
   width: 100%; 
   padding: 4px 16px;
   background: var(--bg-surface);
-  color: var(--bg-text-primary);
+  color: var(--app-text-primary);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow-md);
   // margin-bottom: 16px;
