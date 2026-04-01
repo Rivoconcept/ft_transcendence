@@ -44,7 +44,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
     return (
       <div className="container mt-5">
         <div className="alert alert-danger text-center">
-          Vous devez être connecté pour jouer en multiplayer.
+          You must be logged in to play multiplayer.
         </div>
       </div>
     );
@@ -77,7 +77,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Erreur création salle");
+      setError(err.message || "Failed to create room");
     } finally {
       setLoading(false);
     }
@@ -119,7 +119,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         </h2>
 
         <div className="alert alert-info text-center">
-          Connecté en tant que <strong>{playerName}</strong>
+          Logged in as <strong>{playerName}</strong>
         </div>
 
         <div className="d-flex justify-content-center mb-4">
@@ -127,14 +127,14 @@ export default function MultiplayerSetup(): React.JSX.Element {
             className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(true)}
           >
-            Créer Salle
+            Create Room
           </button>
 
           <button
             className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"}`}
             onClick={() => setIsCreateRoom(false)}
           >
-            Rejoindre Salle
+            Join Room
           </button>
         </div>
 
@@ -143,7 +143,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         {isCreateRoom && (
           <form onSubmit={handleCreateRoom}>
             <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Création..." : "Créer Salle"}
+              {loading ? "Creating..." : "Create Room"}
             </button>
           </form>
         )}
@@ -151,7 +151,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         {!isCreateRoom && (
           <form onSubmit={handleJoinRoom}>
             <div className="mb-3">
-              <label className="form-label">Code de la Salle</label>
+              <label className="form-label">Room Code</label>
               <input
                 className="form-control"
                 value={roomCode}
@@ -161,7 +161,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
             </div>
 
             <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Connexion..." : "Rejoindre Salle"}
+              {loading ? "Connecting..." : "Join Room"}
             </button>
           </form>
         )}
