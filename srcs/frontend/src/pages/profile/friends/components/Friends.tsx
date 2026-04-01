@@ -86,7 +86,7 @@ export default function Friends(): React.JSX.Element {
 	};
 
 	if (isLoading && friends.length === 0) {
-		return <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading friends...</p>;
+		return <p style={{ textAlign: 'center', color: 'var(--app-text-secondary)' }}>Loading friends...</p>;
 	}
 
 	return (
@@ -106,7 +106,7 @@ export default function Friends(): React.JSX.Element {
 
 			<div className="form-group" style={{ marginBottom: '1.5rem' }}>
 				<div style={{ position: 'relative' }}>
-					<Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+					<Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--app-text-secondary)' }} />
 					<input
 						type="text"
 						placeholder="Search friends..."
@@ -118,7 +118,7 @@ export default function Friends(): React.JSX.Element {
 			</div>
 
 			{filteredFriends.length === 0 ? (
-				<p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No friends found</p>
+				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)' }}>No friends found</p>
 			) : (
 				filteredFriends.map(friend => (
 					<div key={friend.id} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem', width: '100%' }}>

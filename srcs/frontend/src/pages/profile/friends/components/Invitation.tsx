@@ -143,7 +143,7 @@ export default function Invitation(): React.JSX.Element {
 							borderRadius: '6px',
 							fontSize: '0.9rem',
 							background: 'var(--bg-surface)',
-							color: 'var(--text-primary)'
+							color: 'var(--app-text-primary)'
 						}}
 					/>
 					<button
@@ -172,9 +172,9 @@ export default function Invitation(): React.JSX.Element {
 			{/* Invitations reçues */}
 			<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Received Invitations</label>
 			{isLoadingReceived && receivedInvitations.length === 0 ? (
-				<p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Loading...</p>
+				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)', marginBottom: '1.5rem' }}>Loading...</p>
 			) : receivedInvitations.length === 0 ? (
-				<p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>No pending invitations</p>
+				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)', marginBottom: '1.5rem' }}>No pending invitations</p>
 			) : (
 				<div style={{ marginBottom: '1.5rem' }}>
 					{receivedInvitations.map(inv => (
@@ -182,7 +182,7 @@ export default function Invitation(): React.JSX.Element {
 							<AvatarUtil id={inv.senderId} radius={36} showStatus={false} />
 							<div style={{ flex: 1, minWidth: 0 }}>
 								<h3 style={{ margin: 0, fontSize: '0.9rem' }}>{inv.sender?.username || 'Unknown'}</h3>
-								<p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+								<p style={{ margin: 0, color: 'var(--app-text-secondary)', fontSize: '0.75rem' }}>
 									{new Date(inv.createdAt).toLocaleDateString()}
 								</p>
 							</div>
@@ -212,9 +212,9 @@ export default function Invitation(): React.JSX.Element {
 			{/* Invitations envoyées */}
 			<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Sent Invitations</label>
 			{isLoadingSent && sentInvitations.length === 0 ? (
-				<p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</p>
+				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)' }}>Loading...</p>
 			) : sentInvitations.length === 0 ? (
-				<p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No sent invitations</p>
+				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)' }}>No sent invitations</p>
 			) : (
 				sentInvitations.map(inv => (
 					<div key={inv.invitationId} className="game-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', padding: '0.5rem 0.75rem', width: '100%' }}>
