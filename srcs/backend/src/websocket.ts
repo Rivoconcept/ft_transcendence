@@ -132,16 +132,6 @@ class SocketService {
           }
         });
 
-        try {
-          await matchService.joinMatch(socket.userId, matchId)
-        } catch (err: any) {
-          socket.emit("error", { error: err.message });
-        };
-
-        console.log("");
-        console.log("--> Updated player list:", participants);
-        console.log("");
-
         const creatorId = participants[0]?.id ?? socket.userId;
         this.io?.to(room).emit("match:player-joined", {
           participants,

@@ -173,7 +173,7 @@ export default function MessagesPage() {
 				const otherUserId = selectedChat.memberIds.find(id => id !== currentUser.id) ?? selectedChat.memberIds[0];
 				blockService.isBlockedMutual(otherUserId).then(({ blocked }) => {
 					setIsChatBlocked(blocked);
-				}).catch(() => {});
+				}).catch(() => { });
 			}
 		}
 		setShowDropdown(false);
@@ -355,10 +355,10 @@ export default function MessagesPage() {
 
 				<div className="overflow-auto flex-grow-1">
 					{chatsLoading && chats.length === 0 && (
-						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>Loading...</p>
+						<p className="text-center small mt-4" style={{ color: "var(--app-text-secondary)" }}>Loading...</p>
 					)}
 					{!chatsLoading && filtered.length === 0 && (
-						<p className="text-center small mt-4" style={{ color: "var(--text-secondary)" }}>No conversations found.</p>
+						<p className="text-center small mt-4" style={{ color: "var(--app-text-secondary)" }}>No conversations found.</p>
 					)}
 					{filtered.map((c) => {
 						return (
@@ -373,17 +373,17 @@ export default function MessagesPage() {
 
 								<div className="flex-grow-1 overflow-hidden">
 									<div className="d-flex justify-content-between align-items-center">
-										<span className="fw-semibold text-truncate" style={{ fontSize: 14, color: "var(--text-primary)" }}>
+										<span className="fw-semibold text-truncate" style={{ fontSize: 14, color: "var(--app-text-primary)" }}>
 											{getChatDisplayName(c)}
 										</span>
-										<span className="ms-2 flex-shrink-0" style={{ fontSize: 11.5, color: "var(--text-secondary)" }}>
+										<span className="ms-2 flex-shrink-0" style={{ fontSize: 11.5, color: "var(--app-text-secondary)" }}>
 											{formatTime(c.lastMessageDate ?? c.created_at)}
 										</span>
 									</div>
 									<div className="d-flex justify-content-between align-items-center mt-1">
 										<span
 											className="text-truncate"
-											style={{ fontSize: 13, color: "var(--text-secondary)" }}
+											style={{ fontSize: 13, color: "var(--app-text-secondary)" }}
 										>
 											{getLastMessagePreview(c)}
 										</span>
@@ -409,10 +409,10 @@ export default function MessagesPage() {
 							</div>
 
 							<div className="flex-grow-1">
-								<div className="fw-semibold" style={{ fontSize: 15, color: "var(--text-primary)" }}>
+								<div className="fw-semibold" style={{ fontSize: 15, color: "var(--app-text-primary)" }}>
 									{getChatDisplayName(selectedChat)}
 								</div>
-								<div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+								<div style={{ fontSize: 12, color: "var(--app-text-secondary)" }}>
 									{selectedChat.type === "group"
 										? `${selectedChat.memberIds.length} members`
 										: ""}
@@ -448,13 +448,13 @@ export default function MessagesPage() {
 
 							{isLoading && messages.length > 0 && (
 								<div className="text-center py-2">
-									<small style={{ color: "var(--text-secondary)" }}>Loading older messages...</small>
+									<small style={{ color: "var(--app-text-secondary)" }}>Loading older messages...</small>
 								</div>
 							)}
 
 							{isLoading && messages.length === 0 && (
 								<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1">
-									<small style={{ color: "var(--text-secondary)" }}>Loading messages...</small>
+									<small style={{ color: "var(--app-text-secondary)" }}>Loading messages...</small>
 								</div>
 							)}
 
@@ -477,7 +477,7 @@ export default function MessagesPage() {
 						{imagePreview && (
 							<div className="image-preview-bar">
 								<img src={imagePreview} alt="preview" className="image-preview-thumb" />
-								<span className="image-preview-label" style={{ color: "var(--text-secondary)", fontSize: 13 }}>Image ready to send</span>
+								<span className="image-preview-label" style={{ color: "var(--app-text-secondary)", fontSize: 13 }}>Image ready to send</span>
 								<button className="icon-action" onClick={cancelImagePreview} title="Cancel">
 									<X size={16} className="icon-themed" />
 								</button>
@@ -495,53 +495,53 @@ export default function MessagesPage() {
 
 						{isChatBlocked ? (
 							<div className="msg-input-area" style={{ justifyContent: "center" }}>
-								<span style={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: 14 }}>
+								<span style={{ color: "var(--app-text-secondary)", fontStyle: "italic", fontSize: 14 }}>
 									You cannot send messages to this person
 								</span>
 							</div>
 						) : (
-						<div className="msg-input-area">
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept="image/jpeg,image/png,image/gif,image/webp"
-								hidden
-								onChange={handleImageSelect}
-							/>
-							<button className="icon-action" onClick={() => fileInputRef.current?.click()} title="Send image">
-								<Paperclip size={17} className="icon-themed" />
-							</button>
+							<div className="msg-input-area">
+								<input
+									ref={fileInputRef}
+									type="file"
+									accept="image/jpeg,image/png,image/gif,image/webp"
+									hidden
+									onChange={handleImageSelect}
+								/>
+								<button className="icon-action" onClick={() => fileInputRef.current?.click()} title="Send image">
+									<Paperclip size={17} className="icon-themed" />
+								</button>
 
-							<textarea
-								className="msg-textarea"
-								rows={1}
-								placeholder="Type a message..."
-								value={input}
-								onChange={(e) => setInput(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-								}}
-							/>
+								<textarea
+									className="msg-textarea"
+									rows={1}
+									placeholder="Type a message..."
+									value={input}
+									onChange={(e) => setInput(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+									}}
+								/>
 
-							<button className="icon-action">
-								<Smile size={17} className="icon-themed" />
-							</button>
+								<button className="icon-action">
+									<Smile size={17} className="icon-themed" />
+								</button>
 
-							<button
-								className="send-btn-custom"
-								onClick={handleSend}
-								disabled={!input.trim() && !imagePreview}
-							>
-								<Send size={20} />
-							</button>
-						</div>
+								<button
+									className="send-btn-custom"
+									onClick={handleSend}
+									disabled={!input.trim() && !imagePreview}
+								>
+									<Send size={20} />
+								</button>
+							</div>
 						)}
 					</>
 				) : (
 					<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">
 						<div style={{ fontSize: 56, opacity: 0.3 }}>💬</div>
-						<h5 className="mt-3 fw-semibold" style={{ color: "var(--text-secondary)" }}>Select a conversation</h5>
-						<p className="small" style={{ maxWidth: 280, color: "var(--text-secondary)" }}>
+						<h5 className="mt-3 fw-semibold" style={{ color: "var(--app-text-secondary)" }}>Select a conversation</h5>
+						<p className="small" style={{ maxWidth: 280, color: "var(--app-text-secondary)" }}>
 							Choose from your existing messages on the left to continue a conversation.
 						</p>
 					</div>

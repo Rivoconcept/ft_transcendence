@@ -95,12 +95,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         return;
       }
 
-      // check the match if exists
-      await apiService.get<MatchItem>(`/matches/${code}`);
-
-      // Then join it
-      // joining is handeld by socket "joinMatchRoom"
-
+      await apiService.post(`/matches/${code}/join`, { gameId: getGameId(gameSlug) });
       setPlayerName(playerName);
       navigate(`/games/${gameSlug}/multiplayer/lobby/${code}`);
 
