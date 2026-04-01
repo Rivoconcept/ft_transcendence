@@ -154,22 +154,29 @@ class MatchService {
     }));
   }
 
-  async joinMatch(userId: number, matchId: string): Promise<MatchItem> {
+  async joinMatch(userId: number, matchId: string, gameID: number): Promise<MatchItem> {
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
     });
 
-    if (!match) {
+    if (!match)
       throw new Error("Match not found");
-    }
 
-    if (match.match_over) {
+    if (match.match_over)
       throw new Error("Match is already over");
-    }
 
-    if (!match.is_open) {
+    if (!match.is_open)
       throw new Error("Match is not open for joining");
-    }
+
+    if (match.game_id !== gameID)
+      throw new Error("Match code does not match the selected game");
+
+    const existingParticipation = await this.participationRepository.findOne({
+      where: { user_id: userId, match_id: matchId },
+    });
+
+    if (existingParticipation)
+      throw new Error("You are already in this match");
 
     // Delete any existing participation (in case of reconnection/multiple joins)
     await this.participationRepository.delete({
@@ -190,20 +197,6 @@ class MatchService {
       where: { match_id: matchId },
     });
     const participantIds = participations.map((p) => p.user_id);
-
-    // Faire rejoindre l'utilisateur à la room du match
-    // socketService.joinMatchRoom(userId, matchId);
-
-    // Notifier tous les participants
-    /** this is already handle in websocket */
-    // const io = socketService.getIO();
-    // if (io) {
-    //   io.to(`match.${matchId}`).emit("match:player-joined", {
-    //     matchId,
-    //     userId,
-    //     participantIds,
-    //   });
-    // }
 
     return {
       id: match.id,

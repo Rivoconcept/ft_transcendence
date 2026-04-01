@@ -58,18 +58,13 @@ export async function getMatchById(req: AuthRequest, res: Response): Promise<voi
 export async function joinMatch(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { id } = req.params;
+    const { gameId } = req.body;
 
     if (!id || id.length !== 4) {
       res.status(400).json({ error: "Invalid match ID" });
       return;
     }
-
-    const match = await matchService.joinMatch(req.user!.userId, id);
-
-    console.log("");
-    console.log(`User ${req.user!.userId} joined match ${id}`);
-    console.log("");
-
+    const match = await matchService.joinMatch(req.user!.userId, id, gameId);
     res.json(match);
 
   } catch (error) {
