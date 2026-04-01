@@ -1,4 +1,42 @@
 services:
+  vault-init:
+    image: hashicorp/vault:1.15
+    container_name: vault-init
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+    volumes:
+      - vault-secrets:/run/secrets
+      - ./.env.vault:/vault/vault-init:ro
+      - ./vault/init.sh:/vault/init.sh:ro
+    command: sh /vault/init.sh
+    depends_on:
+      vault:
+        condition: service_healthy
+    networks:
+      - transcendence-network
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault-dev
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID}
+      VAULT_DEV_LISTEN_ADDRESS: ${VAULT_DEV_LISTEN_ADDRESS}
+    volumes:
+      - ./.env.vault:/vault/vault-init:ro
+    cap_add:
+      - IPC_LOCK
+    command: vault server -dev
+    ports:
+      - "8200:8200"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "VAULT_ADDR=http://127.0.0.1:8200 vault status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - transcendence-network
+
   frontend:
     build:
       context: ./frontend
@@ -21,20 +59,18 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
+      - vault-secrets:/run/secrets:ro
     ports:
       - "${BACKEND_PORT}:3000"
-    env_file:
-      - ./backend/.env
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      VAULT_ADDR: http://vault:8200
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - transcendence-network
 
@@ -44,18 +80,20 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/POSTGRES_PASSWORD
     volumes:
+      - vault-secrets:/run/secrets:ro
       - ${DATA_PATH}/db_data:/var/lib/postgresql/data
-    # secrets:
-    #   - POSTGRES_PASSWORD
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    networks:
+      - transcendence-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - transcendence-network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -63,7 +101,7 @@ services:
     entrypoint: /custom-entrypoint.sh
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_PASSWORD: /run/secrets/PGADMIN_DEFAULT_PASSWORD
       PGADMIN_SERVER_JSON_FILE: /tmp/servers.json
       PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True"
       PGADMIN_SERVER_NAME: ${PGADMIN_SERVER_NAME}
@@ -73,6 +111,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
     volumes:
       - ./pgadmin/custom-entrypoint.sh:/custom-entrypoint.sh:ro
+      - vault-secrets:/run/secrets:ro
     ports:
       - "${PGADMIN_PORT}:80"
     depends_on:
@@ -80,10 +119,8 @@ services:
     networks:
       - transcendence-network
 
-
-# secrets:
-#   POSTGRES_PASSWORD:
-#     file: ../secrets/POSTGRES_PASSWORD.txt
+volumes:
+  vault-secrets:
 
 networks:
   transcendence-network:

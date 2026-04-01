@@ -66,7 +66,6 @@ ps:
 exec:
 	$(COMPOSE) $(COMPOSE_FILE) exec
 
-
 init-dirs:
 	@if [ ! -d "$(DATA_PATH)/db_data" ]; then \
 		mkdir -p "$(DATA_PATH)/db_data"; \
