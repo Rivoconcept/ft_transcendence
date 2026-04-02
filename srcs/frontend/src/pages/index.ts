@@ -1,6 +1,7 @@
 // Auth
 export { AuthPage } from './auth';
 export { LandingPage } from './landing';
+export { LegalPage } from './legal';
 
 // Games
 export { GameList, kingOfDiamond, CardGamePage, StatusScreen } from './games';

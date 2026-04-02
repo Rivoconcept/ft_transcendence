@@ -3,25 +3,25 @@ import { Link } from 'react-router-dom';
 
 const sections = [
 	{
-		heading: 'Play our Card Game !',
+		heading: 'Play our Card Game',
 		description:
-			'Draw 3 cards, add their values, and aim for the best Mod-9 score. In multiplayer, the top score wins the round, and in solo mode you push for a total score target to win.',
-		imageStack: ['/1.png', '/2.png', '/3.png'],
-		imageAlt: 'Card game cards illustration',
+			'Test your Luck and others\' in a mesmerezing card game where you draw cards to reach a score of 27. Against friends, against yourself, or against the house, every game is your chance to prove you were born under the shiniest star. Will you hit 27 or go bust? The choice is yours!',
+		imageSrc: '/card.png',
+		imageAlt: 'Card game symbol',
 	},
 	{
 		heading: 'Discover King of Diamond',
 		description:
-			'Start with 10 points, choose a number from 0 to 100 each round, and get as close as possible to 80% of the group average. Every wrong pick costs points until one player stands as the King.',
-		imageSrc: '/KoD.png',
-		imageAlt: 'King of Diamond illustration',
+			'Inspired by Alice in Wonderland, King of Diamond is a whimsical game where you try to outplay your opponent and twist the numbers in your favor. With simple rules but deep strategy, it\'s a game of wits and cunning. Will you be the one to claim the crown?',	
+		imageSrc: '/crown.png',
+		imageAlt: 'Crown symbol',
 	},
 	{
 		heading: 'Chat with friends',
 		description:
 			'Create conversations, stay connected after matches, and build your own circle on GameHub. You can meet new players, add them as friends, and keep chatting anytime.',
-		imageSrc: '/Chat.png',
-		imageAlt: 'Chat with friends illustration',
+		imageSrc: '/bubbles.png',
+		imageAlt: 'Chat bubbles symbol',
 	},
 ];
 
@@ -49,26 +49,16 @@ export default function LandingPage(): React.JSX.Element {
 							<h2>{section.heading}</h2>
 							<p>{section.description}</p>
 						</div>
-						<div className={`landing-feature__image ${section.imageStack ? 'landing-feature__image--cards' : ''}`}>
-							{section.imageStack ? (
-								<div className="landing-card-cascade">
-									{section.imageStack.map((src, idx) => (
-										<img
-											key={src}
-											src={src}
-											alt={`${section.imageAlt} ${idx + 1}`}
-											className={`landing-card-cascade__item landing-card-cascade__item--${idx + 1}`}
-											loading="lazy"
-										/>
-									))}
-								</div>
-							) : (
-								<img src={section.imageSrc} alt={section.imageAlt} loading="lazy" />
-							)}
-						</div>
+						<img className="landing-feature__image" src={section.imageSrc} alt={section.imageAlt} loading="lazy" />
 					</article>
 				))}
 			</div>
+
+			<footer className="landing-footer">
+				<Link to="/legal" className="landing-legal-link">
+					See our Privacy Policy & Terms of Services
+				</Link>
+			</footer>
 		</section>
 	);
 }

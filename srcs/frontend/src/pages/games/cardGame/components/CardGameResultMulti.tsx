@@ -83,7 +83,7 @@ export default function CardGameMultiResult() {
 
       <div className="text-center">
         <button className="btn btn-primary" onClick={handleBackHome}>
-          Retour aux jeux
+          Back to Games
         </button>
       </div>
 

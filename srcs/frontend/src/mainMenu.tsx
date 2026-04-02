@@ -32,6 +32,7 @@ import {
 import {
 	AuthPage,
 	LandingPage,
+	LegalPage,
 	GameList,
 	kingOfDiamond,
 	CardGamePage,
@@ -345,6 +346,11 @@ export default function App(): React.JSX.Element {
 								<AuthPage />
 							</PublicRoute>
 						}
+					/>
+
+					<Route
+						path="/legal"
+						element={<LegalPage />}
 					/>
 
 					{/* Games Config */}
