@@ -1,10 +1,18 @@
-import { useAtom } from 'jotai';
+import { useEffect } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { friendsAtom } from '../providers/friendsAtom';
+import { fetchFriendsAtom, friendsLoadingAtom } from '../../../providers/friend.provider';
 import * as Tooltip from '@radix-ui/react-tooltip'; 
 import '../Dashboard.scss';
 
 export default function FriendsCard() {
   const [friends] = useAtom(friendsAtom);
+  const isLoading = useAtomValue(friendsLoadingAtom);
+  const fetchFriends = useSetAtom(fetchFriendsAtom);
+
+  useEffect(() => {
+    void fetchFriends();
+  }, [fetchFriends]);
 
   const total = friends.length;
   const onlineFriends = friends.filter(f => f.online);
@@ -49,6 +57,10 @@ export default function FriendsCard() {
   return (
     <div className="dashboard-card">
       <h3>Friends</h3>
+      {isLoading && total === 0 ? (
+        <div className="friends-total">Loading...</div>
+      ) : (
+        <>
       <div className="friends-total">
         Total: {total}
       </div>
@@ -66,6 +78,8 @@ export default function FriendsCard() {
           </span>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

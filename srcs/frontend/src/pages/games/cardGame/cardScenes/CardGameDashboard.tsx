@@ -14,6 +14,8 @@ import CardGameDb from "../components/CardGameDb";
 import { playerNameAtom, isCreatorAtom } from "../../multiplayer/matchAtoms";
 import { socketStore } from "../../../../websocket";
 import apiService from "../../../../services/api.service";
+import AvatarUtil from "../../../../components/AvatarUtil";
+import { currentUserAtom } from "../../../../providers";
 
 interface CardGameDashboardProps {
   phase: Phase;
@@ -21,6 +23,8 @@ interface CardGameDashboardProps {
 }
 
 export default function CardGameDashboard({ phase, setPhase }: CardGameDashboardProps) {
+  const currentUser = useAtomValue(currentUserAtom);
+
   const { score, reset } = useCardState();
   const { playTurn, resetGame, isWin, isLose, turn, isFinished, timeLeft } = useCardGameState();
 
@@ -154,7 +158,9 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       <div className="card-group">
         <div className="card border-0 bg-black text-light">
           <div className="card-body">
-            <div className="avatar"><img src="/avatar.png" alt="avatar" /></div>
+            <div className="avatar"> 
+              <AvatarUtil id={currentUser?.id || 0} radius={120} showStatus={false} />
+            </div>
           </div>
         </div>
         <div className="card border-0 bg-black text-light">

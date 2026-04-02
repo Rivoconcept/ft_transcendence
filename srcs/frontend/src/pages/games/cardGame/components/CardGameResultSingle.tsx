@@ -65,11 +65,11 @@ export default function CardGameResultSingle() {
               <div className="mt-3 mb-4">
                 {result.is_win ? (
                   <span className="badge bg-success fs-5 p-3">
-                    ✅ You Win!s
+                    ✅ You Win!
                   </span>
                 ) : (
                   <span className="badge bg-danger fs-5 p-3">
-                    ❌ You Lose!s
+                    ❌ You Lose!
                   </span>
                 )}
               </div>

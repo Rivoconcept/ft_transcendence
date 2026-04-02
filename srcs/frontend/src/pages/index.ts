@@ -1,5 +1,6 @@
 // Auth
 export { AuthPage } from './auth';
+export { LandingPage } from './landing';
 
 // Games
 export { GameList, kingOfDiamond, CardGamePage, StatusScreen } from './games';

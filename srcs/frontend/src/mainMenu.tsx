@@ -31,6 +31,7 @@ import {
 } from './providers/friend.provider';
 import {
 	AuthPage,
+	LandingPage,
 	GameList,
 	kingOfDiamond,
 	CardGamePage,
@@ -334,6 +335,11 @@ export default function App(): React.JSX.Element {
 					{/* Auth */}
 					<Route
 						path="/"
+						element={<LandingPage />}
+					/>
+
+					<Route
+						path="/auth"
 						element={
 							<PublicRoute>
 								<AuthPage />
