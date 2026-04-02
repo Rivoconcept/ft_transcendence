@@ -1,3 +1,5 @@
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/cardScenes/CardGameDashboard.tsx
+
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PhaseButton from "../components/PhaseButton";
@@ -22,7 +24,7 @@ interface CardGameDashboardProps {
 
 export default function CardGameDashboard({ phase, setPhase }: CardGameDashboardProps) {
   const { score, reset } = useCardState();
-  const { playTurn, resetGame, isWin, isLose, turn, isFinished, timeLeft } = useCardGameState();
+  const { playTurn, resetGame, isWin, isLose, turn, isFinished, maxTurns } = useCardGameState();
 
   const [scores, setScores] = useState<number[]>([]);
   const [hasFinalScore, setHasFinalScore] = useState(false);
@@ -38,10 +40,12 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const navigate = useNavigate();
   const { roomId } = useParams();
   const hasCalledFinishMatchRef = useRef(false);
+  const { totalScore } = useCardGameState();
+  const [finalScoreSnapshot, setFinalScoreSnapshot] = useState<number | null>(null);
 
   if (!mode) throw new Error("Game started without a selected mode");
 
-  /* ------------------ RESET COMPLET ------------------ */
+  /* ------------------ FULL RESET ------------------ */
   const handleNewGame = () => {
     resetGame();
     reset();
@@ -53,7 +57,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
     setPhase(Phase.BEGIN);
   };
   
-  /* ------------------ BOUTON ------------------ */
+  /* ------------------ BUTTON HANDLER ------------------ */
   const onButtonClick = () => {
   if (phase === Phase.BEGIN) {
     setPhase(Phase.SHUFFLE);
@@ -61,82 +65,73 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
     playTurn();
     setPhase(Phase.PLAY);
   } else if (phase === Phase.PLAY) {
-    if (!isFinished) {
+    // Only allow cycling back to BEGIN if we haven't reached max turns yet
+    if (turn < maxTurns) {
       reset();
       setPhase(Phase.BEGIN);
-    } else {
-      handleNewGame();
     }
+    // If turn >= maxTurns, let the auto-finish effect handle the transition to SHOW_RESULT
   } else if (phase === Phase.SHOW_RESULT) {
-    handleNewGame();
+    // Only reset game for SINGLE mode
     if (mode === "SINGLE") {
+      handleNewGame();
       navigate("/games/cardGame/result");
     } else {
+      // MULTI: don't reset, just navigate (auto-navigate effect handles this)
       navigate(`/games/cardGame/${roomId}/result`);
     }
   }
 };
 
-  /* ------------------ SCORE ROUND ------------------ */
+  /* ------------------ SCORE COLLECTION ------------------ */
   useEffect(() => {
     if (score !== null) setScores(prev => [...prev, score]);
   }, [score]);
 
-  const totalScoreCalculated = scores.reduce((sum, s) => sum + s, 0);
-
-  /* ------------------ SYNC JOTAI ------------------ */
+  /* ------------------ SYNC STATE WITH ATOMS ------------------ */
   useEffect(() => {
-    setFinalScore(totalScoreCalculated);
+    setFinalScore(totalScore);
 
     if (mode === "SINGLE") {
       setPlayerState(isWin);
     }
-  }, [totalScoreCalculated, isWin, mode, setFinalScore, setPlayerState]);
+  }, [totalScore, isWin, mode, setFinalScore, setPlayerState]);
 
-  /* ------------------ FIN AUTOMATIQUE ------------------ */
+  /* ------------------ AUTO FINISH - Use isFinished from context ------------------ */
   useEffect(() => {
-    const isTurnLimitReached = scores.length >= 5;
-
-    if (timeLeft <= 0 || totalScoreCalculated >= 27 || isTurnLimitReached) {
+    if (isFinished) {
       setPhase(Phase.SHOW_RESULT);
     }
-  }, [timeLeft, totalScoreCalculated, scores.length, setPhase]);
+  }, [isFinished]);
 
-  /* ------------------ FINISH MATCH (Multiplayer) ------------------ */
+  /* ------------------ FINISH MATCH (Multiplayer) - Only after POST is saved! ------------------ */
   useEffect(() => {
-    console.log("finishMatch check:", { isCreator, mode, roomId, timeLeft, hasCalled: hasCalledFinishMatchRef.current });
-    
-    if (!isCreator || mode !== "MULTI" || !roomId || hasCalledFinishMatchRef.current) return;
+    // Only call finishMatch AFTER we know scores are saved (hasFinalScore = true)
+    if (!isCreator || mode !== "MULTI" || !roomId || !hasFinalScore || hasCalledFinishMatchRef.current) return;
 
-    if (timeLeft <= 0) {
-      console.log("Calling finishMatch for match:", roomId);
-      hasCalledFinishMatchRef.current = true;
-      const finishMatchAsync = async () => {
-        try {
-          await apiService.post(`card-games/match/${roomId}/finish`, {});
-          console.log("Match finished successfully");
-        } catch (error) {
-          console.error("Error finishing match:", error);
-        }
-      };
-      void finishMatchAsync();
-    }
-  }, [timeLeft, isCreator, mode, roomId]);
+    const finishMatchAsync = async () => {
+      try {
+        hasCalledFinishMatchRef.current = true;
+        await apiService.post(`card-games/match/${roomId}/finish`, {});
+      } catch (error) {
+        console.error("❌ Error finishing match:", error);
+      }
+    };
 
-  /* ------------------ PUSH DB ------------------ */
-  const isGameOverForPush =
-    timeLeft <= 0 || totalScoreCalculated >= 27 || scores.length >= 5;
+    // Small delay to ensure finishMatch happens
+    const timer = setTimeout(() => void finishMatchAsync(), 500);
+    return () => clearTimeout(timer);
+  }, [hasFinalScore, isCreator, mode, roomId]);
 
   /* ------------------ RELOAD PAGE ------------------ */
   useEffect(() => {
-    handleNewGame(); // reset complet si F5
+    handleNewGame(); // FULL RESET si F5
   }, []);
 
     useEffect(() => {
     if (!socketStore) return;
 
     const handleResult = (data: { finalScore: number; isWin: boolean; playerName: string }) => {
-      console.log("Received result from another player:", data);
       setFinalScore(data.finalScore);
       setPlayerState(data.isWin);
     };
@@ -147,6 +142,35 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       socketStore.off("match:result", handleResult);
     };
   }, [socketStore, setFinalScore, setPlayerState]);
+
+  /* ---------- AUTO NAVIGATE for MULTIPLAYER - After POST and finishMatch ---------- */
+  // Both creator and non-creator navigate after hasFinalScore is true
+  useEffect(() => {
+    if (mode !== "MULTI" || phase !== Phase.SHOW_RESULT || !hasFinalScore) return;
+
+    const navigateAsync = async () => {
+      // Small delay to ensure finishMatch completes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      navigate(`/games/cardGame/${roomId}/result`);
+    };
+
+    void navigateAsync();
+  }, [isCreator, mode, phase, roomId, navigate, hasFinalScore]);
+
+    /* ------------------ SAVE TO DATABASE - sync with isFinished logic ------------------ */
+
+    useEffect(() => {
+
+      if (finalScoreSnapshot === null && isFinished && totalScore >= 0) {
+
+        const timer = setTimeout(() => {
+          setFinalScoreSnapshot(totalScore);
+
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+    }, [isFinished, totalScore, finalScoreSnapshot]);
+
 
 
   return (
@@ -171,7 +195,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
           <span className="label">PROGRESS</span>
           <span className="turn">{turn} / 5</span>
         </div>
-        <ProgressBar progress={Math.min((totalScoreCalculated / 27) * 100, 100)} />
+        <ProgressBar progress={Math.min((totalScore / 27) * 100, 100)} />
       </div>
 
       <div className="card-group">
@@ -181,7 +205,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
           </ul>
           <div className="separatorLine" />
           <div className="totalScore">
-            <p>Score <span>{totalScoreCalculated}</span></p>
+            <p>Score <span>{totalScore}</span></p>
           </div>
         </div>
 
@@ -196,14 +220,13 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       <div className="cardButton">
         <PhaseButton phase={phase} onClick={onButtonClick}/>
       </div>
-
       <CardGameDb
         player={playerName}
-        finalScore={totalScoreCalculated}
+        finalScore={finalScoreSnapshot ?? 0}
         isWin={isWin}
         mode={mode}
         matchId={mode === "MULTI" ? roomId : null}
-        isGameOver={isGameOverForPush && !hasFinalScore}
+        isGameOver={finalScoreSnapshot !== null && !hasFinalScore} // reste ok
         onSaved={() => setHasFinalScore(true)}
       />
     </div>

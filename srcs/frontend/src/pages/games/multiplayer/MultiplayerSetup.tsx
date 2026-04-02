@@ -88,6 +88,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
     event.preventDefault();
     setLoading(true);
     setError("");
+
     try {
       const code = roomCode.trim().toUpperCase();
       if (code.length !== 4) {
@@ -95,11 +96,22 @@ export default function MultiplayerSetup(): React.JSX.Element {
         return;
       }
 
+      // 🔹 Charger le token depuis localStorage
+      const accessToken = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!accessToken) throw new Error("No access token available.");
+
+      apiService.setTokens(accessToken, refreshToken || "");
+
+      // 🔹 POST join room
       await apiService.post(`/matches/${code}/join`, { gameId: getGameId(gameSlug) });
+
       setPlayerName(playerName);
       navigate(`/games/${gameSlug}/multiplayer/lobby/${code}`);
 
     } catch (err: any) {
+      console.error(err);
       setError(err.message || "Failed to join room");
     } finally {
       setLoading(false);

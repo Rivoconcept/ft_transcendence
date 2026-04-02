@@ -32,7 +32,7 @@ const back = useLoader(THREE.TextureLoader, "/diamonds/back.png");
 
   return (
     <group ref={group}>
-      {/* Fond noir derrière la carte */}
+      {/* Black background behind card */}
       <mesh position={[0, 0, -0.01]}>
         <planeGeometry args={[2.5, 3.5]} />
         <meshBasicMaterial color={0x000000} />

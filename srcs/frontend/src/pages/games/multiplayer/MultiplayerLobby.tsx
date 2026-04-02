@@ -89,10 +89,6 @@ export default function MultiplayerLobby(): React.JSX.Element {
     // because the socket handler fetches all sockets in the room
     const handlePlayersUpdate = (data: { participants: Player[] }) => {
 
-      console.log("");
-      console.log("--> Updated player list:", data.participants);
-      console.log("");
-
       setPlayers(data.participants);
     };
 
