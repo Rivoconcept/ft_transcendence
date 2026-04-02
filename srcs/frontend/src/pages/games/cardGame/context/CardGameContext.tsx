@@ -1,3 +1,4 @@
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/context/CardGameContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCardState } from "./CardContext";
 import type { CardGameContextType } from "../typescript/CardGameContextType";
@@ -28,7 +29,8 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
 
   const isWin = mode === "SINGLE" ? totalScore >= MAX_SCORE && turn <= MAX_TURNS : false;
   const isLose = mode === "SINGLE" ? totalScore < MAX_SCORE && timeLeft <= 0 : false;
-  const isFinished = mode === "SINGLE" ? isWin || isLose : false;
+  // For MULTI: game is finished when time runs out. For SINGLE: finished when win/lose condition met OR all 5 turns are done
+  const isFinished = mode === "SINGLE" ? (isWin || isLose || turn >= MAX_TURNS) : timeLeft <= 0;
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -46,18 +48,21 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isTimerRunning]); // ❌ plus de timeLeft ici
+  }, [isTimerRunning]);
 
   /* ================= GAMEPLAY ================= */
   const playTurn = () => {
-    if (turn >= MAX_TURNS || timeLeft <= 0) return;
+    if (isFinished || turn >= MAX_TURNS) return;
     drawAll();
-    setTurn(t => t + 1);
+    setTimeout(() => setTurn(t => t + 1), 0);
   };
 
   /* ================= AUTO SCORE ================= */
   useEffect(() => {
-    if (cardScore !== null) setTotalScore(prev => prev + cardScore);
+    if (cardScore !== null)
+    {
+        setTotalScore(prev => prev + cardScore);
+    }
   }, [cardScore]);
 
   useEffect(() => {
@@ -66,12 +71,12 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
 
   /* ================= RESET ================= */
   const resetGame = () => {
-    setIsTimerRunning(false); // stop timer
+    setIsTimerRunning(false);
     setTurn(0);
     setTotalScore(0);
     setTimeLeft(TIME_LIMIT);
     resetCards();
-    // relance le timer après le reset
+    // restart timer after reset
     setTimeout(() => setIsTimerRunning(true), 0);
   };
 

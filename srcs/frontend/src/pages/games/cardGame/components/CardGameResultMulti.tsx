@@ -1,3 +1,4 @@
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameResultMulti.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAtomValue } from "jotai";
@@ -83,10 +84,11 @@ export default function CardGameMultiResult() {
 
       <div className="text-center">
         <button className="btn btn-primary" onClick={handleBackHome}>
-          Retour aux jeux
+          Back to Games
         </button>
       </div>
 
     </div>
   );
+
 }

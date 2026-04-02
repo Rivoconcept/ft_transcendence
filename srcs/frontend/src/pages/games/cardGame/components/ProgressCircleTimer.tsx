@@ -9,11 +9,11 @@ type Props = {
 export default function ProgressCircleTimer({ size = 100, strokeWidth = 10 }: Props) {
   const { timeLeft, maxTime } = useCardGameState();
 
-  // ✅ Limiter la taille si écran > 1360px
+  // ✅ Limit size if screen > 1360px
   const screenWidth = window.innerWidth;
-  const maxSize = 100; // la taille max qu'on veut
+  const maxSize = 100; // max size we want
   const finalSize = screenWidth > 1360 ? maxSize : size;
-  const finalStrokeWidth = strokeWidth; // on peut aussi le limiter si besoin
+  const finalStrokeWidth = strokeWidth; // we can also limit it if needed
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;

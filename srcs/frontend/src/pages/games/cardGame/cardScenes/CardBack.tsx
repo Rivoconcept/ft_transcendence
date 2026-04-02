@@ -9,13 +9,13 @@ export default function BackCard() {
 
   return (
 <group>
-  {/* Fond noir */}
+  {/* Black background */}
   <mesh position={[0, 0, -0.01]}>
     <planeGeometry args={[2.5, 3.5]} />
     <meshBasicMaterial color={0x000000} />
   </mesh>
 
-  {/* Carte avec texture */}
+  {/* Card with texture */}
   <mesh>
     <planeGeometry args={[2.5, 3.5]} />
     <meshStandardMaterial map={texture} side={THREE.DoubleSide} transparent={true} />

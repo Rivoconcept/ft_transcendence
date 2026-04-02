@@ -51,14 +51,15 @@ class ApiService {
 
 	private setupInterceptors(): void {
 		// Request interceptor - add auth token
+// api.service.ts -> vérifier le request interceptor
 		this.instance.interceptors.request.use(
-			(config) => {
-				if (this.accessToken) {
-					config.headers.Authorization = `Bearer ${this.accessToken}`;
-				}
-				return config;
-			},
-			(error) => Promise.reject(error)
+		(config) => {
+			if (this.accessToken) {
+			config.headers.Authorization = `Bearer ${this.accessToken}`;
+			}
+			return config;
+		},
+		(error) => Promise.reject(error)
 		);
 
 		// Response interceptor - handle errors
