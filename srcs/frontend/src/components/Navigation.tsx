@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, User, Users, LogOut, BarChart3, MessageSquare, Gamepad2 } from 'lucide-react';
+import { Menu, User, Users, LogOut, BarChart3, MessageSquare, Gamepad2, FileText } from 'lucide-react';
 
 interface NavigationProps {
 	username: string;
@@ -65,6 +65,12 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 							<NavLink to="/profile/friends" className="nav-link">
 								<Users size={18} className="me-1" />
 								Friends
+							</NavLink>
+						</li>
+						<li className="nav-item">
+							<NavLink to="/legal" className="nav-link">
+								<FileText size={18} className="me-1" />
+								Legals
 							</NavLink>
 						</li>
 					</ul>

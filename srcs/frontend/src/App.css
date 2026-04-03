@@ -175,6 +175,8 @@ body {
 	margin: 0 auto;
 	width: 100%;
 	flex: 1;
+  display: flex;
+  flex-direction: column;
 	min-height: 0;
 	overflow: auto;
 }
@@ -248,7 +250,8 @@ body {
 }
 
 .landing-footer {
-	margin-top: 1.25rem;
+	margin-bottom: 1.25rem;
+	margin-top: auto;
 	text-align: center;
 }
 
