@@ -80,7 +80,6 @@ export default function GameSetup(): React.JSX.Element {
               <h5 className="mb-3">Choose your mode</h5>
 
               <div className="d-flex justify-content-center gap-3">
-
                 {/* Multiplayer */}
                 <button
                   className={`btn btn-outline-primary btn-lg ${mode === 'MULTI' ? 'active' : ''}`}
@@ -93,15 +92,17 @@ export default function GameSetup(): React.JSX.Element {
                 </button>
 
                 {/* Single */}
-                <button
-                  className={`btn btn-success btn-lg ${mode === 'SINGLE' ? 'active' : ''}`}
-                  onClick={() => {
-                    setMode('SINGLE');
-                    navigate(`/games/${gameSlug}/single`);
-                  }}
-                >
-                  🧍 Single Player
-                </button>
+                {gameSlug == 'cardGame' && (
+                  <button
+                    className={`btn btn-success btn-lg ${mode === 'SINGLE' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMode('SINGLE');
+                      navigate(`/games/${gameSlug}/single`);
+                    }}
+                  >
+                    🧍 Single Player
+                  </button>
+                )}
 
               </div>
 

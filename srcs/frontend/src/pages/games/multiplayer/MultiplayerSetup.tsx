@@ -131,14 +131,14 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
         <div className="d-flex justify-content-center mb-4">
           <button
-            className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
+            className={`tab-btn me-2 ${isCreateRoom ? "active" : ""}`}
             onClick={() => setIsCreateRoom(true)}
           >
             Create Room
           </button>
 
           <button
-            className={`btn ${!isCreateRoom ? "btn-success" : "btn-outline-success"}`}
+            className={`tab-btn ${!isCreateRoom ? "active" : ""}`}
             onClick={() => setIsCreateRoom(false)}
           >
             Join Room
@@ -150,7 +150,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         {isCreateRoom && (
           <form onSubmit={handleCreateRoom}>
             <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Creating..." : "Create Room"}
+              {loading ? "Creating..." : "Create"}
             </button>
           </form>
         )}
@@ -158,7 +158,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
         {!isCreateRoom && (
           <form onSubmit={handleJoinRoom}>
             <div className="mb-3">
-              <label className="form-label">Room Code</label>
+              <label className="form-label">Enter the room code :</label>
               <input
                 className="form-control"
                 value={roomCode}
@@ -168,7 +168,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
             </div>
 
             <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Connecting..." : "Join Room"}
+              {loading ? "Connecting..." : "Join"}
             </button>
           </form>
         )}
