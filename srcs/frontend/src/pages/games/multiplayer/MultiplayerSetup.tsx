@@ -122,12 +122,14 @@ export default function MultiplayerSetup(): React.JSX.Element {
         </h2>
 
         <div className="d-flex justify-content-center mb-4">
-          <button
-            className={`tab-btn me-2 ${isCreateRoom ? "active" : ""}`}
-            onClick={() => setIsCreateRoom(true)}
-          >
-            Create Room
-          </button>
+          <form onSubmit={handleCreateRoom}>
+            <button
+              className={`btn me-2 ${isCreateRoom ? "btn-success" : "btn-outline-success"}`}
+              disabled={loading}
+            >
+              {loading ? "Creating..." : "Create Room"}
+            </button>
+          </form>
 
           <button
             className={`tab-btn ${!isCreateRoom ? "active" : ""}`}
@@ -138,14 +140,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
         </div>
 
         {error && <div className="alert alert-danger">{error}</div>}
-
-        {isCreateRoom && (
-          <form onSubmit={handleCreateRoom}>
-            <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
-            </button>
-          </form>
-        )}
 
         {!isCreateRoom && (
           <form onSubmit={handleJoinRoom}>
