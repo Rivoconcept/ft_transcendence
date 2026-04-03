@@ -46,6 +46,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const hasCalledFinishMatchRef = useRef(false);
   const { totalScore } = useCardGameState();
   const [finalScoreSnapshot, setFinalScoreSnapshot] = useState<number | null>(null);
+  const avatarSize = Math.min(window.innerWidth * 0.08, 80);
 
   if (!mode) throw new Error("Game started without a selected mode");
 
@@ -175,20 +176,18 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       }
     }, [isFinished, totalScore, finalScoreSnapshot]);
 
-
-
   return (
     <div className="dashboard">
+        <div className="avatarTopLeft">
+          <AvatarUtil
+            id={currentUser?.id || 0}
+            radius={32}
+            showStatus={false}
+          />
+        </div>
       <div className="card-group">
         <div className="card border-0 bg-black text-light">
-          <div className="card-body">
-            <div className="avatar"> 
-              <AvatarUtil id={currentUser?.id || 0} radius={120} showStatus={false} />
-            </div>
-          </div>
-        </div>
-        <div className="card border-0 bg-black text-light">
-          <div className="card-body">
+          <div className="card-body alignTimer">
             <ProgressCircleTimer />
           </div>
         </div>
@@ -217,8 +216,8 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
         <div className="card border-0 bg-black text-light">
           <div className="card-body">
-            {isWin && <h3>🎉 You Win!</h3>}
-            {isLose && !isWin && <h3>💀 You Lose!</h3>}
+            {isWin && <h3 className="gameResult">🎉 <br/>You <br/>Win!</h3>}
+            {isLose && !isWin && <h3 className="gameResult">💀 <br/>You <br/>Lose!</h3>}
           </div>
         </div>
       </div>
