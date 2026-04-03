@@ -33,7 +33,7 @@ export default function OnlineTimeCard() {
       acc[month].minutes += entry.minutes;
       return acc;
     }, {})
-  );
+  ).sort((a, b) => a.month.localeCompare(b.month));
 
   return (
     <div className="dashboard-card">

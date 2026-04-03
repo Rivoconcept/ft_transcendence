@@ -142,6 +142,10 @@
   border: 1px solid var(--border-color);
 }
 
+.tooltip-content ul {
+  list-style-type: none;
+}
+
 .tooltip-arrow {
   fill: var(--bg-surface-alt);
 }
