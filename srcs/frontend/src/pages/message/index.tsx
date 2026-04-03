@@ -97,7 +97,7 @@ export default function MessagesPage() {
 
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
-	const [_, setMobileView] = useState<"list" | "chat">("list");
+	const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
@@ -331,7 +331,7 @@ export default function MessagesPage() {
 	};
 
 	return (
-		<div className="messages-root">
+		<div className={`messages-root${mobileView === "chat" ? " mobile-chat" : ""}`}>
 			{/* Sidebar */}
 			<aside className="msg-sidebar">
 				<div className="px-3 pb-2 search-wrapper d-flex align-items-center gap-2">

@@ -474,6 +474,58 @@
 	color: var(--accent-danger);
 }
 
+/* ── Tablet (576px – 991px) ── */
+@media (max-width: 991.98px) {
+    .msg-sidebar {
+        width: 240px;
+        min-width: 200px;
+    }
+}
+
+/* ── Mobile (≤ 575px) ── */
+@media (max-width: 575.98px) {
+    .messages-root {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .msg-sidebar {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        min-width: 0;
+        z-index: 10;
+        transition: transform 0.25s ease;
+    }
+
+    /* hide sidebar when chat is open */
+    .messages-root.mobile-chat .msg-sidebar {
+        transform: translateX(-100%);
+        pointer-events: none;
+    }
+
+    .msg-chat-panel {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+    }
+
+    /* show chat panel when chat is open */
+    .messages-root.mobile-chat .msg-chat-panel {
+        transform: translateX(0);
+    }
+
+    .back-btn {
+        display: flex !important;
+    }
+
+    .bubble {
+        max-width: 80vw;
+    }
+}
+
 /* @media (max-width: 575.98px) {
 	.msg-sidebar    { width: 100% !important; min-width: 0 !important; display: ${mobileView === "list" ? "flex" : "none"} !important; }
 	.msg-chat-panel { display: ${mobileView === "chat" ? "flex" : "none"} !important; }
