@@ -61,10 +61,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
     try {
       const game_id = getGameId(gameSlug);
 
-      let game = (game_id == 2) ? "Kod" : "game card";
-
-      console.log("---> Creating match for game_id:", game);
-
       const data = await apiService.post<MatchItem>("/matches", {
         is_private: false,
         set: 1,
@@ -124,10 +120,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
         <h2 className="text-center mb-4">
           Multiplayer Setup : {gameSlug}
         </h2>
-
-        <div className="alert alert-info text-center">
-          Logged in as <strong>{playerName}</strong>
-        </div>
 
         <div className="d-flex justify-content-center mb-4">
           <button
