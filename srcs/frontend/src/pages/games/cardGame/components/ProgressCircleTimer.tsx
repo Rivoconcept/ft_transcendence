@@ -1,19 +1,37 @@
 import { useCardGameState } from "../context/CardGameContext";
-
+import { useEffect, useState } from "react";
 
 type Props = {
-  size?: number;
   strokeWidth?: number;
 };
 
-export default function ProgressCircleTimer({ size = 100, strokeWidth = 10 }: Props) {
+export default function ProgressCircleTimer({ strokeWidth = 10 }: Props) {
   const { timeLeft, maxTime } = useCardGameState();
 
-  // ✅ Limit size if screen > 1360px
+  const [size, setSize] = useState({ width: 100, height: 100 });
+
+const updateSize = () => {
   const screenWidth = window.innerWidth;
-  const maxSize = 100; // max size we want
-  const finalSize = screenWidth > 1360 ? maxSize : size;
-  const finalStrokeWidth = strokeWidth; // we can also limit it if needed
+  let width: number;
+  let height: number = 100;
+
+  if (screenWidth < 620) {
+    width = 47;
+  } else if (screenWidth > 920) {
+    width = 100;
+  } else {
+    const factor = (screenWidth - 620) / (920 - 620);
+    width = 47 + factor * (100 - 47);
+  }
+
+  setSize({ width, height });
+};
+
+  useEffect(() => {
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
@@ -21,19 +39,30 @@ export default function ProgressCircleTimer({ size = 100, strokeWidth = 10 }: Pr
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <svg viewBox="0 0 100 100" width={`${finalSize}px`} height={`${finalSize}px`}>
+      <svg
+        viewBox="0 0 100 100"
+        width={size.width}
+        height={size.height}
+        style={{ minWidth: 47, maxWidth: 100 }}
+      >
       <circle
         stroke="#222"
         fill="transparent"
-        strokeWidth={finalStrokeWidth}
+        strokeWidth={strokeWidth}
         r={radius}
         cx={50}
         cy={50}
       />
       <circle
-        stroke={timeLeft > maxTime * 0.5 ? "#06f762" : timeLeft > maxTime * 0.25 ? "#ffb703" : "#ff3b3b"}
+        stroke={
+          timeLeft > maxTime * 0.5
+            ? "#06f762"
+            : timeLeft > maxTime * 0.25
+            ? "#ffb703"
+            : "#ff3b3b"
+        }
         fill="transparent"
-        strokeWidth={finalStrokeWidth}
+        strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}

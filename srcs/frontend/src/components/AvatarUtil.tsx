@@ -1,3 +1,4 @@
+// /home/rhanitra/Pictures/ft_transcendence/srcs/frontend/src/components/AvatarUtil.tsx
 import { useAtomValue } from "jotai";
 import { userFamily } from "../providers";
 import "./AvatarUtil.css";
@@ -17,7 +18,7 @@ export default function AvatarUtil({ id, radius, showStatus = true }: AvatarUtil
     // Loading state
     if (userLoadable.state === 'loading') {
         return (
-            <div className="avatar-container" style={{ height: radius, width: radius }}>
+            <div className="avatar-container" >
                 <div className="avatar skeleton" style={{ height: radius, width: radius }} />
             </div>
         );
@@ -26,7 +27,7 @@ export default function AvatarUtil({ id, radius, showStatus = true }: AvatarUtil
     // Error state
     if (userLoadable.state === 'hasError') {
         return (
-            <div className="avatar-container" style={{ height: radius, width: radius }}>
+            <div className="avatar-container" >
                 <div className="avatar error" style={{ height: radius, width: radius }}>?</div>
             </div>
         );
@@ -36,7 +37,7 @@ export default function AvatarUtil({ id, radius, showStatus = true }: AvatarUtil
     const user = userLoadable.data;
 
     return (
-        <div className="avatar-container" style={{ height: radius, width: radius }}>
+        <div className="avatar-container" >
             {user?.avatar ? (
                 <div className="avatar" style={{ height: radius, width: radius, background: 'transparent', overflow: 'hidden' }}>
                     <img src={user.avatar} alt={user.username} />
