@@ -170,6 +170,20 @@ body {
 	background: var(--accent-danger-hover);
 }
 
+.dark-theme-btn {
+	background: none;
+	color: var(--app-text-primary);
+	border: none;
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.dark-theme-btn:hover {
+	background: var(--bg-surface-hover);
+}
+
 .main-content {
 	max-width: 100%;
 	margin: 0 auto;

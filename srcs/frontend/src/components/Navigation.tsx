@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, Users, BarChart3, MessageSquare, Gamepad2, FileText } from 'lucide-react';
+import { Menu, Users, BarChart3, MessageSquare, Gamepad2, FileText, Moon, Sun } from 'lucide-react';
 import AvatarUtil from "../components/AvatarUtil";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../providers/user.provider';
@@ -74,19 +74,9 @@ export default function Navigation({ username, theme, onThemeChange }: Navigatio
 
 					{/* Theme Switch */}
 					<div className="d-flex align-items-center gap-3">
-						<div className="form-check form-switch m-0">
-							<input
-								className="form-check-input"
-								type="checkbox"
-								role="switch"
-								id="themeSwitch"
-								checked={theme === 'dark'}
-								onChange={toggleTheme}
-							/>
-							<label className="form-check-label" htmlFor="themeSwitch">
-								Dark
-							</label>
-						</div>
+						<button className="dark-theme-btn" onClick={toggleTheme}>
+							{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+						</button>
 
 						<NavLink to="/profile/me" className="nav-link d-flex align-items-center">
 							{user && user.id ? (<AvatarUtil radius={40} id={user.id} showStatus={false} />) : null}
