@@ -88,19 +88,17 @@ function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
 // Layout with Navigation
 interface LayoutProps {
 	user: User | null;
-	onLogout: () => void;
 	theme: 'default' | 'dark';
 	onThemeChange: (theme: 'default' | 'dark') => void;
 	children: React.ReactNode;
 }
 
-function Layout({ user, onLogout, theme, onThemeChange, children }: LayoutProps): React.JSX.Element {
+function Layout({ user, theme, onThemeChange, children }: LayoutProps): React.JSX.Element {
 	return (
 		<div className="app">
 			{user && (
 				<Navigation
 					username={user.username}
-					onLogout={onLogout}
 					theme={theme}
 					onThemeChange={onThemeChange}
 				/>
@@ -327,7 +325,6 @@ export default function App(): React.JSX.Element {
 			<SocketListener />
 			<Layout
 				user={user}
-				onLogout={handleLogout}
 				theme={theme}
 				onThemeChange={setTheme}
 			>
@@ -432,7 +429,7 @@ export default function App(): React.JSX.Element {
 						path="/profile/me"
 						element={
 							<ProtectedRoute>
-								<ProfilePage />
+								<ProfilePage onLogout={handleLogout} />
 							</ProtectedRoute>
 						}
 					/>

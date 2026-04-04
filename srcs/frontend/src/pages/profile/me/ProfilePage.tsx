@@ -5,6 +5,7 @@ import { currentUserAtom, updateCurrentUserAtom } from '../../../providers';
 import { gameHistoryAtom } from '../../../pages/dashboard/atoms/dashboardData';
 import AvatarUtil from '../../../components/AvatarUtil';
 import AvatarSelector from '../../../components/AvatarSelector';
+import { LogOut } from 'lucide-react';
 
 function ProfileStats(): React.JSX.Element {
 	const gameHistory = useAtomValue(gameHistoryAtom);
@@ -37,7 +38,11 @@ function ProfileStats(): React.JSX.Element {
 	);
 }
 
-export default function ProfilePage(): React.JSX.Element {
+interface ProfileProps {
+	onLogout: () => void;
+}
+
+export default function ProfilePage({ onLogout }: ProfileProps): React.JSX.Element {
 	const navigate = useNavigate();
 	const user = useAtomValue(currentUserAtom);
 	const updateCurrentUser = useSetAtom(updateCurrentUserAtom);
@@ -46,6 +51,11 @@ export default function ProfilePage(): React.JSX.Element {
 	const [avatar, setAvatar] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+
+	const handleLogout = () => {
+		onLogout();
+		navigate('/');
+	};
 
 	if (!user) {
 		return <div>Loading...</div>;
@@ -109,7 +119,7 @@ export default function ProfilePage(): React.JSX.Element {
 						onChange={(img) => setAvatar(img)}
 					/>
 				) : (
-					<AvatarUtil radius={100} id={user.id} showStatus={true} />
+					<AvatarUtil radius={100} id={user.id} showStatus={false} />
 				)}
 				<div className="profile-info">
 					{isEditing ? (
@@ -142,6 +152,10 @@ export default function ProfilePage(): React.JSX.Element {
 				<div style={{ display: 'flex', gap: '0.75rem' }}>
 					<button className="btn-secondary" onClick={startEditing}>Edit Profile</button>
 					<button className="btn-secondary" onClick={() => navigate('/dashboard')}>See Dashboard</button>
+					<button className="btn btn-danger d-flex align-items-center" onClick={handleLogout}>
+						<LogOut size={18} className="me-1" />
+						Logout
+					</button>
 				</div>
 			)}
 		</div>

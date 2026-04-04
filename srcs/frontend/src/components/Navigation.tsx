@@ -1,27 +1,24 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, User, Users, LogOut, BarChart3, MessageSquare, Gamepad2, FileText } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { Menu, Users, BarChart3, MessageSquare, Gamepad2, FileText } from 'lucide-react';
+import AvatarUtil from "../components/AvatarUtil";
+import { useAtomValue } from 'jotai';
+import { currentUserAtom } from '../providers/user.provider';
 
 interface NavigationProps {
 	username: string;
-	onLogout: () => void;
 	theme: 'default' | 'dark';
 	onThemeChange: (theme: 'default' | 'dark') => void;
 }
 
-export default function Navigation({ username, onLogout, theme, onThemeChange }: NavigationProps): React.JSX.Element {
-	const navigate = useNavigate();
+export default function Navigation({ username, theme, onThemeChange }: NavigationProps): React.JSX.Element {
+	const user = useAtomValue(currentUserAtom);
 
 	const toggleTheme = () => {
 		onThemeChange(theme === 'dark' ? 'default' : 'dark');
 	};
 
 	const [isOpen, setIsOpen] = useState(false);
-
-	const handleLogout = () => {
-		onLogout();
-		navigate('/');
-	};
 
 	return (
 		<nav className="navbar navbar-expand-lg shadow-sm px-3">
@@ -92,14 +89,9 @@ export default function Navigation({ username, onLogout, theme, onThemeChange }:
 						</div>
 
 						<NavLink to="/profile/me" className="nav-link d-flex align-items-center">
-							<User size={18} className="me-1" />
+							{user && user.id ? (<AvatarUtil radius={40} id={user.id} showStatus={false} />) : null}
 							{username}
 						</NavLink>
-
-						<button className="btn btn-danger d-flex align-items-center" onClick={handleLogout}>
-							<LogOut size={18} className="me-1" />
-							Logout
-						</button>
 					</div>
 				</div>
 			</div>

@@ -66,14 +66,14 @@ function GroupAvatar({ name, size }: { name: string; size: number }) {
 }
 
 // Renders the appropriate avatar based on chat type
-function ChatAvatar({ chat, size, currentUserId }: { chat: ChatListItem; size: number; currentUserId?: number }) {
+function ChatAvatar({ chat, size, currentUserId, showStatus }: { chat: ChatListItem; size: number; currentUserId?: number; showStatus?: boolean }) {
 	if (chat.type === "group") {
 		return <GroupAvatar name={chat.name ?? "Group"} size={size} />;
 	}
 	const otherUserId = currentUserId
 		? (chat.memberIds.find(id => id !== currentUserId) ?? chat.memberIds[0])
 		: chat.memberIds[0];
-	return <AvatarUtil id={otherUserId} radius={size} />;
+	return <AvatarUtil id={otherUserId} radius={size} showStatus={showStatus} />;
 }
 
 export default function MessagesPage() {
@@ -368,7 +368,7 @@ export default function MessagesPage() {
 								onClick={() => handleSelectChat(c.id)}
 							>
 								<div className="position-relative flex-shrink-0">
-									<ChatAvatar chat={c} size={44} currentUserId={currentUser?.id} />
+									<ChatAvatar chat={c} size={44} currentUserId={currentUser?.id} showStatus={true} />
 								</div>
 
 								<div className="flex-grow-1 overflow-hidden">
@@ -405,7 +405,7 @@ export default function MessagesPage() {
 							</button>
 
 							<div className="flex-shrink-0">
-								<ChatAvatar chat={selectedChat} size={40} currentUserId={currentUser?.id} />
+								<ChatAvatar chat={selectedChat} size={40} currentUserId={currentUser?.id} showStatus={false} />
 							</div>
 
 							<div className="flex-grow-1">

@@ -142,35 +142,35 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 						{friends
 							.filter(f => !memberSearch.trim() || f.username.toLowerCase().includes(memberSearch.toLowerCase()))
 							.map((friend) => (
-							<div
-								key={friend.id}
-								className="friend-item"
-								onClick={() => {
-									if (creating) return;
-									if (activeTab === "direct") {
-										handleDirectChat(friend.id);
-									} else {
-										toggleMember(friend.id);
-									}
-								}}
-							>
-								{activeTab === "group" && (
-									<input
-										type="checkbox"
-										checked={selectedMembers.includes(friend.id)}
-										onChange={() => toggleMember(friend.id)}
-										onClick={(e) => e.stopPropagation()}
-										className="friend-item-checkbox"
-									/>
-								)}
-								<AvatarUtil id={friend.id} radius={38} />
-								<div className="flex-grow-1">
-									<span className="fw-semibold" style={{ fontSize: 14, color: "var(--text-primary)" }}>
-										{friend.username}
-									</span>
+								<div
+									key={friend.id}
+									className="friend-item"
+									onClick={() => {
+										if (creating) return;
+										if (activeTab === "direct") {
+											handleDirectChat(friend.id);
+										} else {
+											toggleMember(friend.id);
+										}
+									}}
+								>
+									{activeTab === "group" && (
+										<input
+											type="checkbox"
+											checked={selectedMembers.includes(friend.id)}
+											onChange={() => toggleMember(friend.id)}
+											onClick={(e) => e.stopPropagation()}
+											className="friend-item-checkbox"
+										/>
+									)}
+									<AvatarUtil id={friend.id} radius={38} showStatus={false} />
+									<div className="flex-grow-1">
+										<span className="fw-semibold" style={{ fontSize: 14, color: "var(--text-primary)" }}>
+											{friend.username}
+										</span>
+									</div>
 								</div>
-							</div>
-						))}
+							))}
 					</div>
 				</div>
 
