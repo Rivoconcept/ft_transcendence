@@ -1,18 +1,4 @@
 services:
-  vault-init:
-    image: hashicorp/vault:1.15
-    container_name: vault-init
-    volumes:
-      - vault-secrets:/run/secrets
-      - ./.env.vault:/vault/vault-init:ro
-      - ./vault/init.sh:/vault/init.sh:ro
-    command: sh /vault/init.sh
-    depends_on:
-      vault:
-        condition: service_healthy
-    networks:
-      - transcendence-network
-
   vault:
     image: hashicorp/vault:1.15
     container_name: vault
@@ -31,6 +17,35 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # vault-init:
+  #   image: hashicorp/vault:1.15
+  #   container_name: vault-init
+  #   volumes:
+  #     - vault-secrets:/run/secrets
+  #     - ./.env.vault:/vault/vault-init:ro
+  #     - ./vault/init.sh:/vault/init.sh:ro
+  #   command: sh /vault/init.sh
+  #   depends_on:
+  #     vault:
+  #       condition: service_healthy
+  #   networks:
+  #     - transcendence-network
+
+  vault-agent:
+    image: hashicorp/vault:1.15
+    container_name: vault-agent
+    environement:
+      VAULT_ADDR: ${VAULT_ADDR}
+    volumes:
+      - ./vault/agent-config.hcl:/vault/agent/config.hcl:ro
+      - ./vault/secrets:/vault/secrets
+    command: vault agent -config=/vault/agent/config.hcl -foreground
+    depends_on:
+      vault:
+        condition: service_healthy
+    networks:
+      - transcendence-network
 
   postgres:
     image: postgres:16

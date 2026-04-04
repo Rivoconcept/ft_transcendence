@@ -1,0 +1,7 @@
+{{ with secret "pki/issue/web-external/common_name=waf.gamehub.local ttl=1h" }}
+{{ .Data.certificate }}
+{{ .Data.issuing_ca }}
+{{- range .Data.ca_chain }}
+{{ . }}
+{{- end }}
+{{- end }}

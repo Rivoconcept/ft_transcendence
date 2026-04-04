@@ -6,7 +6,7 @@ services:
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: root
     volumes:
-      - vault-secrets:/run/secrets
+      - vault-secrets:/run/secrets:rw
       - ./.env.vault:/run/secrets/vault-init:ro
       - ./vault/init.sh:/vault/init.sh:ro
     command: sh /vault/init.sh

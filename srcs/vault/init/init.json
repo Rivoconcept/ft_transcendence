@@ -1,0 +1,10 @@
+{
+    "POSTGRES_PASSWORD": "rootpassword",
+    "PGADMIN_DEFAULT_PASSWORD": "admin",
+    "NODE_ENV": "development",
+    "BACKEND_PORT": "3000",
+    "JWT_SECRET": "votre_jwt_secret",
+    "REFRESH_SECRET": "votre_refresh_secret",
+    "JWT_EXPIRES_IN": "15m",
+    "REFRESH_EXPIRES_IN": "7d"
+}
