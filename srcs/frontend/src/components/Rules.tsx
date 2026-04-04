@@ -81,7 +81,7 @@ export const PrivacyPolicy: React.FC = () => {
         <p>We collect minimal data to facilitate your experience on the ft_transcendence project:</p>
         <ul style={styles.list}>
           <li><strong>Identity:</strong> Username, Profile Picture, and Real Name (for verification).</li>
-          <li><strong>Security:</strong> Custom Password (encrypted via <strong>bcrypt</strong>).</li>
+          <li><strong>Security:</strong> Custom Password (encrypted).</li>
           <li><strong>Dashboard Metrics:</strong> Online presence, win rates, and game participation.</li>
         </ul>
       </section>
