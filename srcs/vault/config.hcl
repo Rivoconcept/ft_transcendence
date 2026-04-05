@@ -15,50 +15,23 @@ vault {
 
 template
 {
-  source = "/vault/templates/backend.env.ctmpl"
+  source      = "/vault/templates/backend.env.ctmpl"
   destination = "/run/secrets/GameHub/backend/backend.env"
-  perms = "0644"
+  perms       = "0644"
 }
 
 template
 {
-  source = "/vault/templates/postgres-password.ctmpl"
+  source      = "/vault/templates/postgres-password.ctmpl"
   destination = "/run/secrets/GameHub/postgres/POSTGRES_PASSWORD"
-  perms = "0600"
+  perms       = "0600"
 }
 
 template
 {
-  source = "/vault/templates/pgadmin-password.ctmpl"
+  source      = "/vault/templates/pgadmin-password.ctmpl"
   destination = "/run/secrets/GameHub/pgadmin/PGADMIN_DEFAULT_PASSWORD"
-  perms = "0600"
+  perms       = "0600"
 }
 
-template
-{
-  source = "/vault/templates/backend-fullchain.ctmpl"
-  destination = "/run/secrets/GameHub/backend/fullchain.pem"
-  perms = "0644"
-}
-
-template
-{
-  source = "/vault/templates/backend-privkey.ctmpl"
-  destination = "/run/secrets/GameHub/backend/privkey.pem"
-  perms = "0600"
-}
-
-template
-{
-  source = "/vault/templates/waf-fullchain.ctmpl"
-  destination = "/run/secrets/GameHub/waf/fullchain.pem"
-  perms = "0644"
-}
-
-template
-{
-  source = "/vault/templates/waf-privkey.ctmpl"
-  destination = "/run/secrets/GameHub/waf/privkey.pem"
-  perms = "0600"
-}
 
