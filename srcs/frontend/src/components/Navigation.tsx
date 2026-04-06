@@ -4,6 +4,7 @@ import { Menu, Users, BarChart3, MessageSquare, Gamepad2, FileText, Moon, Sun } 
 import AvatarUtil from "../components/AvatarUtil";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../providers/user.provider';
+import { totalUnreadCountAtom } from '../providers/chat.provider';
 
 interface NavigationProps {
 	username: string;
@@ -13,6 +14,7 @@ interface NavigationProps {
 
 export default function Navigation({ username, theme, onThemeChange }: NavigationProps): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
+	const totalUnread = useAtomValue(totalUnreadCountAtom);
 
 	const toggleTheme = () => {
 		onThemeChange(theme === 'dark' ? 'default' : 'dark');
@@ -45,9 +47,14 @@ export default function Navigation({ username, theme, onThemeChange }: Navigatio
 						</li>
 
 						<li className="nav-item">
-							<NavLink to="/messages" className="nav-link">
+							<NavLink to="/messages" className="nav-link position-relative">
 								<MessageSquare size={16} className="me-1" />
 								Message
+								{totalUnread > 0 && (
+									<span className="badge rounded-pill bg-danger ms-1" style={{ fontSize: 10, verticalAlign: 'top' }}>
+										{totalUnread}
+									</span>
+								)}
 							</NavLink>
 						</li>
 

@@ -25,6 +25,10 @@ class ChatService {
 	async getChatById(chatId: number): Promise<ChatListItem> {
 		return apiService.get<ChatListItem>(`chats/${chatId}`);
 	}
+
+	async markAsRead(chatId: number, messageId: number): Promise<{ readMessageId: number; userId: number }> {
+		return apiService.post<{ readMessageId: number; userId: number }>(`chats/${chatId}/read`, { messageId });
+	}
 }
 
 export const chatService = new ChatService();

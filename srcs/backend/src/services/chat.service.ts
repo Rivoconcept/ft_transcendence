@@ -6,6 +6,7 @@ import { User } from "../database/entities/user.js";
 import { Reaction } from "../database/entities/reaction.js";
 import { UserReaction } from "../database/entities/user-reaction.js";
 import { BlockedUser } from "../database/entities/blocked-user.js";
+import { MessageRead } from "../database/entities/message-read.js";
 import { socketService } from "../websocket.js";
 import { randomBytes } from "crypto";
 
@@ -37,6 +38,7 @@ interface ChatListItem {
   lastMessageType: string | null;
   lastMessageDate: string | null;
   memberIds: number[];
+  unreadCount: number;
 }
 
 interface MessageItem {
@@ -48,6 +50,7 @@ interface MessageItem {
   authorId: number;
   chatId: number;
   reactions: { reactionId: number; userIds: number[] }[];
+  readBy: number[];
 }
 
 interface PaginatedMessages {
@@ -65,6 +68,7 @@ class ChatService {
   private userRepository = AppDataSource.getRepository(User);
   private userReactionRepository = AppDataSource.getRepository(UserReaction);
   private blockedUserRepository = AppDataSource.getRepository(BlockedUser);
+  private messageReadRepository = AppDataSource.getRepository(MessageRead);
 
   private generateChannelId(): string {
     return randomBytes(8).toString("hex");
@@ -280,6 +284,25 @@ class ChatService {
 
     const lastMessageMap = new Map(lastMessages.map((lm) => [lm.chatId, lm]));
 
+    // Compter les messages non lus par chat pour cet utilisateur
+    const unreadCounts = await Promise.all(
+      chatIds.map(async (chatId) => {
+        const count = await this.messageRepository
+          .createQueryBuilder("m")
+          .leftJoin(
+            MessageRead,
+            "mr",
+            "mr.message_id = m.id AND mr.user_id = :userId",
+            { userId }
+          )
+          .where("m.chat_id = :chatId", { chatId })
+          .andWhere("mr.id IS NULL")
+          .getCount();
+        return { chatId, count };
+      })
+    );
+    const unreadMap = new Map(unreadCounts.map((u) => [u.chatId, u.count]));
+
     // Formater les résultats
     const chatList: ChatListItem[] = chats.map((chat) => {
       const lastMsg = lastMessageMap.get(chat.id);
@@ -294,6 +317,7 @@ class ChatService {
         lastMessageType: lastMsg?.type ?? null,
         lastMessageDate: lastMsg?.createdAt?.toISOString() ?? null,
         memberIds: membersByChatId.get(chat.id) ?? [],
+        unreadCount: unreadMap.get(chat.id) ?? 0,
       };
     });
 
@@ -356,6 +380,22 @@ class ChatService {
       reactionsByMessage.set(r.message_id, existing);
     });
 
+    // Récupérer les reads pour chaque message
+    const reads =
+      messageIds.length > 0
+        ? await this.messageReadRepository
+            .createQueryBuilder("mr")
+            .where("mr.message_id IN (:...messageIds)", { messageIds })
+            .getMany()
+        : [];
+
+    const readsByMessage = new Map<number, number[]>();
+    reads.forEach((r) => {
+      const existing = readsByMessage.get(r.message_id) ?? [];
+      existing.push(r.user_id);
+      readsByMessage.set(r.message_id, existing);
+    });
+
     // Formater les messages - uniquement les IDs
     const formattedMessages: MessageItem[] = messages.map((message) => {
       const messageReactions = reactionsByMessage.get(message.id) ?? [];
@@ -381,6 +421,7 @@ class ChatService {
           reactionId,
           userIds,
         })),
+        readBy: readsByMessage.get(message.id) ?? [],
       };
     });
 
@@ -442,6 +483,13 @@ class ChatService {
 
     await this.messageRepository.save(message);
 
+    // L'auteur a automatiquement lu son propre message
+    const authorRead = this.messageReadRepository.create({
+      user_id: userId,
+      message_id: message.id,
+    });
+    await this.messageReadRepository.save(authorRead);
+
     const messageItem: MessageItem = {
       id: message.id,
       content: message.content,
@@ -451,6 +499,7 @@ class ChatService {
       authorId: message.author_id,
       chatId: message.chat_id,
       reactions: [],
+      readBy: [userId],
     };
 
     // Notifier les membres du chat (exclure uniquement le socket émetteur)
@@ -504,6 +553,19 @@ class ChatService {
       select: ["id", "content", "type", "created_at"],
     });
 
+    // Compter les messages non lus
+    const unreadCount = await this.messageRepository
+      .createQueryBuilder("m")
+      .leftJoin(
+        MessageRead,
+        "mr",
+        "mr.message_id = m.id AND mr.user_id = :userId",
+        { userId }
+      )
+      .where("m.chat_id = :chatId", { chatId })
+      .andWhere("mr.id IS NULL")
+      .getCount();
+
     return {
       id: chat.id,
       name: chat.name,
@@ -515,6 +577,7 @@ class ChatService {
       lastMessageType: lastMessage?.type ?? null,
       lastMessageDate: lastMessage?.created_at?.toISOString() ?? null,
       memberIds: members.map((m) => m.user_id),
+      unreadCount,
     };
   }
 
@@ -548,6 +611,11 @@ class ChatService {
       reactionGroups.set(r.reaction_id, existing);
     });
 
+    // Récupérer les reads
+    const messageReads = await this.messageReadRepository.find({
+      where: { message_id: messageId },
+    });
+
     return {
       id: message.id,
       content: message.content,
@@ -560,6 +628,7 @@ class ChatService {
         reactionId,
         userIds,
       })),
+      readBy: messageReads.map((r) => r.user_id),
     };
   }
 
@@ -632,6 +701,63 @@ class ChatService {
 
       return { added: true };
     }
+  }
+
+  async markAsRead(userId: number, chatId: number, messageId: number): Promise<{ readMessageId: number; userId: number }> {
+    // Vérifier que l'utilisateur est membre du chat
+    const membership = await this.chatMemberRepository.findOne({
+      where: { user_id: userId, chat_id: chatId },
+    });
+
+    if (!membership) {
+      throw new Error("You are not a member of this chat");
+    }
+
+    // Vérifier que le message appartient au chat
+    const message = await this.messageRepository.findOne({
+      where: { id: messageId, chat_id: chatId },
+    });
+
+    if (!message) {
+      throw new Error("Message not found in this chat");
+    }
+
+    // Marquer ce message et tous les messages antérieurs comme lus
+    const unreadMessages = await this.messageRepository
+      .createQueryBuilder("m")
+      .leftJoin(
+        MessageRead,
+        "mr",
+        "mr.message_id = m.id AND mr.user_id = :userId",
+        { userId }
+      )
+      .where("m.chat_id = :chatId", { chatId })
+      .andWhere("m.id <= :messageId", { messageId })
+      .andWhere("mr.id IS NULL")
+      .getMany();
+
+    if (unreadMessages.length > 0) {
+      const reads = unreadMessages.map((m) =>
+        this.messageReadRepository.create({
+          user_id: userId,
+          message_id: m.id,
+        })
+      );
+      await this.messageReadRepository.save(reads);
+    }
+
+    // Notifier les participants du chat via WebSocket
+    const chat = await this.chatRepository.findOne({ where: { id: chatId } });
+    const io = socketService.getIO();
+    if (io && chat) {
+      io.to(`chat.${chat.channel_id}`).emit("message:read", {
+        chatId,
+        messageId,
+        userId,
+      });
+    }
+
+    return { readMessageId: messageId, userId };
   }
 
   async getReactions(): Promise<{ id: number; code: string }[]> {

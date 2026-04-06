@@ -26,6 +26,7 @@ export async function createDirectChat(req: AuthRequest, res: Response): Promise
       lastMessageType: null,
       lastMessageDate: null,
       memberIds: [currentUserId, userId],
+      unreadCount: 0,
     };
 
     res.status(201).json(chatListItem);
@@ -230,6 +231,37 @@ export async function getReactions(_req: AuthRequest, res: Response): Promise<vo
     res.json(reactions);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get reactions";
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function markAsRead(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const chatId = parseInt(req.params.id ?? "");
+    const { messageId } = req.body;
+
+    if (isNaN(chatId)) {
+      res.status(400).json({ error: "Invalid chat ID" });
+      return;
+    }
+
+    if (!messageId || typeof messageId !== "number") {
+      res.status(400).json({ error: "Message ID is required" });
+      return;
+    }
+
+    const result = await chatService.markAsRead(req.user!.userId, chatId, messageId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to mark as read";
+    if (message === "You are not a member of this chat") {
+      res.status(403).json({ error: message });
+      return;
+    }
+    if (message === "Message not found in this chat") {
+      res.status(404).json({ error: message });
+      return;
+    }
     res.status(500).json({ error: message });
   }
 }
