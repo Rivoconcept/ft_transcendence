@@ -30,6 +30,10 @@ class UserService {
 		return apiService.put<User>('users/me', data);
 	}
 
+	async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+		await apiService.put<{ message: string }>('users/me/password', { currentPassword, newPassword });
+	}
+
 	async getById(id: number): Promise<User> {
 		return apiService.get<User>(`users/${id}`);
 	}

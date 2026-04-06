@@ -104,6 +104,21 @@ class AuthService {
     return this.generateTokens(user);
   }
 
+  async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      throw new Error("Invalid current password");
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.save(user);
+  }
+
   async deleteUserByUsername(username: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { username },
