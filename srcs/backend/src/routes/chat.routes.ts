@@ -12,6 +12,7 @@ import {
   markAsRead,
   leaveGroupChat,
   toggleModerator,
+  deleteMessage,
   kickMember,
   joinGroupChat,
 } from "../controllers/chat.controller.js";
@@ -45,6 +46,9 @@ router.get("/messages/:messageId", authMiddleware, getMessageById);
 
 // Toggle une réaction sur un message
 router.post("/messages/:messageId/reactions", authMiddleware, toggleReaction);
+
+// Supprimer un message
+router.delete("/messages/:messageId", authMiddleware, deleteMessage);
 
 // Marquer des messages comme lus
 router.post("/:id/read", authMiddleware, markAsRead);

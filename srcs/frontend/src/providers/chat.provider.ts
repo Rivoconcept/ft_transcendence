@@ -168,6 +168,7 @@ export const sendMessageAtom = atom(
 			updated_at: new Date().toISOString(),
 			authorId: 0, // placeholder, component uses currentUserAtom to check fromMe
 			chatId,
+			deleted: false,
 			reactions: [],
 			readBy: []
 		};
@@ -326,6 +327,29 @@ export const markAsReadAtom = atom(
 			));
 		} catch {
 			// silently fail
+		}
+	}
+);
+
+// Called on "message:deleted" WebSocket event
+export const onMessageDeletedAtom = atom(
+	null,
+	(get, set, { chatId, messageId }: { chatId: number; messageId: number }) => {
+		const map = get(chatMessagesMapAtom);
+		const state = map[chatId];
+
+		if (state) {
+			const updatedMessages = state.messages.map(m => {
+				if (m.id === messageId) {
+					return { ...m, content: '', deleted: true };
+				}
+				return m;
+			});
+
+			set(chatMessagesMapAtom, {
+				...map,
+				[chatId]: { ...state, messages: updatedMessages }
+			});
 		}
 	}
 );

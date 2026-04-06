@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CheckCheck, X } from "lucide-react";
+import { CheckCheck, X, Trash2 } from "lucide-react";
 import { useAtomValue } from "jotai";
 import AvatarUtil from "../AvatarUtil";
 import { userFamily } from "../../providers";
@@ -26,6 +26,8 @@ interface MessageBubbleProps {
 	formatTime: (dateStr: string) => string;
 	isBlocked?: boolean;
 	currentUserId?: number;
+	canDelete?: boolean;
+	onDelete?: (messageId: number) => void;
 }
 
 function parseImageContent(content: string): { imageUrl: string; caption: string | null } {
@@ -53,17 +55,24 @@ function ReaderRow({ userId }: { userId: number }) {
 	);
 }
 
-export default function MessageBubble({ message, fromMe, formatTime, isBlocked, currentUserId }: MessageBubbleProps) {
+export default function MessageBubble({ message, fromMe, formatTime, isBlocked, currentUserId, canDelete, onDelete }: MessageBubbleProps) {
 	const [revealed, setRevealed] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const hidden = isBlocked && !revealed;
 
 	const isImage = message.type === "image";
-	const parsed = isImage && !hidden ? parseImageContent(message.content) : null;
-	const imageOnly = isImage && !hidden && !parsed?.caption;
+	const isDeleted = message.deleted;
+	const parsed = isImage && !hidden && !isDeleted ? parseImageContent(message.content) : null;
+	const imageOnly = isImage && !hidden && !isDeleted && !parsed?.caption;
 
 	// Readers excluding the author (author has always read their own message)
 	const readers = message.readBy.filter(id => id !== message.authorId);
+
+	const handleDelete = () => {
+		if (!onDelete) return;
+		if (!window.confirm('Delete this message?')) return;
+		onDelete(message.id);
+	};
 
 	return (
 		<>
@@ -75,8 +84,10 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked, 
 				)}
 
 				<div>
-					<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"} ${imageOnly ? "bubble-image" : ""} ${isImage && !imageOnly && !hidden ? "bubble-with-image" : ""}`}>
-						{hidden ? (
+					<div className={`bubble ${fromMe ? "bubble-me" : "bubble-them"} ${imageOnly ? "bubble-image" : ""} ${isImage && !imageOnly && !hidden && !isDeleted ? "bubble-with-image" : ""}`}>
+						{isDeleted ? (
+							<span style={{ fontStyle: "italic", opacity: 0.5 }}>This message has been deleted</span>
+						) : hidden ? (
 							<span className="blocked-content" onClick={() => setRevealed(true)} style={{ cursor: "pointer" }}>Hidden content</span>
 						) : isImage && parsed ? (
 							<>
@@ -95,6 +106,15 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked, 
 						<small style={{ fontSize: 11, color: "var(--text-secondary)" }}>
 							{formatTime(message.created_at)}
 						</small>
+						{canDelete && !isDeleted && (
+							<Trash2
+								size={12}
+								style={{ color: "var(--app-text-secondary)", cursor: "pointer", opacity: 0.5 }}
+								onClick={handleDelete}
+								onMouseEnter={e => { (e.target as HTMLElement).style.opacity = "1"; }}
+								onMouseLeave={e => { (e.target as HTMLElement).style.opacity = "0.5"; }}
+							/>
+						)}
 						{readers.length > 0 && (
 							<CheckCheck
 								size={14}

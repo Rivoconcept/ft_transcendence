@@ -327,6 +327,31 @@ export async function toggleModerator(req: AuthRequest, res: Response): Promise<
   }
 }
 
+export async function deleteMessage(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const messageId = parseInt(req.params.messageId ?? "");
+
+    if (isNaN(messageId)) {
+      res.status(400).json({ error: "Invalid message ID" });
+      return;
+    }
+
+    await chatService.deleteMessage(req.user!.userId, messageId);
+    res.json({ message: "Message deleted" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete message";
+    if (message === "Only the author or a moderator can delete this message") {
+      res.status(403).json({ error: message });
+      return;
+    }
+    if (message === "Message not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
 export async function kickMember(req: AuthRequest, res: Response): Promise<void> {
   try {
     const chatId = parseInt(req.params.id ?? "");

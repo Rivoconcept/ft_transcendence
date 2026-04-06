@@ -51,6 +51,7 @@ interface MessageItem {
   updated_at: Date;
   authorId: number;
   chatId: number;
+  deleted: boolean;
   reactions: { reactionId: number; userIds: number[] }[];
   readBy: number[];
 }
@@ -482,6 +483,7 @@ class ChatService {
           reactionId,
           userIds,
         })),
+        deleted: message.deleted,
         readBy: readsByMessage.get(message.id) ?? [],
       };
     });
@@ -559,6 +561,7 @@ class ChatService {
       updated_at: message.updated_at,
       authorId: message.author_id,
       chatId: message.chat_id,
+      deleted: false,
       reactions: [],
       readBy: [userId],
     };
@@ -695,6 +698,7 @@ class ChatService {
         reactionId,
         userIds,
       })),
+      deleted: message.deleted,
       readBy: messageReads.map((r) => r.user_id),
     };
   }
@@ -923,6 +927,43 @@ class ChatService {
     }
 
     return this.getChatById(userId, chat.id) as Promise<ChatListItem>;
+  }
+
+  async deleteMessage(userId: number, messageId: number): Promise<void> {
+    const message = await this.messageRepository.findOne({ where: { id: messageId } });
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    // Vérifier que l'utilisateur est membre du chat
+    const membership = await this.chatMemberRepository.findOne({
+      where: { user_id: userId, chat_id: message.chat_id },
+    });
+    if (!membership) {
+      throw new Error("You are not a member of this chat");
+    }
+
+    // L'auteur ou un modérateur peut supprimer
+    const isModerator = await this.chatModeratorRepository.findOne({
+      where: { user_id: userId, chat_id: message.chat_id },
+    });
+
+    if (message.author_id !== userId && !isModerator) {
+      throw new Error("Only the author or a moderator can delete this message");
+    }
+
+    message.content = "";
+    message.deleted = true;
+    await this.messageRepository.save(message);
+
+    const chat = await this.chatRepository.findOne({ where: { id: message.chat_id } });
+    const io = socketService.getIO();
+    if (io && chat) {
+      io.to(`chat.${chat.channel_id}`).emit("message:deleted", {
+        chatId: message.chat_id,
+        messageId: message.id,
+      });
+    }
   }
 
   async kickMember(userId: number, chatId: number, targetUserId: number): Promise<void> {

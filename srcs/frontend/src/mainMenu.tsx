@@ -29,6 +29,7 @@ import {
 	onNewMessageAtom,
 	onChatCreatedAtom,
 	onMessageReadAtom,
+	onMessageDeletedAtom,
 	selectedChatIdAtom,
 	fetchChatListAtom,
 	chatListAtom,
@@ -342,6 +343,10 @@ function SocketListener(): null {
 			store.set(onMessageReadAtom, data);
 		};
 
+		const handleMessageDeleted = (data: { chatId: number; messageId: number }) => {
+			store.set(onMessageDeletedAtom, data);
+		};
+
 		const handleMemberJoined = async (data: { chatId: number; channelId: string; userId: number }) => {
 			// Update memberIds in chat list
 			const chats = store.get(chatListAtom);
@@ -435,6 +440,7 @@ function SocketListener(): null {
 		socketStore.on('message:new', handleMessageNew);
 		socketStore.on('chat:created', handleChatCreated);
 		socketStore.on('message:read', handleMessageRead);
+		socketStore.on('message:deleted', handleMessageDeleted);
 		socketStore.on('chat:moderator-changed', handleModeratorChanged);
 		socketStore.on('chat:member-joined', handleMemberJoined);
 		socketStore.on('chat:member-left', handleMemberLeft);
@@ -454,6 +460,7 @@ function SocketListener(): null {
 			socketStore.off('message:new', handleMessageNew);
 			socketStore.off('chat:created', handleChatCreated);
 			socketStore.off('message:read', handleMessageRead);
+			socketStore.off('message:deleted', handleMessageDeleted);
 			socketStore.off('chat:moderator-changed', handleModeratorChanged);
 			socketStore.off('chat:member-joined', handleMemberJoined);
 			socketStore.off('chat:member-left', handleMemberLeft);
