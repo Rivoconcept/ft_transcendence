@@ -7,6 +7,7 @@ import { Reaction } from "../database/entities/reaction.js";
 import { UserReaction } from "../database/entities/user-reaction.js";
 import { BlockedUser } from "../database/entities/blocked-user.js";
 import { MessageRead } from "../database/entities/message-read.js";
+import { ChatModerator } from "../database/entities/chat-moderator.js";
 import { socketService } from "../websocket.js";
 import { randomBytes } from "crypto";
 
@@ -38,6 +39,7 @@ interface ChatListItem {
   lastMessageType: string | null;
   lastMessageDate: string | null;
   memberIds: number[];
+  moderatorIds: number[];
   unreadCount: number;
 }
 
@@ -69,6 +71,7 @@ class ChatService {
   private userReactionRepository = AppDataSource.getRepository(UserReaction);
   private blockedUserRepository = AppDataSource.getRepository(BlockedUser);
   private messageReadRepository = AppDataSource.getRepository(MessageRead);
+  private chatModeratorRepository = AppDataSource.getRepository(ChatModerator);
 
   private generateChannelId(): string {
     return randomBytes(8).toString("hex");
@@ -165,6 +168,13 @@ class ChatService {
 
     await this.chatMemberRepository.save(members);
 
+    // Le créateur est modérateur par défaut
+    const moderator = this.chatModeratorRepository.create({
+      chat_id: chat.id,
+      user_id: currentUserId,
+    });
+    await this.chatModeratorRepository.save(moderator);
+
     // Faire rejoindre tous les membres à la room du chat
     allMemberIds.forEach((userId) => {
       socketService.joinChatRoom(userId, chat.channel_id);
@@ -203,6 +213,44 @@ class ChatService {
 
     if (!membership) {
       throw new Error("You are not a member of this chat");
+    }
+
+    const allMembers = await this.chatMemberRepository.find({
+      where: { chat_id: chatId },
+    });
+
+    const isModerator = await this.chatModeratorRepository.findOne({
+      where: { user_id: userId, chat_id: chatId },
+    });
+
+    const allModerators = await this.chatModeratorRepository.find({
+      where: { chat_id: chatId },
+    });
+
+    // Seul membre restant → supprimer le groupe
+    if (allMembers.length === 1) {
+      await this.chatModeratorRepository.remove(allModerators);
+      await this.chatMemberRepository.remove(membership);
+      await this.messageRepository.delete({ chat_id: chatId });
+      await this.messageReadRepository
+        .createQueryBuilder()
+        .delete()
+        .where("message_id IN (SELECT id FROM message WHERE chat_id = :chatId)", { chatId })
+        .execute()
+        .catch(() => {}); // ignore if no messages
+      await this.chatRepository.remove(chat);
+      socketService.leaveChatRoom(userId, chat.channel_id);
+      return;
+    }
+
+    // Modérateur unique avec d'autres membres → doit désigner un remplaçant
+    if (isModerator && allModerators.length === 1) {
+      throw new Error("You must assign another moderator before leaving");
+    }
+
+    // Retirer le rôle de modérateur si applicable
+    if (isModerator) {
+      await this.chatModeratorRepository.remove(isModerator);
     }
 
     // Supprimer le membre du chat
@@ -264,6 +312,18 @@ class ChatService {
       membersByChatId.set(m.chat_id, existing);
     });
 
+    // Récupérer les modérateurs de tous les chats
+    const allModerators = await this.chatModeratorRepository.find({
+      where: chatIds.map((id) => ({ chat_id: id })),
+    });
+
+    const moderatorsByChatId = new Map<number, number[]>();
+    allModerators.forEach((m) => {
+      const existing = moderatorsByChatId.get(m.chat_id) ?? [];
+      existing.push(m.user_id);
+      moderatorsByChatId.set(m.chat_id, existing);
+    });
+
     // Récupérer le dernier message de chaque chat (par date de création)
     const lastMessages = await Promise.all(
       chatIds.map(async (chatId) => {
@@ -317,6 +377,7 @@ class ChatService {
         lastMessageType: lastMsg?.type ?? null,
         lastMessageDate: lastMsg?.createdAt?.toISOString() ?? null,
         memberIds: membersByChatId.get(chat.id) ?? [],
+        moderatorIds: moderatorsByChatId.get(chat.id) ?? [],
         unreadCount: unreadMap.get(chat.id) ?? 0,
       };
     });
@@ -525,20 +586,20 @@ class ChatService {
   }
 
   async getChatById(userId: number, chatId: number): Promise<ChatListItem | null> {
-    // Vérifier que l'utilisateur est membre du chat
-    const membership = await this.chatMemberRepository.findOne({
-      where: { user_id: userId, chat_id: chatId },
-    });
-
-    if (!membership) {
-      return null;
-    }
-
     const chat = await this.chatRepository.findOne({
       where: { id: chatId },
     });
 
     if (!chat) {
+      return null;
+    }
+
+    // Pour les chats directs, vérifier le membership
+    const membership = await this.chatMemberRepository.findOne({
+      where: { user_id: userId, chat_id: chatId },
+    });
+
+    if (!membership && chat.type === ChatType.DIRECT) {
       return null;
     }
 
@@ -566,6 +627,11 @@ class ChatService {
       .andWhere("mr.id IS NULL")
       .getCount();
 
+    // Récupérer les modérateurs
+    const moderators = await this.chatModeratorRepository.find({
+      where: { chat_id: chatId },
+    });
+
     return {
       id: chat.id,
       name: chat.name,
@@ -577,6 +643,7 @@ class ChatService {
       lastMessageType: lastMessage?.type ?? null,
       lastMessageDate: lastMessage?.created_at?.toISOString() ?? null,
       memberIds: members.map((m) => m.user_id),
+      moderatorIds: moderators.map((m) => m.user_id),
       unreadCount,
     };
   }
@@ -758,6 +825,104 @@ class ChatService {
     }
 
     return { readMessageId: messageId, userId };
+  }
+
+  async toggleModerator(userId: number, chatId: number, targetUserId: number): Promise<{ isModerator: boolean }> {
+    const chat = await this.chatRepository.findOne({ where: { id: chatId } });
+    if (!chat || chat.type !== ChatType.GROUP) {
+      throw new Error("Group chat not found");
+    }
+
+    // Vérifier que l'utilisateur courant est modérateur
+    const callerMod = await this.chatModeratorRepository.findOne({
+      where: { user_id: userId, chat_id: chatId },
+    });
+    if (!callerMod) {
+      throw new Error("Only moderators can change moderator status");
+    }
+
+    // Vérifier que la cible est membre
+    const targetMember = await this.chatMemberRepository.findOne({
+      where: { user_id: targetUserId, chat_id: chatId },
+    });
+    if (!targetMember) {
+      throw new Error("Target user is not a member of this chat");
+    }
+
+    const existingMod = await this.chatModeratorRepository.findOne({
+      where: { user_id: targetUserId, chat_id: chatId },
+    });
+
+    if (existingMod) {
+      // Retirer le rôle — vérifier qu'il reste au moins un modérateur
+      const allMods = await this.chatModeratorRepository.find({ where: { chat_id: chatId } });
+      if (allMods.length <= 1) {
+        throw new Error("Cannot remove the last moderator");
+      }
+      await this.chatModeratorRepository.remove(existingMod);
+
+      const io = socketService.getIO();
+      if (io) {
+        io.to(`chat.${chat.channel_id}`).emit("chat:moderator-changed", {
+          chatId, userId: targetUserId, isModerator: false,
+        });
+      }
+
+      return { isModerator: false };
+    } else {
+      // Ajouter comme modérateur
+      const newMod = this.chatModeratorRepository.create({
+        user_id: targetUserId,
+        chat_id: chatId,
+      });
+      await this.chatModeratorRepository.save(newMod);
+
+      const io = socketService.getIO();
+      if (io) {
+        io.to(`chat.${chat.channel_id}`).emit("chat:moderator-changed", {
+          chatId, userId: targetUserId, isModerator: true,
+        });
+      }
+
+      return { isModerator: true };
+    }
+  }
+
+  async joinGroupChat(userId: number, channelId: string): Promise<ChatListItem> {
+    const chat = await this.chatRepository.findOne({ where: { channel_id: channelId } });
+    if (!chat) {
+      throw new Error("Chat not found");
+    }
+    if (chat.type !== ChatType.GROUP) {
+      throw new Error("Can only join group chats");
+    }
+
+    // Déjà membre ?
+    const existing = await this.chatMemberRepository.findOne({
+      where: { user_id: userId, chat_id: chat.id },
+    });
+    if (existing) {
+      return this.getChatById(userId, chat.id) as Promise<ChatListItem>;
+    }
+
+    const member = this.chatMemberRepository.create({
+      chat_id: chat.id,
+      user_id: userId,
+    });
+    await this.chatMemberRepository.save(member);
+
+    socketService.joinChatRoom(userId, chat.channel_id);
+
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`chat.${chat.channel_id}`).emit("chat:member-joined", {
+        chatId: chat.id,
+        channelId: chat.channel_id,
+        userId,
+      });
+    }
+
+    return this.getChatById(userId, chat.id) as Promise<ChatListItem>;
   }
 
   async getReactions(): Promise<{ id: number; code: string }[]> {

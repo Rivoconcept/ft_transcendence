@@ -12,7 +12,12 @@ import {
 	Image,
 	ShieldBan,
 	ShieldCheck,
+	Users,
+	LogOut,
+	UserRound,
+	Link2,
 } from "lucide-react";
+import Swal from "sweetalert2";
 import {
 	currentUserAtom,
 	sortedChatListAtom,
@@ -33,6 +38,7 @@ import {
 } from "../../providers";
 import { socketStore } from "../../store/socketStore";
 import { blockService } from "../../services/block.service";
+import { chatService } from "../../services/chat.service";
 import AvatarUtil from "../../components/AvatarUtil";
 import CreateChatModal from "./CreateChatModal";
 import MessageBubble from "../../components/message/MessageBubble";
@@ -104,6 +110,9 @@ export default function MessagesPage() {
 	const [imageError, setImageError] = useState<string | null>(null);
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [isChatBlocked, setIsChatBlocked] = useState(false);
+	const [showMembersModal, setShowMembersModal] = useState(false);
+	const [nonMemberChat, setNonMemberChat] = useState<ChatListItem | null>(null);
+	const [joiningGroup, setJoiningGroup] = useState(false);
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -138,16 +147,29 @@ export default function MessagesPage() {
 
 	// Handle URL param chatId or "create"
 	useEffect(() => {
+		setNonMemberChat(null);
 		if (chatIdParam === "create") {
 			setShowCreateModal(true);
 		} else if (chatIdParam) {
 			const id = Number(chatIdParam);
 			if (!isNaN(id)) {
-				selectChat(id);
-				setMobileView("chat");
+				// Check if we're a member
+				const isMember = chats.some(c => c.id === id);
+				if (isMember) {
+					selectChat(id);
+					setMobileView("chat");
+				} else if (!chatsLoading) {
+					// Not a member — fetch chat info to show join button
+					chatService.getChatById(id).then(chat => {
+						if (chat && chat.type === "group") {
+							setNonMemberChat(chat);
+							setMobileView("chat");
+						}
+					}).catch(() => {});
+				}
 			}
 		}
-	}, [chatIdParam, selectChat]);
+	}, [chatIdParam, selectChat, chats, chatsLoading]);
 
 	// Scroll to bottom when messages become ready (initial load)
 	const hasScrolledRef = useRef(false);
@@ -329,6 +351,56 @@ export default function MessagesPage() {
 		} catch { /* silently fail */ }
 	}, [doUnblockUser]);
 
+	const handleLeaveGroup = useCallback(async () => {
+		if (!selectedChatId) return;
+		const result = await Swal.fire({
+			title: 'Leave group?',
+			text: 'Are you sure you want to leave this group?',
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: 'Leave',
+			confirmButtonColor: '#ef4444',
+		});
+		if (!result.isConfirmed) return;
+		try {
+			await chatService.leaveGroup(selectedChatId);
+			navigate('/messages');
+			window.location.reload();
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Failed to leave group';
+			Swal.fire({ icon: 'warning', title: 'Cannot leave', text: msg });
+		}
+	}, [selectedChatId, navigate]);
+
+	const handleToggleModerator = useCallback(async (targetUserId: number) => {
+		if (!selectedChatId) return;
+		try {
+			await chatService.toggleModerator(selectedChatId, targetUserId);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Failed to change moderator status';
+			Swal.fire({ icon: 'warning', title: 'Cannot change', text: msg });
+		}
+	}, [selectedChatId]);
+
+	const handleJoinGroup = useCallback(async () => {
+		if (!nonMemberChat) return;
+		setJoiningGroup(true);
+		try {
+			await chatService.joinGroup(nonMemberChat.channel_id);
+			window.location.reload();
+		} catch (err) {
+			Swal.fire({ icon: 'error', title: 'Cannot join', text: err instanceof Error ? err.message : 'Failed to join group' });
+			setJoiningGroup(false);
+		}
+	}, [nonMemberChat]);
+
+	const handleCopyInviteLink = useCallback(() => {
+		if (!selectedChat) return;
+		const link = `${window.location.origin}/messages/${selectedChat.id}`;
+		navigator.clipboard.writeText(link);
+		Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Invite link copied!', showConfirmButton: false, timer: 2000 });
+	}, [selectedChat]);
+
 	const getOtherUserId = (chat: ChatListItem): number => {
 		if (chat.type === "direct" && currentUser) {
 			return chat.memberIds.find(id => id !== currentUser.id) ?? chat.memberIds[0];
@@ -477,6 +549,19 @@ export default function MessagesPage() {
 										</div>
 									);
 								})()}
+								{showDropdown && selectedChat.type === "group" && (
+									<div className="chat-dropdown-menu">
+										<button className="chat-dropdown-item" onClick={() => { setShowMembersModal(true); setShowDropdown(false); }}>
+											<Users size={15} /> Members
+										</button>
+										<button className="chat-dropdown-item" onClick={() => { handleCopyInviteLink(); setShowDropdown(false); }}>
+											<Link2 size={15} /> Copy invite link
+										</button>
+										<button className="chat-dropdown-item danger" onClick={() => { handleLeaveGroup(); setShowDropdown(false); }}>
+											<LogOut size={15} /> Leave group
+										</button>
+									</div>
+								)}
 							</div>
 						</div>
 
@@ -572,6 +657,24 @@ export default function MessagesPage() {
 							</div>
 						)}
 					</>
+				) : nonMemberChat ? (
+					<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">
+						<Users size={48} style={{ color: "var(--primary-color)", marginBottom: 16 }} />
+						<h5 className="fw-semibold" style={{ color: "var(--app-text-primary)" }}>
+							{nonMemberChat.name}
+						</h5>
+						<p style={{ color: "var(--app-text-secondary)", fontSize: 14, marginBottom: 24 }}>
+							{nonMemberChat.memberIds.length} members
+						</p>
+						<button
+							className="btn-primary"
+							onClick={handleJoinGroup}
+							disabled={joiningGroup}
+							style={{ padding: "0.6rem 2rem", borderRadius: 8, fontWeight: 600 }}
+						>
+							{joiningGroup ? "Joining..." : "Join the group chat"}
+						</button>
+					</div>
 				) : (
 					<div className="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center p-4">
 						<div style={{ fontSize: 56, opacity: 0.3 }}>💬</div>
@@ -588,6 +691,84 @@ export default function MessagesPage() {
 					setShowCreateModal(false);
 					if (chatIdParam === "create") navigate("/messages");
 				}} />
+			)}
+
+			{showMembersModal && selectedChat?.type === "group" && (
+				<div
+					className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+					style={{ zIndex: 1060, background: "rgba(0,0,0,0.4)" }}
+					onClick={() => setShowMembersModal(false)}
+				>
+					<div
+						className="rounded-3 shadow"
+						style={{
+							background: "var(--bg-surface)",
+							border: "1px solid var(--border-color)",
+							minWidth: 240,
+							maxWidth: 320,
+							maxHeight: "50vh",
+							overflow: "hidden",
+						}}
+						onClick={e => e.stopPropagation()}
+					>
+						<div className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+							<span className="fw-semibold" style={{ fontSize: 15, color: "var(--app-text-primary)" }}>
+								Members ({selectedChat.memberIds.length})
+							</span>
+							<button
+								className="btn btn-sm p-0 border-0"
+								onClick={() => setShowMembersModal(false)}
+								style={{ lineHeight: 1 }}
+							>
+								<X size={18} style={{ color: "var(--app-text-secondary)" }} />
+							</button>
+						</div>
+						<div style={{ overflowY: "auto", maxHeight: "calc(50vh - 45px)" }}>
+							{[...selectedChat.memberIds].sort((a, b) => {
+							if (a === currentUser?.id) return -1;
+							if (b === currentUser?.id) return 1;
+							return 0;
+						}).map(uid => {
+								const isMod = selectedChat.moderatorIds.includes(uid);
+								const iAmMod = currentUser ? selectedChat.moderatorIds.includes(currentUser.id) : false;
+								return (
+									<div key={uid} className="d-flex align-items-center gap-2 px-3 py-2">
+										<AvatarUtil id={uid} radius={32} showStatus={true} />
+										<div className="flex-grow-1">
+											<span style={{ fontSize: 14, color: "var(--app-text-primary)" }}>
+												<UserName userId={uid} />
+												{uid === currentUser?.id && <span style={{ color: "var(--app-text-secondary)" }}> (You)</span>}
+											</span>
+										</div>
+										{iAmMod && uid !== currentUser?.id ? (
+											<div
+												onClick={() => handleToggleModerator(uid)}
+												title={isMod ? "Remove moderator" : "Make moderator"}
+												style={{
+													width: 40, height: 22, borderRadius: 11, cursor: "pointer",
+													background: isMod ? "#ef4444" : "#6c757d",
+													position: "relative", transition: "background 0.2s",
+												}}
+											>
+												<div style={{
+													position: "absolute", top: 2,
+													left: isMod ? 20 : 2,
+													width: 18, height: 18, borderRadius: "50%",
+													background: "#fff", transition: "left 0.2s",
+													display: "flex", alignItems: "center", justifyContent: "center",
+												}}>
+													<UserRound size={12} style={{ color: isMod ? "#ef4444" : "#6c757d" }} />
+												</div>
+											</div>
+										) : (
+											<UserRound size={18} style={{ color: isMod ? "#ef4444" : "#6c757d" }} />
+										)}
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);

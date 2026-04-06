@@ -9,6 +9,7 @@ export interface ChatListItem {
 	lastMessageType: string | null;
 	lastMessageDate: string | null;
 	memberIds: number[];
+	moderatorIds: number[];
 	unreadCount: number;
 }
 

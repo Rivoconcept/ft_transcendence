@@ -319,6 +319,7 @@ function SocketListener(): null {
 				lastMessageType: null,
 				lastMessageDate: null,
 				memberIds: [],
+				moderatorIds: [],
 				unreadCount: 0
 			};
 			store.set(onChatCreatedAtom, chat);
@@ -327,6 +328,58 @@ function SocketListener(): null {
 
 		const handleMessageRead = (data: { chatId: number; messageId: number; userId: number }) => {
 			store.set(onMessageReadAtom, data);
+		};
+
+		const handleMemberJoined = async (data: { chatId: number; channelId: string; userId: number }) => {
+			// Update memberIds in chat list
+			const chats = store.get(chatListAtom);
+			store.set(chatListAtom, chats.map(c => {
+				if (c.id !== data.chatId) return c;
+				if (c.memberIds.includes(data.userId)) return c;
+				return { ...c, memberIds: [...c.memberIds, data.userId] };
+			}));
+
+			// Notify moderators
+			const chat = chats.find(c => c.id === data.chatId);
+			if (chat && user && chat.moderatorIds.includes(user.id)) {
+				const newMember = await store.set(fetchUserToCacheAtom, data.userId) as User | null;
+				const memberName = newMember?.username ?? 'Someone';
+				const groupName = chat.name ?? 'a group';
+				Toast.fire({
+					icon: 'info',
+					title: `${memberName} joined ${groupName}`,
+					didOpen: (el) => {
+						el.style.cursor = 'pointer';
+						el.addEventListener('click', () => {
+							Toast.close();
+							navigate(`/messages/${data.chatId}`);
+						});
+					},
+				});
+			}
+		};
+
+		const handleMemberLeft = (data: { chatId: number; channelId: string; userId: number }) => {
+			const chats = store.get(chatListAtom);
+			store.set(chatListAtom, chats.map(c => {
+				if (c.id !== data.chatId) return c;
+				return {
+					...c,
+					memberIds: c.memberIds.filter(id => id !== data.userId),
+					moderatorIds: c.moderatorIds.filter(id => id !== data.userId),
+				};
+			}));
+		};
+
+		const handleModeratorChanged = (data: { chatId: number; userId: number; isModerator: boolean }) => {
+			const chats = store.get(chatListAtom);
+			store.set(chatListAtom, chats.map(c => {
+				if (c.id !== data.chatId) return c;
+				const moderatorIds = data.isModerator
+					? [...c.moderatorIds, data.userId]
+					: c.moderatorIds.filter(id => id !== data.userId);
+				return { ...c, moderatorIds };
+			}));
 		};
 
 		// Register listeners
@@ -339,6 +392,9 @@ function SocketListener(): null {
 		socketStore.on('message:new', handleMessageNew);
 		socketStore.on('chat:created', handleChatCreated);
 		socketStore.on('message:read', handleMessageRead);
+		socketStore.on('chat:moderator-changed', handleModeratorChanged);
+		socketStore.on('chat:member-joined', handleMemberJoined);
+		socketStore.on('chat:member-left', handleMemberLeft);
 
 		// Cleanup
 		return () => {
@@ -351,6 +407,9 @@ function SocketListener(): null {
 			socketStore.off('message:new', handleMessageNew);
 			socketStore.off('chat:created', handleChatCreated);
 			socketStore.off('message:read', handleMessageRead);
+			socketStore.off('chat:moderator-changed', handleModeratorChanged);
+			socketStore.off('chat:member-joined', handleMemberJoined);
+			socketStore.off('chat:member-left', handleMemberLeft);
 		};
 	}, [user, store, navigate]);
 

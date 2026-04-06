@@ -1,6 +1,6 @@
 .avatar-container {
-    /* width: clamp(50px, 6vw, 90px);
-    height: clamp(50px, 6vw, 90px); */
+    position: relative;
+    display: inline-block;
 }
 
 .avatar {

@@ -18,6 +18,7 @@ import { BlockedUser } from "./entities/blocked-user.js";
 import { KodWinner, KodRound } from "./entities/KodRound.js";
 import { UserOnlineTime } from "./entities/user-online-time.js";
 import { MessageRead } from "./entities/message-read.js";
+import { ChatModerator } from "./entities/chat-moderator.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -47,5 +48,6 @@ export const AppDataSource = new DataSource({
     KodRound,
     UserOnlineTime,
     MessageRead,
+    ChatModerator,
   ],
 } as DataSourceOptions);
