@@ -30,7 +30,8 @@ import {
 	onChatCreatedAtom,
 	onMessageReadAtom,
 	selectedChatIdAtom,
-	fetchChatListAtom
+	fetchChatListAtom,
+	chatListAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -273,10 +274,14 @@ function SocketListener(): null {
 			if (currentChatId !== data.chatId) {
 				const sender = await store.set(fetchUserToCacheAtom, data.message.authorId) as User | null;
 				const senderName = sender?.username ?? 'Someone';
-				const preview = data.message.type === 'image' ? 'sent an image' : data.message.content.substring(0, 50);
+				const chat = store.get(chatListAtom).find(c => c.id === data.chatId);
+				const titleName = chat?.type === 'group' && chat.name
+					? `${senderName} (${chat.name})`
+					: senderName;
+				const preview = data.message.type === 'image' ? 'Sent an image' : data.message.content;
 				Toast.fire({
 					icon: 'info',
-					title: `${senderName}`,
+					title: titleName,
 					text: preview,
 					didOpen: (el) => {
 						el.style.cursor = 'pointer';
