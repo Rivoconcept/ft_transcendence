@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAtomValue, useSetAtom, useStore } from 'jotai';
+import Swal from 'sweetalert2';
+
+const Toast = Swal.mixin({
+	toast: true,
+	position: 'top-end',
+	showConfirmButton: false,
+	timer: 4000,
+	timerProgressBar: true,
+});
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import "./pages/message/message.css"
@@ -19,7 +28,9 @@ import {
 	userCacheFamily,
 	onNewMessageAtom,
 	onChatCreatedAtom,
-	onMessageReadAtom
+	onMessageReadAtom,
+	selectedChatIdAtom,
+	fetchChatListAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -138,6 +149,7 @@ function GameWrapper({ GameComponent }: GameWrapperProps): React.JSX.Element {
 function SocketListener(): null {
 	const store = useStore();
 	const user = useAtomValue(currentUserAtom);
+	const navigate = useNavigate();
 
 	// Set up Jotai store reference and status callback in socketStore
 	useEffect(() => {
@@ -154,12 +166,18 @@ function SocketListener(): null {
 		});
 	}, [store]);
 
+	// Fetch chat list on login so unread badges work globally
+	useEffect(() => {
+		if (!user) return;
+		store.set(fetchChatListAtom);
+	}, [user, store]);
+
 	useEffect(() => {
 		if (!user) return;
 
 		const handleInvitationReceived = async (data: { invitationId: number; senderId: number }) => {
 			// Fetch sender info
-			await store.set(fetchUserToCacheAtom, data.senderId);
+			const sender = await store.set(fetchUserToCacheAtom, data.senderId) as User | null;
 			// Add to received invitations
 			const current = store.get(receivedInvitationsAtom);
 			if (!current.find(i => i.invitationId === data.invitationId)) {
@@ -171,6 +189,19 @@ function SocketListener(): null {
 				};
 				store.set(receivedInvitationsAtom, [...current, newInvitation]);
 			}
+
+			const senderName = sender?.username ?? 'Someone';
+			Toast.fire({
+				icon: 'info',
+				title: `${senderName} sent you a friend request`,
+				didOpen: (el) => {
+					el.style.cursor = 'pointer';
+					el.addEventListener('click', () => {
+						Toast.close();
+						navigate('/profile/friends/invitation');
+					});
+				},
+			});
 		};
 
 		const handleInvitationAccepted = async (data: { invitationId: number; friendId: number }) => {
@@ -178,7 +209,7 @@ function SocketListener(): null {
 			const sent = store.get(sentInvitationsAtom);
 			store.set(sentInvitationsAtom, sent.filter(i => i.invitationId !== data.invitationId));
 			// Fetch friend info and add to friends
-			await store.set(fetchUserToCacheAtom, data.friendId);
+			const friend = await store.set(fetchUserToCacheAtom, data.friendId) as User | null;
 			const friends = store.get(friendRelationsAtom);
 			if (!friends.find(f => f.friendId === data.friendId)) {
 				const newFriend: FriendRelation = {
@@ -187,6 +218,19 @@ function SocketListener(): null {
 				};
 				store.set(friendRelationsAtom, [...friends, newFriend]);
 			}
+
+			const friendName = friend?.username ?? 'Someone';
+			Toast.fire({
+				icon: 'success',
+				title: `${friendName} accepted your friend request`,
+				didOpen: (el) => {
+					el.style.cursor = 'pointer';
+					el.addEventListener('click', () => {
+						Toast.close();
+						navigate('/profile/friends/list');
+					});
+				},
+			});
 		};
 
 		const handleInvitationDeclined = (data: { invitationId: number }) => {
@@ -221,8 +265,28 @@ function SocketListener(): null {
 		};
 
 		// Chat events
-		const handleMessageNew = (data: { chatId: number; channelId: string; message: MessageItem }) => {
+		const handleMessageNew = async (data: { chatId: number; channelId: string; message: MessageItem }) => {
 			store.set(onNewMessageAtom, data.message);
+
+			// Notify only if not currently viewing this chat
+			const currentChatId = store.get(selectedChatIdAtom);
+			if (currentChatId !== data.chatId) {
+				const sender = await store.set(fetchUserToCacheAtom, data.message.authorId) as User | null;
+				const senderName = sender?.username ?? 'Someone';
+				const preview = data.message.type === 'image' ? 'sent an image' : data.message.content.substring(0, 50);
+				Toast.fire({
+					icon: 'info',
+					title: `${senderName}`,
+					text: preview,
+					didOpen: (el) => {
+						el.style.cursor = 'pointer';
+						el.addEventListener('click', () => {
+							Toast.close();
+							navigate(`/messages/${data.chatId}`);
+						});
+					},
+				});
+			}
 		};
 
 		const handleChatCreated = (data: { chatId: number; channelId: string; type: string; name?: string }) => {
@@ -443,6 +507,10 @@ export default function App(): React.JSX.Element {
 					/>
 					<Route
 						path="/profile/friends"
+						element={<Navigate to="/profile/friends/list" replace />}
+					/>
+					<Route
+						path="/profile/friends/:tab"
 						element={
 							<ProtectedRoute>
 								<FriendsPage />
