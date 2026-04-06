@@ -32,6 +32,11 @@ function safeSortDescByTimestamp<T extends { timestamp: number }>(items: T[]): T
 	return [...items].sort((a, b) => b.timestamp - a.timestamp);
 }
 
+export const onlineTimeRefresTriggerAtom = atom(0);
+export const gameHistoryRefreshTriggerAtom = atom(0);
+export const refreshGameHistoryAtom = atom(null, (get, set) => {
+	set(gameHistoryRefreshTriggerAtom, get(gameHistoryRefreshTriggerAtom) + 1);
+});
 // ===== Client-side "real" tracking with backend sync =====
 // We track session minutes in localStorage per userId, but sync to backend
 // This is "real" app usage time, independent of backend support.
@@ -55,6 +60,7 @@ const _remoteOnlineTimeFamily = atomFamily((userId: number) =>
 );
 
 export const remoteOnlineTimeAtom = atom(async (get) => {
+	get(onlineTimeRefresTriggerAtom);
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as DailyOnlineTime[];
 	return await get(_remoteOnlineTimeFamily(currentUser.id));
@@ -154,7 +160,8 @@ interface CardGameApiRow {
 }
 
 const _remoteCardGamesFamily = atomFamily((_userId: number) =>
-	atom(async () => {
+	atom(async (get) => {
+		get(gameHistoryRefreshTriggerAtom);
 		// atomFamily(_userId) creates a separate cached atom per user
 		// Backend enforces auth and returns only the current user's card games
 		const rows = await apiService.get<CardGameApiRow[]>('card-games');
@@ -221,7 +228,8 @@ interface KodGameApiRow {
 }
 
 const _remoteKodGamesFamily = atomFamily((_userId: number) =>
-	atom(async () => {
+	atom(async (get) => {
+		get(gameHistoryRefreshTriggerAtom);
 		const rows = await apiService.get<KodGameApiRow[]>('kod-games');
 
 		return Promise.all(
@@ -277,6 +285,7 @@ export const remoteKodGamesAtom = atom(async (get) => {
 });
 
 export const gameHistoryAtom = atom(async (get) => {
+	get(gameHistoryRefreshTriggerAtom);
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 

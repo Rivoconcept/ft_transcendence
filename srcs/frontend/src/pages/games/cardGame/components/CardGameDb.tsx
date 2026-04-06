@@ -1,8 +1,9 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameDb.tsx
 import { useEffect, useRef } from "react";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import apiService from "../../../../services/api.service";
 import { currentUserAtom } from "../../../../providers";
+import { refreshGameHistoryAtom } from "../../../dashboard/providers/gameHistoryAtom";
 
 interface CardGameDbProps {
   finalScore: number;
@@ -25,6 +26,7 @@ export default function CardGameDb({
 }: CardGameDbProps) {
   const hasPushedRef = useRef(false);
   const currentUser = useAtomValue(currentUserAtom);
+  const refreshGameHistory = useSetAtom(refreshGameHistoryAtom);
 
 useEffect(() => {
   if (!isGameOver || hasPushedRef.current) return;
@@ -42,29 +44,29 @@ useEffect(() => {
   hasPushedRef.current = true;
 
   const saveGame = async () => {
-    const generateShortId = () => Math.random().toString(36).substring(2, 6);
-
-    const matchIdForPush =
-      mode === "MULTI"
-        ? matchId ?? ""
-        : generateShortId();
-
-    if (mode === "MULTI" && !matchIdForPush) {
+    if (mode === "MULTI" && !matchId) {
       console.error("Cannot save multiplayer game: matchId is missing");
       return;
     }
 
     try {
-
       const payload = {
-        mode,
         final_score: finalScore,
-        is_win: mode === "MULTI" ? false : isWin,
-        match_id: matchIdForPush,
+        is_win: isWin,
         player_name: player || currentUser.username,
       };
 
-      await apiService.post("card-games", payload);
+      if (mode === "MULTI") {
+        await apiService.post("card-games", {
+          ...payload,
+          mode,
+          is_win: false,
+          match_id: matchId,
+        });
+      } else {
+        await apiService.post("card-games/single/finish", payload);
+      }
+      refreshGameHistory();
 
       onSaved();
     } catch (error) {
@@ -74,7 +76,7 @@ useEffect(() => {
   };
 
   void saveGame();
-}, [isGameOver, currentUser, finalScore, matchId, player, isWin, mode, onSaved]);
+}, [isGameOver, currentUser, finalScore, matchId, player, isWin, mode, onSaved, refreshGameHistory]);
 
   return null;
 }

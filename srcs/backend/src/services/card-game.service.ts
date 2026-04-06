@@ -2,7 +2,9 @@
 import { AppDataSource } from "../database/data-source.js";
 import { CardGame } from "../database/entities/card-game.js";
 import { Match } from "../database/entities/match.js";
+import { Participation } from "../database/entities/participation.js";
 import { CardGameMode } from "../database/enum/cardGameModeEnum.js";
+import { socketService } from "../websocket.js";
 
 interface CreateCardGameDTO {
   mode?: CardGameMode;
@@ -12,9 +14,16 @@ interface CreateCardGameDTO {
   player_name: string;
 }
 
+interface FinishSingleCardGameDTO {
+  final_score?: number;
+  is_win?: boolean;
+  player_name: string;
+}
+
 class CardGameService {
   private repo = AppDataSource.getRepository(CardGame);
   private matchRepository = AppDataSource.getRepository(Match);
+  private participationRepository = AppDataSource.getRepository(Participation);
 
   // Crée une partie
 
@@ -29,6 +38,31 @@ class CardGameService {
     } as Partial<CardGame>);
 
     await this.repo.save(card);
+    return card;
+  }
+
+  async finishSingleGame(userId: number, data: FinishSingleCardGameDTO) {
+    const singleMatchId = Math.random().toString(36).substring(2, 6);
+
+    const card = this.repo.create({
+      author_id: userId,
+      mode: CardGameMode.SINGLE,
+      final_score: data.final_score ?? 0,
+      is_win: data.is_win ?? false,
+      match_id: singleMatchId,
+      player_name: data.player_name,
+    } as Partial<CardGame>);
+
+    await this.repo.save(card);
+
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`user.${userId}`).emit("game-history:updated", {
+        userId,
+        game: CardGameMode.SINGLE,
+      });
+    }
+
     return card;
   }
 
@@ -83,6 +117,42 @@ class CardGameService {
         WHERE match_id = $1
       )
     `, [matchId]);
+
+    const match = await this.matchRepository.findOne({
+      where: { id: matchId },
+    });
+
+    const participations = await this.participationRepository.find({
+      where: { match_id: matchId },
+    });
+    const participantIds = participations.map((p) => p.user_id);
+
+    if (match && !match.match_over) {
+      match.match_over = true;
+      match.is_open = false;
+      await this.matchRepository.save(match);
+    }
+
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`match.${matchId}`).emit("match:ended", {
+        matchId,
+        current_set: match?.current_set ?? 1,
+        participantIds,
+      });
+
+      participantIds.forEach((userId) => {
+        io.to(`user.${userId}`).emit("game-history:updated", {
+          userId,
+          game: CardGameMode.MULTI,
+          matchId,
+        });
+      });
+    }
+
+    participantIds.forEach((id) => {
+      socketService.leaveMatchRoom(id, matchId);
+    });
   }
   
 }

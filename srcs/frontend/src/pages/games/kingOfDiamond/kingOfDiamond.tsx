@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { currentUserAtom } from '../../../providers';
+import { refreshGameHistoryAtom } from '../../dashboard/providers/gameHistoryAtom';
 import { socketStore } from '../../../store/socketStore';
 import './kod.css';
 
@@ -238,6 +239,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 	const navigate = useNavigate();
 	const matchId = roomId || '';
 	const currentUser = useAtomValue(currentUserAtom);
+	const refreshGameHistory = useSetAtom(refreshGameHistoryAtom);
 	const currentUserId = currentUser!.id;
 
 	const [phase, setPhase] = useState<Phase>('waiting');
@@ -343,6 +345,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			clearResultTimer();
 			setGameWinner({ id: winnerId, name: winnerName });
 			setPhase('ended');
+			refreshGameHistory();
 		};
 
 		const onError = ({ error: msg }: { error: string }) => setError(msg);
@@ -364,7 +367,7 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			clearPickTimer();
 			clearResultTimer();
 		};
-	}, [socket, matchId, currentUserId, startPickTimer, clearPickTimer, clearResultTimer]);
+	}, [socket, matchId, currentUserId, startPickTimer, clearPickTimer, clearResultTimer, refreshGameHistory]);
 
 	// ── Auto-submit when pick timer expires ───────────────────────────────────
 
