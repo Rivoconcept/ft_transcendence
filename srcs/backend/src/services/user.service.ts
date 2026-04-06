@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { AppDataSource } from "../database/data-source.js";
 import { User } from "../database/entities/user.js";
 import { Invitation, InvitationStatus } from "../database/entities/invitation.js";
@@ -44,6 +45,16 @@ class UserService {
 
     await this.userRepository.update(userId, data);
     return this.getById(userId);
+  }
+
+  async resetPassword(userId: number, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.save(user);
   }
 
   async setOnlineStatus(userId: number, isOnline: boolean): Promise<void> {

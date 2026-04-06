@@ -46,6 +46,7 @@ import {
 import {
 	AuthPage,
 	OtpPage,
+	ForgotPasswordPage,
 	LandingPage,
 	LegalPage,
 	GameList,
@@ -460,6 +461,11 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/verify"
 						element={<OtpPage />}
+					/>
+
+					<Route
+						path="/forgot-password"
+						element={<ForgotPasswordPage />}
 					/>
 
 					{/* Games Config */}
