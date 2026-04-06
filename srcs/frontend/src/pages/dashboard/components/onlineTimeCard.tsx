@@ -8,8 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { onlineTimeAtom, onlineTimeRefresTriggerAtom } from '../providers/timeAtom';
-import { usePollingAtom } from '../utils/poll';
+import { onlineTimeAtom } from '../providers/timeAtom';
 import '../Dashboard.scss';
 
 // Optional: nicer month formatting
@@ -24,7 +23,6 @@ interface MonthlyOnlineTime {
 }
 
 export default function OnlineTimeCard() {
-  usePollingAtom(onlineTimeRefresTriggerAtom, 60000);
   const [onlineTime] = useAtom(onlineTimeAtom);
 
   // Aggregate daily data into months
