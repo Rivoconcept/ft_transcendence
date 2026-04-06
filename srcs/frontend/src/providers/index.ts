@@ -68,7 +68,8 @@ export {
 	createGroupChatAtom,
 	totalUnreadCountAtom,
 	markAsReadAtom,
-	onMessageReadAtom
+	onMessageReadAtom,
+	onMessageDeletedAtom
 } from './chat.provider';
 export type { ChatMessagesState } from './chat.provider';
 

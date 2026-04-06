@@ -21,6 +21,7 @@ export interface MessageItem {
 	updated_at: string;
 	authorId: number;
 	chatId: number;
+	deleted: boolean;
 	reactions: { reactionId: number; userIds: number[] }[];
 	readBy: number[];
 }

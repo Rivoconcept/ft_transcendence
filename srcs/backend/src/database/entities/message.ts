@@ -37,6 +37,9 @@ export class Message {
   @JoinColumn({ name: "chat_id" })
   chat!: Relation<Chat>;
 
+  @Column({ default: false })
+  deleted!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 

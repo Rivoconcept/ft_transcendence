@@ -38,6 +38,10 @@ class ChatService {
 		return apiService.post<{ isModerator: boolean }>(`chats/${chatId}/moderator`, { targetUserId });
 	}
 
+	async deleteMessage(messageId: number): Promise<void> {
+		await apiService.delete<{ message: string }>(`chats/messages/${messageId}`);
+	}
+
 	async kickMember(chatId: number, targetUserId: number): Promise<void> {
 		await apiService.post<{ message: string }>(`chats/${chatId}/kick`, { targetUserId });
 	}

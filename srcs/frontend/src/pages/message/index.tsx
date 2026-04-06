@@ -586,6 +586,9 @@ export default function MessagesPage() {
 							{messages.map((msg) => {
 								const fromMe = msg.authorId === currentUser?.id || msg.id < 0;
 								const isMessageBlocked = !fromMe && blockedUserIds.has(msg.authorId);
+								const iAmMod = selectedChat?.type === "group" && currentUser
+									? selectedChat.moderatorIds.includes(currentUser.id) : false;
+								const canDeleteMsg = !msg.deleted && (fromMe || iAmMod);
 								return (
 									<MessageBubble
 										key={msg.id}
@@ -594,6 +597,12 @@ export default function MessagesPage() {
 										formatTime={formatTime}
 										isBlocked={isMessageBlocked}
 										currentUserId={currentUser?.id}
+										canDelete={canDeleteMsg}
+										onDelete={async (messageId) => {
+											try {
+												await chatService.deleteMessage(messageId);
+											} catch { /* socket will update */ }
+										}}
 									/>
 								);
 							})}
