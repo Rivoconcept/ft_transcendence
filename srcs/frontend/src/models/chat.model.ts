@@ -9,6 +9,7 @@ export interface ChatListItem {
 	lastMessageType: string | null;
 	lastMessageDate: string | null;
 	memberIds: number[];
+	unreadCount: number;
 }
 
 export interface MessageItem {
@@ -20,6 +21,7 @@ export interface MessageItem {
 	authorId: number;
 	chatId: number;
 	reactions: { reactionId: number; userIds: number[] }[];
+	readBy: number[];
 }
 
 export interface PaginatedMessages {

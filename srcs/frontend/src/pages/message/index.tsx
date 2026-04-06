@@ -25,6 +25,7 @@ import {
 	selectChatAtom,
 	loadOlderMessagesAtom,
 	sendMessageAtom,
+	markAsReadAtom,
 	userFamily,
 	blockedUserIdsAtom,
 	fetchBlockedUsersAtom,
@@ -94,6 +95,7 @@ export default function MessagesPage() {
 	const fetchBlockedUsers = useSetAtom(fetchBlockedUsersAtom);
 	const doBlockUser = useSetAtom(blockUserAtom);
 	const doUnblockUser = useSetAtom(unblockUserAtom);
+	const doMarkAsRead = useSetAtom(markAsReadAtom);
 
 	const [input, setInput] = useState("");
 	const [search, setSearch] = useState("");
@@ -178,6 +180,22 @@ export default function MessagesPage() {
 		}
 		setShowDropdown(false);
 	}, [selectedChatId, fetchBlockedUsers, selectedChat, currentUser]);
+
+	// Auto-mark messages as read when viewing a chat
+	const lastReadMarkedRef = useRef<number | null>(null);
+	useEffect(() => {
+		lastReadMarkedRef.current = null;
+	}, [selectedChatId]);
+
+	const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+	useEffect(() => {
+		if (!selectedChatId || !messagesReady || lastMessageId === null || lastMessageId < 0) return;
+		if (lastReadMarkedRef.current === lastMessageId) return;
+		if (currentUser) {
+			lastReadMarkedRef.current = lastMessageId;
+			doMarkAsRead({ chatId: selectedChatId, messageId: lastMessageId });
+		}
+	}, [selectedChatId, messagesReady, lastMessageId, currentUser, doMarkAsRead]);
 
 	// Scroll to bottom when current user sends a message
 	useEffect(() => {
@@ -387,6 +405,11 @@ export default function MessagesPage() {
 										>
 											{getLastMessagePreview(c)}
 										</span>
+										{c.unreadCount > 0 && (
+											<span className="badge rounded-pill bg-primary ms-2 flex-shrink-0" style={{ fontSize: 11, minWidth: 20 }}>
+												{c.unreadCount}
+											</span>
+										)}
 									</div>
 								</div>
 							</div>
@@ -468,6 +491,7 @@ export default function MessagesPage() {
 										fromMe={fromMe}
 										formatTime={formatTime}
 										isBlocked={isMessageBlocked}
+										currentUserId={currentUser?.id}
 									/>
 								);
 							})}

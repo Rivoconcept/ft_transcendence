@@ -165,7 +165,8 @@ export const sendMessageAtom = atom(
 			updated_at: new Date().toISOString(),
 			authorId: 0, // placeholder, component uses currentUserAtom to check fromMe
 			chatId,
-			reactions: []
+			reactions: [],
+			readBy: []
 		};
 
 		// Optimistically append
@@ -241,10 +242,19 @@ export const onNewMessageAtom = atom(
 			}
 		}
 
-		// Update last message info in chat list
+		// Update last message info in chat list + increment unread count
 		const chats = get(chatListAtom);
+		const selectedId = get(selectedChatIdAtom);
 		set(chatListAtom, chats.map(c =>
-			c.id === message.chatId ? { ...c, lastMessageId: message.id, lastMessageContent: message.content, lastMessageType: message.type, lastMessageDate: message.created_at } : c
+			c.id === message.chatId ? {
+				...c,
+				lastMessageId: message.id,
+				lastMessageContent: message.content,
+				lastMessageType: message.type,
+				lastMessageDate: message.created_at,
+				// Increment unread if this chat is not currently selected
+				unreadCount: c.id !== selectedId ? c.unreadCount + 1 : c.unreadCount,
+			} : c
 		));
 	}
 );
@@ -286,6 +296,58 @@ export const createGroupChatAtom = atom(
 			set(chatListAtom, [chat, ...chats]);
 		}
 		return chat.id;
+	}
+);
+
+// ============================================================
+// UNREAD COUNT
+// ============================================================
+
+// Derived: total unread count across all chats
+export const totalUnreadCountAtom = atom((get) => {
+	const chats = get(chatListAtom);
+	return chats.reduce((sum, c) => sum + c.unreadCount, 0);
+});
+
+// Action: mark messages as read up to a given message
+export const markAsReadAtom = atom(
+	null,
+	async (get, set, { chatId, messageId }: { chatId: number; messageId: number }) => {
+		try {
+			await chatService.markAsRead(chatId, messageId);
+
+			// Reset unread count for this chat
+			const chats = get(chatListAtom);
+			set(chatListAtom, chats.map(c =>
+				c.id === chatId ? { ...c, unreadCount: 0 } : c
+			));
+		} catch {
+			// silently fail
+		}
+	}
+);
+
+// Called on "message:read" WebSocket event
+export const onMessageReadAtom = atom(
+	null,
+	(get, set, { chatId, messageId, userId }: { chatId: number; messageId: number; userId: number }) => {
+		const map = get(chatMessagesMapAtom);
+		const state = map[chatId];
+
+		if (state) {
+			// Add userId to readBy for the target message and all earlier messages
+			const updatedMessages = state.messages.map(m => {
+				if (m.id <= messageId && !m.readBy.includes(userId)) {
+					return { ...m, readBy: [...m.readBy, userId] };
+				}
+				return m;
+			});
+
+			set(chatMessagesMapAtom, {
+				...map,
+				[chatId]: { ...state, messages: updatedMessages }
+			});
+		}
 	}
 );
 

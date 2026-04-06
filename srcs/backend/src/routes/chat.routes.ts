@@ -9,6 +9,7 @@ import {
   getMessageById,
   toggleReaction,
   getReactions,
+  markAsRead,
   leaveGroupChat,
 } from "../controllers/chat.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -41,6 +42,9 @@ router.get("/messages/:messageId", authMiddleware, getMessageById);
 
 // Toggle une réaction sur un message
 router.post("/messages/:messageId/reactions", authMiddleware, toggleReaction);
+
+// Marquer des messages comme lus
+router.post("/:id/read", authMiddleware, markAsRead);
 
 // Quitter un chat de groupe
 router.post("/:id/leave", authMiddleware, leaveGroupChat);

@@ -7,6 +7,7 @@ interface MessageBubbleProps {
 	fromMe: boolean;
 	formatTime: (dateStr: string) => string;
 	isBlocked?: boolean;
+	currentUserId?: number;
 }
 
 function parseImageContent(content: string): { imageUrl: string; caption: string | null } {
@@ -20,13 +21,16 @@ function parseImageContent(content: string): { imageUrl: string; caption: string
 	};
 }
 
-export default function MessageBubble({ message, fromMe, formatTime, isBlocked }: MessageBubbleProps) {
+export default function MessageBubble({ message, fromMe, formatTime, isBlocked, currentUserId }: MessageBubbleProps) {
 	const [revealed, setRevealed] = useState(false);
 	const hidden = isBlocked && !revealed;
 
 	const isImage = message.type === "image";
 	const parsed = isImage && !hidden ? parseImageContent(message.content) : null;
 	const imageOnly = isImage && !hidden && !parsed?.caption;
+
+	// Readers excluding the author (author has always read their own message)
+	const readers = message.readBy.filter(id => id !== message.authorId);
 
 	return (
 		<div className={`d-flex mb-2 ${fromMe ? "justify-content-end" : "justify-content-start"}`}>
@@ -57,6 +61,13 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked }
 					<small style={{ fontSize: 11, color: "var(--text-secondary)" }}>
 						{formatTime(message.created_at)}
 					</small>
+					{readers.length > 0 && (
+						<div className="d-flex align-items-center ms-1" style={{ gap: 2 }}>
+							{readers.map(uid => (
+								<AvatarUtil key={uid} id={uid} radius={14} showStatus={false} />
+							))}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

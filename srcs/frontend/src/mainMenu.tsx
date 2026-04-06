@@ -18,7 +18,8 @@ import {
 	fetchUserToCacheAtom,
 	userCacheFamily,
 	onNewMessageAtom,
-	onChatCreatedAtom
+	onChatCreatedAtom,
+	onMessageReadAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -235,10 +236,15 @@ function SocketListener(): null {
 				lastMessageContent: null,
 				lastMessageType: null,
 				lastMessageDate: null,
-				memberIds: []
+				memberIds: [],
+				unreadCount: 0
 			};
 			store.set(onChatCreatedAtom, chat);
 			socketStore.emit('chat:join', { channelId: data.channelId });
+		};
+
+		const handleMessageRead = (data: { chatId: number; messageId: number; userId: number }) => {
+			store.set(onMessageReadAtom, data);
 		};
 
 		// Register listeners
@@ -250,6 +256,7 @@ function SocketListener(): null {
 		socketStore.on('friend:status', handleUserStatusChanged);
 		socketStore.on('message:new', handleMessageNew);
 		socketStore.on('chat:created', handleChatCreated);
+		socketStore.on('message:read', handleMessageRead);
 
 		// Cleanup
 		return () => {
@@ -261,6 +268,7 @@ function SocketListener(): null {
 			socketStore.off('friend:status', handleUserStatusChanged);
 			socketStore.off('message:new', handleMessageNew);
 			socketStore.off('chat:created', handleChatCreated);
+			socketStore.off('message:read', handleMessageRead);
 		};
 	}, [user, store]);
 

@@ -65,7 +65,10 @@ export {
 	onChatCreatedAtom,
 	selectChatAtom,
 	openOrCreateDirectChatAtom,
-	createGroupChatAtom
+	createGroupChatAtom,
+	totalUnreadCountAtom,
+	markAsReadAtom,
+	onMessageReadAtom
 } from './chat.provider';
 export type { ChatMessagesState } from './chat.provider';
 
