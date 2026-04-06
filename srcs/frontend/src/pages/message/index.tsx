@@ -40,6 +40,7 @@ import { socketStore } from "../../store/socketStore";
 import { blockService } from "../../services/block.service";
 import { chatService } from "../../services/chat.service";
 import AvatarUtil from "../../components/AvatarUtil";
+import UserProfileModal from "../../components/UserProfileModal";
 import CreateChatModal from "./CreateChatModal";
 import MessageBubble from "../../components/message/MessageBubble";
 import type { ChatListItem } from "../../models";
@@ -111,6 +112,7 @@ export default function MessagesPage() {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [isChatBlocked, setIsChatBlocked] = useState(false);
 	const [showMembersModal, setShowMembersModal] = useState(false);
+	const [profileUserId, setProfileUserId] = useState<number | null>(null);
 	const [nonMemberChat, setNonMemberChat] = useState<ChatListItem | null>(null);
 	const [joiningGroup, setJoiningGroup] = useState(false);
 
@@ -520,7 +522,16 @@ export default function MessagesPage() {
 								<ChatAvatar chat={selectedChat} size={40} currentUserId={currentUser?.id} showStatus={false} />
 							</div>
 
-							<div className="flex-grow-1">
+							<div
+								className="flex-grow-1"
+								style={{ cursor: selectedChat.type === "direct" ? "pointer" : undefined }}
+								onClick={() => {
+									if (selectedChat.type === "direct" && currentUser) {
+										const otherUserId = getOtherUserId(selectedChat);
+										setProfileUserId(otherUserId);
+									}
+								}}
+							>
 								<div className="fw-semibold" style={{ fontSize: 15, color: "var(--app-text-primary)" }}>
 									{getChatDisplayName(selectedChat)}
 								</div>
@@ -746,7 +757,11 @@ export default function MessagesPage() {
 								return (
 									<div key={uid} className="d-flex align-items-center gap-2 px-3 py-2">
 										<AvatarUtil id={uid} radius={32} showStatus={true} />
-										<div className="flex-grow-1">
+										<div
+											className="flex-grow-1"
+											style={{ cursor: "pointer" }}
+											onClick={() => setProfileUserId(uid)}
+										>
 											<span style={{ fontSize: 14, color: "var(--app-text-primary)" }}>
 												<UserName userId={uid} />
 												{uid === currentUser?.id && <span style={{ color: "var(--app-text-secondary)" }}> (You)</span>}
@@ -800,6 +815,10 @@ export default function MessagesPage() {
 						</div>
 					</div>
 				</div>
+			)}
+
+			{profileUserId !== null && (
+				<UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />
 			)}
 		</div>
 	);

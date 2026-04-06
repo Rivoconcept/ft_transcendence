@@ -230,15 +230,22 @@ class ChatService {
 
     // Seul membre restant → supprimer le groupe
     if (allMembers.length === 1) {
+      // Supprimer les reads avant les messages (foreign key)
+      const messageIds = await this.messageRepository.find({
+        where: { chat_id: chatId },
+        select: ["id"],
+      });
+      if (messageIds.length > 0) {
+        const ids = messageIds.map(m => m.id);
+        await this.messageReadRepository
+          .createQueryBuilder()
+          .delete()
+          .where("message_id IN (:...ids)", { ids })
+          .execute();
+      }
+      await this.messageRepository.delete({ chat_id: chatId });
       await this.chatModeratorRepository.remove(allModerators);
       await this.chatMemberRepository.remove(membership);
-      await this.messageRepository.delete({ chat_id: chatId });
-      await this.messageReadRepository
-        .createQueryBuilder()
-        .delete()
-        .where("message_id IN (SELECT id FROM message WHERE chat_id = :chatId)", { chatId })
-        .execute()
-        .catch(() => {}); // ignore if no messages
       await this.chatRepository.remove(chat);
       socketService.leaveChatRoom(userId, chat.channel_id);
       return;
