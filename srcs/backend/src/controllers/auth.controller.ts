@@ -4,14 +4,14 @@ import { authService } from "../services/auth.service.js";
 
 export async function register(req: Request, res: Response): Promise<void> {
   try {
-    const { username, realname, password, avatar } = req.body;
+    const { username, email, password, avatar } = req.body;
 
-    if (!username || !realname || !password) {
+    if (!username || !email || !password) {
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
 
-    const result = await authService.register({ username, realname, password, avatar });
+    const result = await authService.register({ username, email, password, avatar });
     res.status(201).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Registration failed";

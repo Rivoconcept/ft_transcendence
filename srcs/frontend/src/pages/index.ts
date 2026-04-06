@@ -1,5 +1,5 @@
 // Auth
-export { AuthPage } from './auth';
+export { AuthPage, OtpPage } from './auth';
 export { LandingPage } from './landing';
 export { LegalPage } from './legal';
 

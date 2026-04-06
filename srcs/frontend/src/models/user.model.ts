@@ -1,21 +1,22 @@
 export interface User {
 	id: number;
 	username: string;
-	realname: string;
+	email: string;
 	avatar: string;
 	is_online: boolean;
+	is_confirmed: boolean;
 }
 
 export interface UserCreate {
 	username: string;
-	realname: string;
+	email: string;
 	avatar: null | string;
 	password: string;
 }
 
 export interface UserUpdate {
 	username?: string;
-	realname?: string;
+	email?: string;
 	avatar?: string;
 	password?: string;
 }

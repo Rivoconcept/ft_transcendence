@@ -17,8 +17,8 @@ export class User {
   @Column({ unique: true })
   username!: string;
 
-  @Column()
-  realname!: string;
+  @Column({ unique: true })
+  email!: string;
 
   @Column()
   avatar!: string;
@@ -28,6 +28,15 @@ export class User {
 
   @Column({ default: false })
   is_online!: boolean;
+
+  @Column({ default: false })
+  is_confirmed!: boolean;
+
+  @Column({ type: "char", length: 6, nullable: true })
+  otp_code!: string | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  otp_expiration!: Date | null;
 
   @OneToMany("Invitation", "sender")
   sent_invitations!: Relation<Invitation>[];

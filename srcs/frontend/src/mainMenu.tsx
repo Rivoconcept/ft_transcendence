@@ -45,6 +45,7 @@ import {
 } from './providers/friend.provider';
 import {
 	AuthPage,
+	OtpPage,
 	LandingPage,
 	LegalPage,
 	GameList,
@@ -82,6 +83,9 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
 	if (!user) {
 		return <Navigate to="/" replace />;
 	}
+	if (!user.is_confirmed) {
+		return <Navigate to="/verify" replace />;
+	}
 	return <>{children}</>;
 }
 
@@ -94,7 +98,7 @@ function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
 
 	if (user) {
-		return <Navigate to="/games" replace />;
+		return <Navigate to={user.is_confirmed ? "/games" : "/verify"} replace />;
 	}
 	return <>{children}</>;
 }
@@ -451,6 +455,11 @@ export default function App(): React.JSX.Element {
 					<Route
 						path="/legal"
 						element={<LegalPage />}
+					/>
+
+					<Route
+						path="/verify"
+						element={<OtpPage />}
 					/>
 
 					{/* Games Config */}

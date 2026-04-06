@@ -30,7 +30,7 @@ class UserService {
 
   async updateProfile(
     userId: number,
-    data: { username?: string; realname?: string; avatar?: string }
+    data: { username?: string; email?: string; avatar?: string }
   ): Promise<Partial<User> | null> {
     if (data.username) {
       const existingUser = await this.userRepository.findOne({

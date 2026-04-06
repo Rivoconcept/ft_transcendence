@@ -54,7 +54,7 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const { username, realname, avatar } = req.body;
+    const { username, email, avatar } = req.body;
     const normalizedUsername = typeof username === "string" ? username.trim() : undefined;
 
     if (normalizedUsername !== undefined && normalizedUsername.length === 0) {
@@ -64,7 +64,7 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
 
     const user = await userService.updateProfile(req.user.userId, {
       username: normalizedUsername,
-      realname,
+      email,
       avatar,
     });
 
