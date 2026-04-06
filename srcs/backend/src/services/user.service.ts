@@ -2,6 +2,8 @@ import bcrypt from "bcrypt";
 import { AppDataSource } from "../database/data-source.js";
 import { User } from "../database/entities/user.js";
 import { Invitation, InvitationStatus } from "../database/entities/invitation.js";
+import { Participation } from "../database/entities/participation.js";
+import { Match } from "../database/entities/match.js";
 
 class UserService {
   private userRepository = AppDataSource.getRepository(User);
@@ -45,6 +47,53 @@ class UserService {
 
     await this.userRepository.update(userId, data);
     return this.getById(userId);
+  }
+
+  async getUserProfile(userId: number): Promise<{
+    id: number;
+    username: string;
+    avatar: string;
+    is_online: boolean;
+    gamesPlayed: number;
+    wins: number;
+    losses: number;
+  } | null> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) return null;
+
+    const participationRepo = AppDataSource.getRepository(Participation);
+
+    // Toutes les participations à des matchs terminés
+    const participations = await participationRepo.find({
+      where: { user_id: userId },
+      relations: ["match", "match.participations"],
+    });
+
+    const finishedParticipations = participations.filter(p => p.match?.match_over);
+    const gamesPlayed = finishedParticipations.length;
+
+    let wins = 0;
+    let losses = 0;
+
+    for (const p of finishedParticipations) {
+      const allScores = p.match.participations;
+      const maxScore = Math.max(...allScores.map(s => s.score));
+      if (p.score === maxScore) {
+        wins++;
+      } else {
+        losses++;
+      }
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      is_online: user.is_online,
+      gamesPlayed,
+      wins,
+      losses,
+    };
   }
 
   async resetPassword(userId: number, newPassword: string): Promise<void> {

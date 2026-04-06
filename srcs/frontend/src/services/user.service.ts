@@ -41,6 +41,10 @@ class UserService {
 	async getById(id: number): Promise<User> {
 		return apiService.get<User>(`users/${id}`);
 	}
+
+	async getUserProfile(id: number): Promise<{ id: number; username: string; avatar: string; is_online: boolean; gamesPlayed: number; wins: number; losses: number }> {
+		return apiService.get(`users/${id}/profile`);
+	}
 }
 
 export const userService = new UserService();

@@ -4,6 +4,29 @@ import { userService } from "../services/user.service.js";
 import { authService } from "../services/auth.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
 
+export async function getUserProfile(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const userId = parseInt(req.params.id ?? "");
+
+    if (isNaN(userId)) {
+      res.status(400).json({ error: "Invalid user ID" });
+      return;
+    }
+
+    const profile = await userService.getUserProfile(userId);
+
+    if (!profile) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json(profile);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get profile";
+    res.status(500).json({ error: message });
+  }
+}
+
 export async function getProfile(req: AuthRequest, res: Response): Promise<void> {
   try {
     const userId = parseInt(req.params.id ?? "");
