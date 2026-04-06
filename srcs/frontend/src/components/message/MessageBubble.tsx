@@ -1,9 +1,24 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { CheckCheck, X } from "lucide-react";
 import { useAtomValue } from "jotai";
 import AvatarUtil from "../AvatarUtil";
 import { userFamily } from "../../providers";
 import type { MessageItem } from "../../models";
+
+const URL_REGEX = /(https?:\/\/\S+)/g;
+
+function linkifyText(text: string): React.ReactNode {
+	const parts = text.split(URL_REGEX);
+	return parts.map((part, i) =>
+		URL_REGEX.test(part) ? (
+			<a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
+				{part}
+			</a>
+		) : (
+			<React.Fragment key={i}>{part}</React.Fragment>
+		)
+	);
+}
 
 interface MessageBubbleProps {
 	message: MessageItem;
@@ -71,7 +86,7 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked, 
 								<img src={parsed.imageUrl} alt="image" className="bubble-img" />
 							</>
 						) : (
-							message.content
+							linkifyText(message.content)
 						)}
 					</div>
 					<div

@@ -26,6 +26,7 @@ export async function createDirectChat(req: AuthRequest, res: Response): Promise
       lastMessageType: null,
       lastMessageDate: null,
       memberIds: [currentUserId, userId],
+      moderatorIds: [],
       unreadCount: 0,
     };
 
@@ -279,12 +280,68 @@ export async function leaveGroupChat(req: AuthRequest, res: Response): Promise<v
     res.json({ message: "Successfully left the group" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to leave group";
-    if (message === "Cannot leave a direct chat") {
+    if (message === "Cannot leave a direct chat" || message === "You must assign another moderator before leaving") {
       res.status(400).json({ error: message });
       return;
     }
     if (message === "You are not a member of this chat") {
       res.status(403).json({ error: message });
+      return;
+    }
+    if (message === "Chat not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function toggleModerator(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const chatId = parseInt(req.params.id ?? "");
+    const { targetUserId } = req.body;
+
+    if (isNaN(chatId)) {
+      res.status(400).json({ error: "Invalid chat ID" });
+      return;
+    }
+
+    if (!targetUserId || typeof targetUserId !== "number") {
+      res.status(400).json({ error: "Target user ID is required" });
+      return;
+    }
+
+    const result = await chatService.toggleModerator(req.user!.userId, chatId, targetUserId);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to toggle moderator";
+    if (message === "Only moderators can change moderator status" || message === "Cannot remove the last moderator") {
+      res.status(400).json({ error: message });
+      return;
+    }
+    if (message === "Target user is not a member of this chat") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function joinGroupChat(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { channelId } = req.params;
+
+    if (!channelId) {
+      res.status(400).json({ error: "Channel ID is required" });
+      return;
+    }
+
+    const chat = await chatService.joinGroupChat(req.user!.userId, channelId);
+    res.json(chat);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to join group";
+    if (message === "Can only join group chats") {
+      res.status(400).json({ error: message });
       return;
     }
     if (message === "Chat not found") {

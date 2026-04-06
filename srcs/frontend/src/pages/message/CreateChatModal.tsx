@@ -108,7 +108,7 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 						<div style={{ padding: "0.75rem 1rem 0" }}>
 							<input
 								type="text"
-								className="form-control"
+								className="form-control" style={{ background: "var(--bg-surface)", color: "var(--app-text-primary)", borderColor: "var(--border-color)" }}
 								placeholder="Group name"
 								value={groupName}
 								onChange={(e) => setGroupName(e.target.value)}
@@ -119,7 +119,7 @@ export default function CreateChatModal({ onClose }: CreateChatModalProps) {
 					<div style={{ padding: "0.75rem 1rem 0" }}>
 						<input
 							type="text"
-							className="form-control"
+							className="form-control" style={{ background: "var(--bg-surface)", color: "var(--app-text-primary)", borderColor: "var(--border-color)" }}
 							placeholder="Search friends..."
 							value={memberSearch}
 							onChange={(e) => setMemberSearch(e.target.value)}

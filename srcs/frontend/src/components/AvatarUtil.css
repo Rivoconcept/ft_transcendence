@@ -1,8 +1,6 @@
 .avatar-container {
     position: relative;
-    display: inline-flex;
-    width: fit-content;
-    height: fit-content;
+    display: inline-block;
 }
 
 .avatar {

@@ -29,6 +29,18 @@ class ChatService {
 	async markAsRead(chatId: number, messageId: number): Promise<{ readMessageId: number; userId: number }> {
 		return apiService.post<{ readMessageId: number; userId: number }>(`chats/${chatId}/read`, { messageId });
 	}
+
+	async leaveGroup(chatId: number): Promise<void> {
+		await apiService.post<{ message: string }>(`chats/${chatId}/leave`, {});
+	}
+
+	async toggleModerator(chatId: number, targetUserId: number): Promise<{ isModerator: boolean }> {
+		return apiService.post<{ isModerator: boolean }>(`chats/${chatId}/moderator`, { targetUserId });
+	}
+
+	async joinGroup(channelId: string): Promise<ChatListItem> {
+		return apiService.post<ChatListItem>(`chats/join/${channelId}`, {});
+	}
 }
 
 export const chatService = new ChatService();

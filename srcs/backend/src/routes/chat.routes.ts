@@ -11,6 +11,8 @@ import {
   getReactions,
   markAsRead,
   leaveGroupChat,
+  toggleModerator,
+  joinGroupChat,
 } from "../controllers/chat.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -46,7 +48,13 @@ router.post("/messages/:messageId/reactions", authMiddleware, toggleReaction);
 // Marquer des messages comme lus
 router.post("/:id/read", authMiddleware, markAsRead);
 
+// Toggle moderator status
+router.post("/:id/moderator", authMiddleware, toggleModerator);
+
 // Quitter un chat de groupe
 router.post("/:id/leave", authMiddleware, leaveGroupChat);
+
+// Rejoindre un groupe via channel_id
+router.post("/join/:channelId", authMiddleware, joinGroupChat);
 
 export default router;
