@@ -112,14 +112,26 @@
 
 .status-group {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
   font-weight: 500;
   color: var(--app-text-primary);
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface) 82%, transparent), var(--bg-surface-hover));
 }
 
 .status-text {
   font-size: 0.9rem;
   color: var(--app-text-secondary);
+}
+
+.friends-group-header {
+  display: flex;
+  align-items: center;
 }
 
 .friends-total {
@@ -142,22 +154,91 @@
   border: 1px solid var(--border-color);
 }
 
-.tooltip-content ul {
-  list-style-type: none;
-}
-
 .tooltip-arrow {
   fill: var(--bg-surface-alt);
 }
 
-.friends-preview {
+.friends-avatar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.friend-avatar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
   cursor: pointer;
-  text-decoration: underline;
-  color: var(--primary-color);
-  transition: color 0.2s;
+  border-radius: 999px;
+  transition: transform 0.18s ease;
 
   &:hover {
-    color: var(--primary-dark);
+    transform: translateX(4px);
+  }
+}
+
+.friend-avatar-button--overflow {
+  width: 42px;
+  height: 42px;
+  border: 1px dashed var(--border-color);
+  background: var(--bg-surface);
+  color: var(--app-text-secondary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.friends-empty {
+  font-size: 0.82rem;
+  color: var(--app-text-secondary);
+}
+
+.friends-tooltip-content {
+  width: min(260px, 72vw);
+}
+
+.friends-tooltip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.friends-tooltip-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.friends-tooltip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.friends-tooltip-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--app-text-primary);
+}
+
+.friends-tooltip-presence {
+  font-size: 0.78rem;
+  color: var(--app-text-secondary);
+
+  &.online {
+    color: #4caf50;
+  }
+
+  &.offline {
+    color: #f44336;
   }
 }
 
