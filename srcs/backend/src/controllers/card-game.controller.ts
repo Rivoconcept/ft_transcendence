@@ -46,6 +46,32 @@ export async function createCardGame(
   }
 }
 
+export async function finishSingleCardGame(
+  req: AuthRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const { final_score, is_win, player_name } = req.body;
+
+    if (!player_name || player_name.trim() === "") {
+      res.status(400).json({ error: "player_name is required" });
+      return;
+    }
+
+    const card = await cardGameService.finishSingleGame(req.user!.userId, {
+      final_score,
+      is_win,
+      player_name,
+    });
+
+    res.status(201).json(card);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to finish single card game";
+    res.status(400).json({ error: message });
+  }
+}
+
 // Récupérer toutes les parties d'un utilisateur
 export async function getUserCardGames(
   req: AuthRequest,
@@ -108,4 +134,3 @@ export async function finishMatch(req: Request, res: Response) {
     res.status(500).json({ error: "Failed to finish match" });
   }
 }
-

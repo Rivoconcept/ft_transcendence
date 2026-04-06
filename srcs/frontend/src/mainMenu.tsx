@@ -13,7 +13,7 @@ const Toast = Swal.mixin({
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import "./pages/message/message.css"
-import { startOnlineSessionAtom, stopOnlineSessionAtom } from './pages/dashboard/atoms/dashboardData';
+import { refreshGameHistoryAtom, startOnlineSessionAtom, stopOnlineSessionAtom } from './pages/dashboard/atoms/dashboardData';
 
 import { Navigation } from './components';
 import { apiService } from './services';
@@ -279,6 +279,18 @@ function SocketListener(): null {
 			}
 		};
 
+		const handleMatchEnded = () => {
+			store.set(refreshGameHistoryAtom);
+		};
+
+		const handleKodGameOver = () => {
+			store.set(refreshGameHistoryAtom);
+		};
+
+		const handleGameHistoryUpdated = () => {
+			store.set(refreshGameHistoryAtom);
+		};
+
 		// Chat events
 		const handleMessageNew = async (data: { chatId: number; channelId: string; message: MessageItem }) => {
 			store.set(onNewMessageAtom, data.message);
@@ -422,6 +434,9 @@ function SocketListener(): null {
 		socketStore.on('invitation:cancelled', handleInvitationCancelled);
 		socketStore.on('friend:removed', handleFriendRemoved);
 		socketStore.on('friend:status', handleUserStatusChanged);
+		socketStore.on('match:ended', handleMatchEnded);
+		socketStore.on('kod:game-over', handleKodGameOver);
+		socketStore.on('game-history:updated', handleGameHistoryUpdated);
 		socketStore.on('message:new', handleMessageNew);
 		socketStore.on('chat:created', handleChatCreated);
 		socketStore.on('message:read', handleMessageRead);
@@ -439,6 +454,9 @@ function SocketListener(): null {
 			socketStore.off('invitation:cancelled', handleInvitationCancelled);
 			socketStore.off('friend:removed', handleFriendRemoved);
 			socketStore.off('friend:status', handleUserStatusChanged);
+			socketStore.off('match:ended', handleMatchEnded);
+			socketStore.off('kod:game-over', handleKodGameOver);
+			socketStore.off('game-history:updated', handleGameHistoryUpdated);
 			socketStore.off('message:new', handleMessageNew);
 			socketStore.off('chat:created', handleChatCreated);
 			socketStore.off('message:read', handleMessageRead);

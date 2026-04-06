@@ -1,11 +1,19 @@
 import { useAtom } from 'jotai';
 import { gameHistoryAtom } from '../providers/gameHistoryAtom';
 import { dashboardViewAtom } from '../services/dashboardNavigation';
+import { refreshGameHistoryAtom } from '../atoms/dashboardData';
 import '../Dashboard.scss';
+import { useEffect } from 'react';
 
 export default function GameHistoryCard() {
+  const [, setRefreshTrigger] = useAtom(refreshGameHistoryAtom);
   const [gameHistory] = useAtom(gameHistoryAtom);
   const [, setView] = useAtom(dashboardViewAtom);
+
+  useEffect(() => {
+    // Refresh game history when component mounts
+    void setRefreshTrigger();
+  }, [setRefreshTrigger]);
 
   // Display only the first 3 entries
   const recentGames = gameHistory.slice(0, 3);

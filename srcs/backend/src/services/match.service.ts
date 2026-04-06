@@ -615,6 +615,13 @@ class MatchService {
           winnerId: result!.gameWinnerId,
           winnerName: result!.gameWinnerName,
         });
+        result!.players.forEach((p) => {
+          io.to(`user.${p.userId}`).emit("game-history:updated", {
+            userId: p.userId,
+            game: "kingOfDiamond",
+            matchId,
+          });
+        });
         result!.players.forEach(p => socketService.leaveMatchRoom(p.userId, matchId));
       }
 
