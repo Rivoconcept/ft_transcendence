@@ -7,7 +7,6 @@ import {
 	MoreVertical,
 	ArrowLeft,
 	Paperclip,
-	Smile,
 	Plus,
 	X,
 	Image,
@@ -268,20 +267,16 @@ export default function MessagesPage() {
 	const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2Mo
 	const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
-	const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+	const processImageFile = useCallback((file: File) => {
 		setImageError(null);
-		const file = e.target.files?.[0];
-		if (!file) return;
 
 		if (!ALLOWED_TYPES.includes(file.type)) {
 			setImageError("Unsupported format. Use JPEG, PNG, GIF or WebP.");
-			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
 
 		if (file.size > MAX_IMAGE_SIZE) {
 			setImageError("Image must not exceed 2 MB.");
-			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
 
@@ -290,8 +285,27 @@ export default function MessagesPage() {
 			setImagePreview(reader.result as string);
 		};
 		reader.readAsDataURL(file);
-		if (fileInputRef.current) fileInputRef.current.value = "";
 	}, []);
+
+	const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		processImageFile(file);
+		if (fileInputRef.current) fileInputRef.current.value = "";
+	}, [processImageFile]);
+
+	const handlePaste = useCallback((e: React.ClipboardEvent) => {
+		const items = e.clipboardData?.items;
+		if (!items) return;
+		for (const item of items) {
+			if (item.type.startsWith("image/")) {
+				e.preventDefault();
+				const file = item.getAsFile();
+				if (file) processImageFile(file);
+				return;
+			}
+		}
+	}, [processImageFile]);
 
 	const cancelImagePreview = useCallback(() => {
 		setImagePreview(null);
@@ -542,14 +556,11 @@ export default function MessagesPage() {
 									placeholder="Type a message..."
 									value={input}
 									onChange={(e) => setInput(e.target.value)}
+									onPaste={handlePaste}
 									onKeyDown={(e) => {
 										if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
 									}}
 								/>
-
-								<button className="icon-action">
-									<Smile size={17} className="icon-themed" />
-								</button>
 
 								<button
 									className="send-btn-custom"
