@@ -178,10 +178,11 @@ function SocketListener(): null {
 	useEffect(() => {
 		if (!user) return;
 		store.set(fetchChatListAtom);
-	}, [user, store]);
+	}, [user, store, navigate]);
 
 	useEffect(() => {
 		if (!user) return;
+		if (!socketStore.getSocket()) return;
 
 		const handleInvitationReceived = async (data: { invitationId: number; senderId: number }) => {
 			// Fetch sender info
@@ -346,7 +347,7 @@ function SocketListener(): null {
 			socketStore.off('chat:created', handleChatCreated);
 			socketStore.off('message:read', handleMessageRead);
 		};
-	}, [user, store]);
+	}, [user, store, navigate]);
 
 	return null;
 }

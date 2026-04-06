@@ -14,8 +14,7 @@ export const chatListErrorAtom = atom<string | null>(null);
 // Action: fetch all chats
 export const fetchChatListAtom = atom(
 	null,
-	async (get, set) => {
-		if (get(chatListLoadingAtom)) return;
+	async (_get, set) => {
 		set(chatListLoadingAtom, true);
 		set(chatListErrorAtom, null);
 		try {
