@@ -361,14 +361,42 @@ function SocketListener(): null {
 
 		const handleMemberLeft = (data: { chatId: number; channelId: string; userId: number }) => {
 			const chats = store.get(chatListAtom);
-			store.set(chatListAtom, chats.map(c => {
-				if (c.id !== data.chatId) return c;
-				return {
-					...c,
-					memberIds: c.memberIds.filter(id => id !== data.userId),
-					moderatorIds: c.moderatorIds.filter(id => id !== data.userId),
-				};
-			}));
+			if (user && data.userId === user.id) {
+				// I left — remove chat from my list
+				store.set(chatListAtom, chats.filter(c => c.id !== data.chatId));
+			} else {
+				store.set(chatListAtom, chats.map(c => {
+					if (c.id !== data.chatId) return c;
+					return {
+						...c,
+						memberIds: c.memberIds.filter(id => id !== data.userId),
+						moderatorIds: c.moderatorIds.filter(id => id !== data.userId),
+					};
+				}));
+			}
+		};
+
+		const handleMemberKicked = (data: { chatId: number; channelId: string; userId: number; kickedBy: number }) => {
+			const chats = store.get(chatListAtom);
+
+			// If I was kicked, remove the chat entirely from my list
+			if (user && data.userId === user.id) {
+				const chat = chats.find(c => c.id === data.chatId);
+				const groupName = chat?.name ?? 'a group';
+				store.set(chatListAtom, chats.filter(c => c.id !== data.chatId));
+				Toast.fire({ icon: 'warning', title: `You were removed from ${groupName}` });
+				navigate('/messages');
+			} else {
+				// Update member list for others
+				store.set(chatListAtom, chats.map(c => {
+					if (c.id !== data.chatId) return c;
+					return {
+						...c,
+						memberIds: c.memberIds.filter(id => id !== data.userId),
+						moderatorIds: c.moderatorIds.filter(id => id !== data.userId),
+					};
+				}));
+			}
 		};
 
 		const handleModeratorChanged = (data: { chatId: number; userId: number; isModerator: boolean }) => {
@@ -395,6 +423,7 @@ function SocketListener(): null {
 		socketStore.on('chat:moderator-changed', handleModeratorChanged);
 		socketStore.on('chat:member-joined', handleMemberJoined);
 		socketStore.on('chat:member-left', handleMemberLeft);
+		socketStore.on('chat:member-kicked', handleMemberKicked);
 
 		// Cleanup
 		return () => {
@@ -410,6 +439,7 @@ function SocketListener(): null {
 			socketStore.off('chat:moderator-changed', handleModeratorChanged);
 			socketStore.off('chat:member-joined', handleMemberJoined);
 			socketStore.off('chat:member-left', handleMemberLeft);
+			socketStore.off('chat:member-kicked', handleMemberKicked);
 		};
 	}, [user, store, navigate]);
 

@@ -925,6 +925,65 @@ class ChatService {
     return this.getChatById(userId, chat.id) as Promise<ChatListItem>;
   }
 
+  async kickMember(userId: number, chatId: number, targetUserId: number): Promise<void> {
+    const chat = await this.chatRepository.findOne({ where: { id: chatId } });
+    if (!chat || chat.type !== ChatType.GROUP) {
+      throw new Error("Group chat not found");
+    }
+
+    // Vérifier que l'utilisateur courant est modérateur
+    const callerMod = await this.chatModeratorRepository.findOne({
+      where: { user_id: userId, chat_id: chatId },
+    });
+    if (!callerMod) {
+      throw new Error("Only moderators can kick members");
+    }
+
+    if (userId === targetUserId) {
+      throw new Error("Cannot kick yourself");
+    }
+
+    // Vérifier que la cible est membre
+    const targetMembership = await this.chatMemberRepository.findOne({
+      where: { user_id: targetUserId, chat_id: chatId },
+    });
+    if (!targetMembership) {
+      throw new Error("User is not a member of this chat");
+    }
+
+    // Retirer le rôle de modérateur si applicable
+    const targetMod = await this.chatModeratorRepository.findOne({
+      where: { user_id: targetUserId, chat_id: chatId },
+    });
+    if (targetMod) {
+      await this.chatModeratorRepository.remove(targetMod);
+    }
+
+    // Retirer le membre
+    await this.chatMemberRepository.remove(targetMembership);
+
+    // Faire quitter la room socket
+    socketService.leaveChatRoom(targetUserId, chat.channel_id);
+
+    // Notifier les membres du chat
+    const io = socketService.getIO();
+    if (io) {
+      io.to(`chat.${chat.channel_id}`).emit("chat:member-kicked", {
+        chatId: chat.id,
+        channelId: chat.channel_id,
+        userId: targetUserId,
+        kickedBy: userId,
+      });
+      // Notifier le user kické directement
+      io.to(`user.${targetUserId}`).emit("chat:member-kicked", {
+        chatId: chat.id,
+        channelId: chat.channel_id,
+        userId: targetUserId,
+        kickedBy: userId,
+      });
+    }
+  }
+
   async getReactions(): Promise<{ id: number; code: string }[]> {
     const reactionRepo = AppDataSource.getRepository(Reaction);
     const reactions = await reactionRepo.find();
