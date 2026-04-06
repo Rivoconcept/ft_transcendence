@@ -8,7 +8,7 @@ import { TermsOfService } from '../../components/Rules';
 
 interface RegisterFormData {
     username: string;
-    realname: string;
+    email: string;
     password: string;
     confirmPassword: string;
     avatar: string | null;
@@ -21,7 +21,7 @@ export default function RegisterForm(): React.JSX.Element {
     const logout = useSetAtom(logoutAtom);
     const [formData, setFormData] = useState<RegisterFormData>({
         username: '',
-        realname: '',
+        email: '',
         password: '',
         confirmPassword: '',
         avatar: null
@@ -31,7 +31,7 @@ export default function RegisterForm(): React.JSX.Element {
     const [showTerms, setShowTerms] = useState<boolean>(false);
 
     const handleSubmit = async (): Promise<void> => {
-        if (!formData.username || !formData.realname || !formData.password) {
+        if (!formData.username || !formData.email || !formData.password) {
             setError('Please fill in all required fields');
             return;
         }
@@ -47,7 +47,7 @@ export default function RegisterForm(): React.JSX.Element {
         try {
             await register({
                 username: formData.username,
-                realname: formData.realname,
+                email: formData.email,
                 avatar: formData.avatar,
                 password: formData.password
             });
@@ -136,12 +136,12 @@ export default function RegisterForm(): React.JSX.Element {
             </div>
 
             <div className="form-group">
-                <label>Real Name</label>
+                <label>Email</label>
                 <input
-                    type="text"
-                    placeholder="Enter your real name"
-                    value={formData.realname}
-                    onChange={(e) => setFormData({ ...formData, realname: e.target.value })}
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     onKeyUp={handleKeyPress}
                     disabled={isLoading}
                 />

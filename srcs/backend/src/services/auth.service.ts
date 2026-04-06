@@ -10,7 +10,7 @@ const REFRESH_EXPIRES_IN = process.env.REFRESH_EXPIRES_IN || "7d";
 
 export interface RegisterDTO {
   username: string;
-  realname: string;
+  email: string;
   password: string;
   avatar?: string;
 }
@@ -42,14 +42,23 @@ class AuthService {
       throw new Error("Username already exists");
     }
 
+    const existingEmail = await this.userRepository.findOne({
+      where: { email: data.email },
+    });
+
+    if (existingEmail) {
+      throw new Error("Email already exists");
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const user = this.userRepository.create({
       username: data.username,
-      realname: data.realname,
+      email: data.email,
       password: hashedPassword,
       avatar: data.avatar || "",
       is_online: false,
+      is_confirmed: false,
     });
 
     await this.userRepository.save(user);

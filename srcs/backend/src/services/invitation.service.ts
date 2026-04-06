@@ -235,7 +235,7 @@ class InvitationService {
 
     if (search) {
       query = query.andWhere(
-        "(user.username ILIKE :search OR user.realname ILIKE :search)",
+        "(user.username ILIKE :search OR user.email ILIKE :search)",
         { search: `%${search}%` }
       );
     }

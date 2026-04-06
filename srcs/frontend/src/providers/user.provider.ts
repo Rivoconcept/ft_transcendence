@@ -131,7 +131,7 @@ export const loginAtom = atom(
 // before completing authentication and socket connection.
 export const registerAtom = atom(
 	null,
-	async (_get, _set, data: { username: string; realname: string; avatar: null | string; password: string }) => {
+	async (_get, _set, data: { username: string; email: string; avatar: null | string; password: string }) => {
 		const response = await userService.register(data);
 		// Tokens are stored by userService.register; caller can later
 		// finalize authentication (e.g. via initCurrentUserAtom) after ToS acceptance.
