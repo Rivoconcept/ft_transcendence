@@ -6,6 +6,7 @@ import { gameHistoryAtom } from '../../../pages/dashboard/atoms/dashboardData';
 import AvatarUtil from '../../../components/AvatarUtil';
 import AvatarSelector from '../../../components/AvatarSelector';
 import { LogOut } from 'lucide-react';
+import ChangePassword from './ChangePassword';
 
 function ProfileStats(): React.JSX.Element {
 	const gameHistory = useAtomValue(gameHistoryAtom);
@@ -47,6 +48,7 @@ export default function ProfilePage({ onLogout }: ProfileProps): React.JSX.Eleme
 	const user = useAtomValue(currentUserAtom);
 	const updateCurrentUser = useSetAtom(updateCurrentUserAtom);
 	const [isEditing, setIsEditing] = useState<boolean>(false);
+	const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
 	const [username, setUsername] = useState<string>('');
 	const [avatar, setAvatar] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -141,7 +143,9 @@ export default function ProfilePage({ onLogout }: ProfileProps): React.JSX.Eleme
 				</div>
 			</div>
 
-			{isEditing ? (
+			{isChangingPassword ? (
+				<ChangePassword onClose={() => setIsChangingPassword(false)} onLogout={handleLogout} />
+			) : isEditing ? (
 				<div style={{ display: 'flex', gap: '0.75rem' }}>
 					<button className="btn-secondary" style={{ width: 'auto' }} onClick={cancelEditing} disabled={isSaving}>Cancel</button>
 					<button className="btn-primary" style={{ width: 'auto' }} onClick={saveProfile} disabled={isSaving}>
@@ -149,8 +153,9 @@ export default function ProfilePage({ onLogout }: ProfileProps): React.JSX.Eleme
 					</button>
 				</div>
 			) : (
-				<div style={{ display: 'flex', gap: '0.75rem' }}>
+				<div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
 					<button className="btn-secondary" onClick={startEditing}>Edit Profile</button>
+					<button className="btn-secondary" onClick={() => setIsChangingPassword(true)}>Change Password</button>
 					<button className="btn-secondary" onClick={() => navigate('/dashboard')}>See Dashboard</button>
 					<button className="btn btn-danger d-flex align-items-center" onClick={handleLogout}>
 						<LogOut size={18} className="me-1" />

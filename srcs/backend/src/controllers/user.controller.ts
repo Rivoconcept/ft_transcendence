@@ -1,6 +1,7 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/user.controller.ts
 import { Response } from "express";
 import { userService } from "../services/user.service.js";
+import { authService } from "../services/auth.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
 
 export async function getProfile(req: AuthRequest, res: Response): Promise<void> {
@@ -78,6 +79,37 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
     const message = error instanceof Error ? error.message : "Failed to update profile";
     if (message === "Username already exists") {
       res.status(409).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function changePassword(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: "Current password and new password are required" });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ error: "New password must be at least 6 characters" });
+      return;
+    }
+
+    await authService.changePassword(req.user.userId, currentPassword, newPassword);
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to change password";
+    if (message === "Invalid current password") {
+      res.status(400).json({ error: message });
       return;
     }
     res.status(500).json({ error: message });
