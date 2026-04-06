@@ -1,5 +1,5 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/controllers/user.controller.ts
-import { Response } from "express";
+import { Request, Response } from "express";
 import { userService } from "../services/user.service.js";
 import { authService } from "../services/auth.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
@@ -110,6 +110,33 @@ export async function changePassword(req: AuthRequest, res: Response): Promise<v
     const message = error instanceof Error ? error.message : "Failed to change password";
     if (message === "Invalid current password") {
       res.status(400).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
+// Public: reset password (after OTP validation on frontend)
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+      res.status(400).json({ error: "User ID and new password are required" });
+      return;
+    }
+
+    if (typeof newPassword !== "string" || newPassword.length < 6) {
+      res.status(400).json({ error: "New password must be at least 6 characters" });
+      return;
+    }
+
+    await userService.resetPassword(userId, newPassword);
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to reset password";
+    if (message === "User not found") {
+      res.status(404).json({ error: message });
       return;
     }
     res.status(500).json({ error: message });

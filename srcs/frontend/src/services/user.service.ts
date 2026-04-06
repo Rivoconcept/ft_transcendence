@@ -34,6 +34,10 @@ class UserService {
 		await apiService.put<{ message: string }>('users/me/password', { currentPassword, newPassword });
 	}
 
+	async resetPassword(userId: number, newPassword: string): Promise<void> {
+		await apiService.post<{ message: string }>('users/reset-password', { userId, newPassword });
+	}
+
 	async getById(id: number): Promise<User> {
 		return apiService.get<User>(`users/${id}`);
 	}

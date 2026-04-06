@@ -86,6 +86,16 @@ export default function LoginForm(): React.JSX.Element {
             <button onClick={handleSubmit} className="btn-primary" disabled={isLoading}>
                 {isLoading ? 'Loading...' : 'Login'}
             </button>
+
+            <div className="text-center mt-3">
+                <a
+                    href="/forgot-password"
+                    onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }}
+                    style={{ color: 'var(--primary-color, #667eea)', fontSize: 14, textDecoration: 'none' }}
+                >
+                    I forgot my password
+                </a>
+            </div>
         </div>
     );
 }
