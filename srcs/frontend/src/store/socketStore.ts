@@ -66,10 +66,11 @@ class SocketStore {
   connectAndAuth(token: string): void {
     const socket = this.connect();
 
-    if (this.authenticated) {
+    if (this.authenticated && socket.connected) {
       return;
     }
 
+    this.authenticated = false;
     socket.emit("auth", token);
 
     socket.once("auth:success", () => {
