@@ -66,7 +66,7 @@ export default function Navigation({ username, theme, onThemeChange }: Navigatio
 						</li>
 
 						<li className="nav-item">
-							<NavLink to="/profile/friends" className="nav-link">
+							<NavLink to="/profile/friends/list" className="nav-link">
 								<Users size={18} className="me-1" />
 								Friends
 							</NavLink>

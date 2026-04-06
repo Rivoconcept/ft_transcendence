@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Friends, Invitation } from './components';
 
-type Tab = 'friends' | 'invitations';
+type Tab = 'list' | 'invitation';
 
 export default function FriendsPage(): React.JSX.Element {
-	const [activeTab, setActiveTab] = useState<Tab>('friends');
+	const { tab } = useParams<{ tab?: string }>();
+	const navigate = useNavigate();
+	const activeTab: Tab = tab === 'invitation' ? 'invitation' : 'list';
 
 	return (
 		<div className="profile-container">
@@ -14,21 +17,21 @@ export default function FriendsPage(): React.JSX.Element {
 
 			<div className="auth-tabs" style={{ marginBottom: '1.5rem' }}>
 				<button
-					className={`tab-btn ${activeTab === 'friends' ? 'active' : ''}`}
-					onClick={() => setActiveTab('friends')}
+					className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+					onClick={() => navigate('/profile/friends/list')}
 				>
 					Friends
 				</button>
 				<button
-					className={`tab-btn ${activeTab === 'invitations' ? 'active' : ''}`}
-					onClick={() => setActiveTab('invitations')}
+					className={`tab-btn ${activeTab === 'invitation' ? 'active' : ''}`}
+					onClick={() => navigate('/profile/friends/invitation')}
 				>
 					Invitations
 				</button>
 			</div>
 
-			{activeTab === 'friends' && <Friends />}
-			{activeTab === 'invitations' && <Invitation />}
+			{activeTab === 'list' && <Friends />}
+			{activeTab === 'invitation' && <Invitation />}
 		</div>
 	);
 }
