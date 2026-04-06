@@ -31,7 +31,8 @@ import {
 	onMessageReadAtom,
 	selectedChatIdAtom,
 	fetchChatListAtom,
-	chatListAtom
+	chatListAtom,
+	totalUnreadCountAtom
 } from './providers';
 import {
 	receivedInvitationsAtom,
@@ -151,6 +152,12 @@ function SocketListener(): null {
 	const store = useStore();
 	const user = useAtomValue(currentUserAtom);
 	const navigate = useNavigate();
+	const totalUnread = useAtomValue(totalUnreadCountAtom);
+
+	// Update page title with unread count
+	useEffect(() => {
+		document.title = totalUnread > 0 ? `(${totalUnread}) GameHub` : 'GameHub';
+	}, [totalUnread]);
 
 	// Set up Jotai store reference and status callback in socketStore
 	useEffect(() => {
