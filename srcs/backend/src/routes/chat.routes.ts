@@ -12,6 +12,7 @@ import {
   markAsRead,
   leaveGroupChat,
   toggleModerator,
+  kickMember,
   joinGroupChat,
 } from "../controllers/chat.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -50,6 +51,9 @@ router.post("/:id/read", authMiddleware, markAsRead);
 
 // Toggle moderator status
 router.post("/:id/moderator", authMiddleware, toggleModerator);
+
+// Kick a member from group chat
+router.post("/:id/kick", authMiddleware, kickMember);
 
 // Quitter un chat de groupe
 router.post("/:id/leave", authMiddleware, leaveGroupChat);

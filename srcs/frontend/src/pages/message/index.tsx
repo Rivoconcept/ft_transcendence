@@ -353,22 +353,14 @@ export default function MessagesPage() {
 
 	const handleLeaveGroup = useCallback(async () => {
 		if (!selectedChatId) return;
-		const result = await Swal.fire({
-			title: 'Leave group?',
-			text: 'Are you sure you want to leave this group?',
-			icon: 'warning',
-			showCancelButton: true,
-			confirmButtonText: 'Leave',
-			confirmButtonColor: '#ef4444',
-		});
-		if (!result.isConfirmed) return;
+		if (!window.confirm('Are you sure you want to leave this group?')) return;
 		try {
 			await chatService.leaveGroup(selectedChatId);
 			navigate('/messages');
 			window.location.reload();
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to leave group';
-			Swal.fire({ icon: 'warning', title: 'Cannot leave', text: msg });
+			Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: msg, showConfirmButton: false, timer: 3000 });
 		}
 	}, [selectedChatId, navigate]);
 
@@ -379,6 +371,17 @@ export default function MessagesPage() {
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to change moderator status';
 			Swal.fire({ icon: 'warning', title: 'Cannot change', text: msg });
+		}
+	}, [selectedChatId]);
+
+	const handleKickMember = useCallback(async (targetUserId: number) => {
+		if (!selectedChatId) return;
+		if (!window.confirm('Are you sure you want to kick this member?')) return;
+		try {
+			await chatService.kickMember(selectedChatId, targetUserId);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : 'Failed to kick member';
+			Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: msg, showConfirmButton: false, timer: 3000 });
 		}
 	}, [selectedChatId]);
 
@@ -741,31 +744,50 @@ export default function MessagesPage() {
 											</span>
 										</div>
 										{iAmMod && uid !== currentUser?.id ? (
-											<div
-												onClick={() => handleToggleModerator(uid)}
-												title={isMod ? "Remove moderator" : "Make moderator"}
-												style={{
-													width: 40, height: 22, borderRadius: 11, cursor: "pointer",
-													background: isMod ? "#ef4444" : "#6c757d",
-													position: "relative", transition: "background 0.2s",
-												}}
-											>
-												<div style={{
-													position: "absolute", top: 2,
-													left: isMod ? 20 : 2,
-													width: 18, height: 18, borderRadius: "50%",
-													background: "#fff", transition: "left 0.2s",
-													display: "flex", alignItems: "center", justifyContent: "center",
-												}}>
-													<UserRound size={12} style={{ color: isMod ? "#ef4444" : "#6c757d" }} />
+											<>
+												<div
+													onClick={() => handleToggleModerator(uid)}
+													title={isMod ? "Remove moderator" : "Make moderator"}
+													style={{
+														width: 40, height: 22, borderRadius: 11, cursor: "pointer",
+														background: isMod ? "#ef4444" : "#6c757d",
+														position: "relative", transition: "background 0.2s",
+													}}
+												>
+													<div style={{
+														position: "absolute", top: 2,
+														left: isMod ? 20 : 2,
+														width: 18, height: 18, borderRadius: "50%",
+														background: "#fff", transition: "left 0.2s",
+														display: "flex", alignItems: "center", justifyContent: "center",
+													}}>
+														<UserRound size={12} style={{ color: isMod ? "#ef4444" : "#6c757d" }} />
+													</div>
 												</div>
-											</div>
+												<button
+													className="btn btn-sm p-0 border-0"
+													onClick={() => handleKickMember(uid)}
+													title="Kick member"
+													style={{ lineHeight: 1 }}
+												>
+													<LogOut size={16} style={{ color: "#ef4444" }} />
+												</button>
+											</>
 										) : (
 											<UserRound size={18} style={{ color: isMod ? "#ef4444" : "#6c757d" }} />
 										)}
 									</div>
 								);
 							})}
+						</div>
+						<div className="px-3 py-2 border-top">
+							<button
+								className="btn btn-sm w-100 d-flex align-items-center justify-content-center gap-1"
+								onClick={() => { setShowMembersModal(false); handleLeaveGroup(); }}
+								style={{ color: "#ef4444", background: "transparent", border: "none", fontSize: 14 }}
+							>
+								<LogOut size={15} /> Leave group
+							</button>
 						</div>
 					</div>
 				</div>

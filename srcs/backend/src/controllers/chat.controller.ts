@@ -327,6 +327,37 @@ export async function toggleModerator(req: AuthRequest, res: Response): Promise<
   }
 }
 
+export async function kickMember(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const chatId = parseInt(req.params.id ?? "");
+    const { targetUserId } = req.body;
+
+    if (isNaN(chatId)) {
+      res.status(400).json({ error: "Invalid chat ID" });
+      return;
+    }
+
+    if (!targetUserId || typeof targetUserId !== "number") {
+      res.status(400).json({ error: "Target user ID is required" });
+      return;
+    }
+
+    await chatService.kickMember(req.user!.userId, chatId, targetUserId);
+    res.json({ message: "Member kicked successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to kick member";
+    if (message === "Only moderators can kick members" || message === "Cannot kick yourself") {
+      res.status(400).json({ error: message });
+      return;
+    }
+    if (message === "User is not a member of this chat" || message === "Group chat not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: message });
+  }
+}
+
 export async function joinGroupChat(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { channelId } = req.params;
