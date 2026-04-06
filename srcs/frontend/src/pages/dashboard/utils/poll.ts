@@ -9,8 +9,6 @@ export function usePollingAtom(atom: any, interval: number) {
       setAtom((prev: any) => prev + 1);
     }, interval);
 
-    return () => {
-      clearInterval(polling);
-    };
+    return () => clearInterval(polling);
   }, [atom, interval, setAtom]);
 }
