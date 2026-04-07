@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
-import { registerAtom, initCurrentUserAtom, logoutAtom } from '../../providers';
-import { apiService } from '../../services';
+import { registerAtom } from '../../providers';
 import AvatarSelector from '../../components/AvatarSelector';
 import { TermsOfService } from '../../components/Rules';
 
@@ -17,8 +16,6 @@ interface RegisterFormData {
 export default function RegisterForm(): React.JSX.Element {
     const navigate = useNavigate();
     const register = useSetAtom(registerAtom);
-    const initCurrentUser = useSetAtom(initCurrentUserAtom);
-    const logout = useSetAtom(logoutAtom);
     const [formData, setFormData] = useState<RegisterFormData>({
         username: '',
         email: '',
@@ -29,6 +26,7 @@ export default function RegisterForm(): React.JSX.Element {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [showTerms, setShowTerms] = useState<boolean>(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean>(false);
 
     const handleSubmit = async (): Promise<void> => {
         if (!formData.username || !formData.email || !formData.password) {
@@ -38,6 +36,11 @@ export default function RegisterForm(): React.JSX.Element {
 
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
+            return;
+        }
+
+        if (!hasAcceptedTerms) {
+            setError('You must agree with the Terms and conditions to register');
             return;
         }
 
@@ -51,7 +54,7 @@ export default function RegisterForm(): React.JSX.Element {
                 avatar: formData.avatar,
                 password: formData.password
             });
-            setShowTerms(true);
+            navigate('/login');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -63,37 +66,14 @@ export default function RegisterForm(): React.JSX.Element {
         }
     };
 
-    const handleAcceptTerms = async (): Promise<void> => {
-        try {
-            setIsLoading(true);
-            await initCurrentUser();
-            setShowTerms(false);
-            navigate('/games');
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Could not complete registration. Please try again.');
-            }
-            setShowTerms(false);
-        } finally {
-            setIsLoading(false);
-        }
+    const handleAcceptTerms = (): void => {
+        setHasAcceptedTerms(true);
+        setError(null);
+        setShowTerms(false);
     };
 
-    const handleDeclineTerms = async (): Promise<void> => {
-        try {
-            setIsLoading(true);
-            await apiService.delete<void>('auth/user', {
-                data: { username: formData.username }
-            });
-        } catch {
-            // Swallow deletion errors; from the user's perspective, they declined the account.
-        } finally {
-            logout();
-            setShowTerms(false);
-            setIsLoading(false);
-        }
+    const handleDeclineTerms = (): void => {
+        setShowTerms(false);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -177,10 +157,50 @@ export default function RegisterForm(): React.JSX.Element {
                 )}
             </div>
 
+            <div className="form-group">
+                <label
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        cursor: 'default'
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        checked={hasAcceptedTerms}
+                        disabled
+                        style={{
+                            width: '1.15rem',
+                            height: '1.15rem',
+                            flexShrink: 0
+                        }}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowTerms(true)}
+                        disabled={isLoading}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            color: '#60a5fa',
+                            textDecoration: 'underline',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            font: 'inherit',
+                            fontSize: '0.875rem',
+                            lineHeight: 1.3
+                        }}
+                    >
+                        I agree with the Terms and conditions
+                    </button>
+                </label>
+            </div>
+
             <button
                 onClick={handleSubmit}
                 className="btn-primary"
-                disabled={isLoading || showPasswordError}
+                disabled={isLoading || showPasswordError || !hasAcceptedTerms}
             >
                 {isLoading ? 'Loading...' : 'Register'}
             </button>
