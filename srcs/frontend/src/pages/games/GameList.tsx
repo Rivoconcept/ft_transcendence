@@ -1,13 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type GameId = 'kingOfDiamond' | 'cardGame';
+type GameId = 'kingOfDiamond' | 'cardGame' | 'queensGambit';
 
 export interface Game {
   id: GameId;
   name: string;
   description: string;
   icon: React.ReactNode;
+  ctaLabel?: string;
+  path?: string;
 }
 
 export default function GameList() {
@@ -26,6 +28,14 @@ export default function GameList() {
       description: 'Single or Multiplayer card challenge',
       icon: '🃏',
     },
+    {
+      id: 'queensGambit',
+      name: "The Queen's Gambit",
+      description: 'A stylish strategy duel built around nerve, positioning, and bold late-game turns.',
+      icon: '♛',
+      ctaLabel: 'In Development',
+      path: '/games/queens-gambit',
+    },
   ];
 
   return (
@@ -39,9 +49,9 @@ export default function GameList() {
           <div className="gameCardButton">
             <button
               className="btn-primary"
-              onClick={() => navigate(`/games/${game.id}/setup`)}
+              onClick={() => navigate(game.path ?? `/games/${game.id}/setup`)}
             >
-              ▶️ Play
+              {game.ctaLabel ?? '▶️ Play'}
             </button>
           </div>
         </div>

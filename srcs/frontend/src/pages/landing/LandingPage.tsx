@@ -12,7 +12,7 @@ const sections = [
 	{
 		heading: 'Discover King of Diamond',
 		description:
-			'Inspired by Alice in Wonderland, King of Diamond is a whimsical game where you try to outplay your opponent and twist the numbers in your favor. With simple rules but deep strategy, it\'s a game of wits and cunning. Will you be the one to claim the crown?',	
+			'Inspired by Alice in Borderland, King of Diamond is a whimsical game where you try to outplay your opponent and twist the numbers in your favor. With simple rules but deep strategy, it\'s a game of wits and cunning. Will you be the one to claim the crown?',	
 		imageSrc: '/crown.png',
 		imageAlt: 'Crown symbol',
 	},

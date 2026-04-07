@@ -4,7 +4,7 @@ export { LandingPage } from './landing';
 export { LegalPage } from './legal';
 
 // Games
-export { GameList, kingOfDiamond, CardGamePage, StatusScreen } from './games';
+export { GameList, kingOfDiamond, CardGamePage, QueensGambitPage, StatusScreen } from './games';
 
 // Profile
 export { ProfilePage, FriendsPage } from './profile';
