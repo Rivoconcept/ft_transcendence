@@ -5,11 +5,17 @@ import { kodGameManager, type KodPlayer, type KodRoundResult } from "./KodGameMa
 import { Match } from "../database/entities/match.js";
 import { Participation } from "../database/entities/participation.js";
 import { socketService } from "../websocket.js";
+import { User } from "../database/entities/user.js";
 
 interface CreateMatchDTO {
   is_private?: boolean;
   set?: number;
   game_id?: number;
+}
+
+interface Participant {
+  id: number;
+  name: string;
 }
 
 interface MatchItem {
@@ -23,6 +29,7 @@ interface MatchItem {
   match_over: boolean;
   created_at: Date;
   participantIds: number[];
+  participants: Participant[];
 }
 
 const STARTING_POINTS = 10;
@@ -32,6 +39,7 @@ class MatchService {
   private participationRepository = AppDataSource.getRepository(Participation);
   private kodRoundRepository = AppDataSource.getRepository(KodRound);
   private kodRepository = AppDataSource.getRepository(KodWinner);
+  private userRepository = AppDataSource.getRepository(User);
 
   private async generateUniqueId(): Promise<string> {
     const maxAttempts = 10;
@@ -43,6 +51,33 @@ class MatchService {
       }
     }
     throw new Error("Failed to generate unique match ID");
+  }
+
+  private async resolveParticipants(participations: Participation[]): Promise<Participant[]> {
+    if (participations.length === 0) return [];
+    const userIds = participations.map((p) => p.user_id);
+    const users = await this.userRepository.findByIds(userIds);
+    const nameById = new Map(users.map((u) => [u.id, u.username]));
+    return participations.map((p) => ({
+      id: p.user_id,
+      name: nameById.get(p.user_id) ?? "Unknown",
+    }));
+  }
+
+  private buildMatchItem(match: Match, participations: Participation[], participants: Participant[]): MatchItem {
+    return {
+      id: match.id,
+      set: match.set,
+      current_set: match.current_set,
+      authorId: match.author_id,
+      gameId: match.game_id,
+      is_open: match.is_open,
+      is_private: match.is_private,
+      match_over: match.match_over,
+      created_at: match.created_at,
+      participantIds: participations.map((p) => p.user_id),
+      participants,
+    };
   }
 
   async createMatch(userId: number, data?: CreateMatchDTO): Promise<MatchItem> {
@@ -59,24 +94,17 @@ class MatchService {
       game_id: data?.game_id ?? null,
     });
 
-    let game = (match.game_id == 1) ? "Kod" : "game card";
-    console.log("---> Game : ", game);
-
     await this.matchRepository.save(match);
 
-    // Ajouter le créateur comme participant
     const participation = this.participationRepository.create({
       user_id: userId,
       match_id: match.id,
       score: 0,
     });
-
     await this.participationRepository.save(participation);
+    const participations = await this.participationRepository.find({ where: { match_id: match.id } });
 
-    // Faire rejoindre le créateur à la room du match
     socketService.joinMatchRoom(userId, match.id);
-
-    // Notifier via la room du match
     const io = socketService.getIO();
     if (io) {
       io.to(`match.${match.id}`).emit("match:created", {
@@ -84,20 +112,10 @@ class MatchService {
         authorId: userId,
       });
     }
-
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds: [userId],
-    };
+    const participants = await this.resolveParticipants(participations);
+    return this.buildMatchItem(match, participations, participants);
   }
+
   async leaveMatch(userId: number, matchId: string): Promise<void> {
     // Remove the user's participation from the match
     await this.participationRepository.delete({
@@ -105,53 +123,24 @@ class MatchService {
       match_id: matchId,
     });
   }
-  async discoverMatches(gameId?: number): Promise<MatchItem[]> {
-    // Seulement les matchs publics, ouverts et non terminés
+
+  async discoverMatches(gameId?: number): Promise<string[]> {
     const whereClause: Record<string, unknown> = {
       is_open: true,
       is_private: false,
       match_over: false,
     };
 
-    if (gameId !== undefined) {
+    if (gameId !== undefined)
       whereClause.game_id = gameId;
-    }
 
     const matches = await this.matchRepository.find({
       where: whereClause,
       order: { created_at: "DESC" },
+      select: ["id"],
     });
 
-    const matchIds = matches.map((m) => m.id);
-
-    if (matchIds.length === 0) {
-      return [];
-    }
-
-    // Récupérer les participants
-    const participations = await this.participationRepository.find({
-      where: matchIds.map((id) => ({ match_id: id })),
-    });
-
-    const participantsByMatch = new Map<string, number[]>();
-    participations.forEach((p) => {
-      const existing = participantsByMatch.get(p.match_id) ?? [];
-      existing.push(p.user_id);
-      participantsByMatch.set(p.match_id, existing);
-    });
-
-    return matches.map((match) => ({
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds: participantsByMatch.get(match.id) ?? [],
-    }));
+    return matches.map((m) => m.id);
   }
 
   async joinMatch(userId: number, matchId: string, gameID: number): Promise<MatchItem> {
@@ -196,20 +185,8 @@ class MatchService {
     const participations = await this.participationRepository.find({
       where: { match_id: matchId },
     });
-    const participantIds = participations.map((p) => p.user_id);
-
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds,
-    };
+    const participants = await this.resolveParticipants(participations);
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async startMatch(userId: number, matchId: string): Promise<MatchItem> {
@@ -257,18 +234,8 @@ class MatchService {
       });
     }
 
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds,
-    };
+    const participants = await this.resolveParticipants(participations);
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async nextSet(userId: number, matchId: string): Promise<MatchItem> {
@@ -328,18 +295,8 @@ class MatchService {
       }
     }
 
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds,
-    };
+    const participants = await this.resolveParticipants(participations);
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async getMatchById(matchId: string): Promise<MatchItem | null> {
@@ -354,19 +311,8 @@ class MatchService {
     const participations = await this.participationRepository.find({
       where: { match_id: matchId },
     });
-
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds: participations.map((p) => p.user_id),
-    };
+    const participants = await this.resolveParticipants(participations);
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async setVisibility(userId: number, matchId: string, is_private: boolean): Promise<MatchItem> {
@@ -394,6 +340,7 @@ class MatchService {
     });
 
     const participantIds = participations.map((p) => p.user_id);
+    const participants = await this.resolveParticipants(participations);
 
     // Notifier tous les participants
     const io = socketService.getIO();
@@ -415,6 +362,7 @@ class MatchService {
       match_over: match.match_over,
       created_at: match.created_at,
       participantIds,
+      participants,
     };
   }
 
@@ -444,6 +392,7 @@ class MatchService {
     });
 
     const participantIds = participations.map((p) => p.user_id);
+    const participants = await this.resolveParticipants(participations);
 
     // Notifier tous les participants
     const io = socketService.getIO();
@@ -455,9 +404,8 @@ class MatchService {
     }
 
     // Faire quitter la room à tous les participants
-    participantIds.forEach((id) => {
-      socketService.leaveMatchRoom(id, matchId);
-    });
+    participantIds.forEach((id) => { socketService.leaveMatchRoom(id, matchId) });
+
 
     return {
       id: match.id,
@@ -470,6 +418,7 @@ class MatchService {
       match_over: match.match_over,
       created_at: match.created_at,
       participantIds,
+      participants
     };
   }
 

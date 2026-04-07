@@ -11,6 +11,10 @@ interface Player {
   name: string;
   ready: boolean;
 }
+interface Participant {
+  id: number;
+  name: string;
+}
 
 interface MatchItem {
   id: string;
@@ -23,6 +27,7 @@ interface MatchItem {
   match_over: boolean;
   created_at: Date;
   participantIds: number[];
+  participants: Participant[];
 }
 
 export default function MultiplayerLobby(): React.JSX.Element {
@@ -42,13 +47,12 @@ export default function MultiplayerLobby(): React.JSX.Element {
   useEffect(() => {
     if (!roomId || !currentUser) return;
 
-    // Build initial player list from DB participants
     // Names will be enriched when match:player-joined fires
     apiService.get<MatchItem>(`/matches/${roomId}`).then(match => {
       setPlayers(
-        match.participantIds.map(id => ({
-          id,
-          name: id === currentUser.id ? playerName : `Player ${id}`,
+        match.participants.map((participant) => ({
+          id: participant.id,
+          name: participant.name,
           ready: false,
         }))
       );
