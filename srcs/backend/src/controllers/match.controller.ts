@@ -81,6 +81,15 @@ export async function joinMatch(req: AuthRequest, res: Response): Promise<void> 
   }
 }
 
+export const leaveMatch = async (req: AuthRequest, res: Response) => {
+  try {
+    await matchService.leaveMatch(req.user!.userId, req.params.id);
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 export async function startMatch(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { id } = req.params;

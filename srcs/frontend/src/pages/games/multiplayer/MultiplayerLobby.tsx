@@ -92,7 +92,9 @@ export default function MultiplayerLobby(): React.JSX.Element {
     // match:player-joined now carries the full participant list with names
     // because the socket handler fetches all sockets in the room
     const handlePlayersUpdate = (data: { participants: Player[] }) => {
-
+      setPlayers(data.participants);
+    };
+    const handlePlayerLeft = (data: { userId: number; playerName: string; participants: Player[] }) => {
       setPlayers(data.participants);
     };
 
@@ -107,6 +109,7 @@ export default function MultiplayerLobby(): React.JSX.Element {
     if (socket.connected) joinRoom();
     socket.once("connect", joinRoom);
     socket.on("match:player-joined", handlePlayersUpdate);
+    socket.on("match:player-left", handlePlayerLeft);
     socket.on("match:started", handleStart);
     socket.on("error", handleError);
 
@@ -116,6 +119,7 @@ export default function MultiplayerLobby(): React.JSX.Element {
       // socket.emit("leaveMatchRoom", { matchId: roomId });
       socket.off("connect", joinRoom);
       socket.off("match:player-joined", handlePlayersUpdate);
+      socket.off("match:player-left", handlePlayerLeft);
       socket.off("match:started", handleStart);
       socket.off("error", handleError);
     };
@@ -128,7 +132,17 @@ export default function MultiplayerLobby(): React.JSX.Element {
     }
   };
 
-  // const me = players.find(p => p.id === currentUser?.id);
+  const leaveRoom = async () => {
+    const socket = socketStore.getSocket();
+    if (socket && roomId) {
+      socket.emit("leaveMatchRoom", { matchId: roomId });
+    }
+    try {
+      await apiService.post(`/matches/${roomId}/leave`);
+    } catch {
+    }
+    navigate(`/games/${gameSlug}/multiplayer/setup`);
+  };
 
   return (
     <div className="container mt-5">
@@ -169,6 +183,15 @@ export default function MultiplayerLobby(): React.JSX.Element {
           <div className="alert alert-info text-center">
             Waiting for the host to start…
           </div>
+        )}
+
+        {!isCreator && (
+          <button
+            className="btn btn-outline-danger w-100 mt-2"
+            onClick={leaveRoom}
+          >
+            Leave Room
+          </button>
         )}
       </div>
     </div>

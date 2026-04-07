@@ -39,6 +39,15 @@ export class Match {
   @Column({ default: false })
   match_over!: boolean;
 
+  @Column({ default: false })
+  has_begun!: boolean;
+
+  @Column({ default: false })
+  is_limited!: boolean;
+
+  @Column({ type: "int", default: 10 })
+  participations_limit!: number | null;
+
   @CreateDateColumn()
   created_at!: Date;
 

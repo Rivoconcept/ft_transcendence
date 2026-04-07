@@ -37,5 +37,11 @@ AppDataSource.initialize()
   })
   .catch((error) => {
     console.error("Database connection failed:", error);
+    if (error instanceof Error) {
+      console.error("Message:", error.message);
+      console.error("Stack:", error.stack);
+    } else {
+      console.error("Raw error:", JSON.stringify(error, null, 2));
+    }
     process.exit(1);
   });

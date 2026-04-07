@@ -9,6 +9,8 @@ import { User } from "../database/entities/user.js";
 
 interface CreateMatchDTO {
   is_private?: boolean;
+  is_limited?: boolean;
+  participations_limit?: number;
   set?: number;
   game_id?: number;
 }
@@ -26,6 +28,9 @@ interface MatchItem {
   gameId: number | null;
   is_open: boolean;
   is_private: boolean;
+  is_limited: boolean;
+  participations_limit: number | null;
+  has_begun: boolean;
   match_over: boolean;
   created_at: Date;
   participantIds: number[];
@@ -71,8 +76,11 @@ class MatchService {
       current_set: match.current_set,
       authorId: match.author_id,
       gameId: match.game_id,
+      is_limited: match.is_limited,
+      participations_limit: match.participations_limit,
       is_open: match.is_open,
       is_private: match.is_private,
+      has_begun: match.has_begun,
       match_over: match.match_over,
       created_at: match.created_at,
       participantIds: participations.map((p) => p.user_id),
@@ -88,10 +96,13 @@ class MatchService {
       author_id: userId,
       is_open: true,
       is_private: data?.is_private ?? false,
-      match_over: false,
-      set: data?.set ?? 1,
-      current_set: 1,
       game_id: data?.game_id ?? null,
+      is_limited: data?.is_limited ?? false,
+      has_begun: false,
+      match_over: false,
+      set: data?.set ?? 10,
+      current_set: 1,
+      participations_limit: data?.participations_limit ?? 0,
     });
 
     await this.matchRepository.save(match);
@@ -117,7 +128,6 @@ class MatchService {
   }
 
   async leaveMatch(userId: number, matchId: string): Promise<void> {
-    // Remove the user's participation from the match
     await this.participationRepository.delete({
       user_id: userId,
       match_id: matchId,
@@ -129,6 +139,7 @@ class MatchService {
       is_open: true,
       is_private: false,
       match_over: false,
+      has_begun: false,
     };
 
     if (gameId !== undefined)
@@ -154,11 +165,20 @@ class MatchService {
     if (match.match_over)
       throw new Error("Match is already over");
 
+    if (match.has_begun)
+      throw new Error("Match has already begun");
+
     if (!match.is_open)
       throw new Error("Match is not open for joining");
 
     if (match.game_id !== gameID)
       throw new Error("Match code does not match the selected game");
+
+    if (match.is_limited && match.participations_limit) {
+      const currentParticipants = await this.participationRepository.count({ where: { match_id: matchId } });
+      if (currentParticipants >= match.participations_limit)
+        throw new Error("Match is full");
+    }
 
     const existingParticipation = await this.participationRepository.findOne({
       where: { user_id: userId, match_id: matchId },
@@ -221,6 +241,7 @@ class MatchService {
 
     // Fermer le match aux nouveaux joueurs
     match.is_open = false;
+    match.has_begun = true;
     await this.matchRepository.save(match);
 
     const participantIds = participations.map((p) => p.user_id);
@@ -350,20 +371,7 @@ class MatchService {
         is_private,
       });
     }
-
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds,
-      participants,
-    };
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async endMatch(userId: number, matchId: string): Promise<MatchItem> {
@@ -393,8 +401,6 @@ class MatchService {
 
     const participantIds = participations.map((p) => p.user_id);
     const participants = await this.resolveParticipants(participations);
-
-    // Notifier tous les participants
     const io = socketService.getIO();
     if (io) {
       io.to(`match.${matchId}`).emit("match:ended", {
@@ -402,24 +408,8 @@ class MatchService {
         participantIds,
       });
     }
-
-    // Faire quitter la room à tous les participants
     participantIds.forEach((id) => { socketService.leaveMatchRoom(id, matchId) });
-
-
-    return {
-      id: match.id,
-      set: match.set,
-      current_set: match.current_set,
-      authorId: match.author_id,
-      gameId: match.game_id,
-      is_open: match.is_open,
-      is_private: match.is_private,
-      match_over: match.match_over,
-      created_at: match.created_at,
-      participantIds,
-      participants
-    };
+    return this.buildMatchItem(match, participations, participants);
   }
 
   async updateScore(
@@ -585,7 +575,6 @@ class MatchService {
   }
 
   private async _persistKodRound(matchId: string, result: KodRoundResult): Promise<void> {
-    // Save the round record
     await this.kodRoundRepository.save(
       this.kodRoundRepository.create({
         match_id: matchId,
@@ -614,7 +603,6 @@ class MatchService {
     }
   }
 
-  // Expose round history (add a route GET /:id/rounds)
   async getKodRounds(matchId: string): Promise<KodRound[]> {
     return this.kodRoundRepository.find({
       where: { match_id: matchId },

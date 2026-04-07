@@ -152,6 +152,22 @@ class SocketService {
 
           if (!stillInRoom) {
             await matchService.leaveMatch(socket.userId, matchId);
+            // Rebuild participant list from remaining sockets
+            const participants: { id: number; name: string; ready: boolean }[] = [];
+            const seen = new Set<number>();
+            roomSockets?.forEach((s: any) => {
+              if (s.userId && !seen.has(s.userId)) {
+                participants.push({ id: s.userId, name: s.playerName || s.username, ready: false });
+                seen.add(s.userId);
+              }
+            });
+
+            // Notify remaining players
+            this.io?.to(room).emit("match:player-left", {
+              userId: socket.userId,
+              playerName: socket.playerName || socket.username,
+              participants,
+            });
           }
         } catch (err: any) {
           console.error("Error leaving match:", err);
