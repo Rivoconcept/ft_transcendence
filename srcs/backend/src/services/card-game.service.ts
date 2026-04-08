@@ -1,4 +1,3 @@
-// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/card-game.service.ts
 import { AppDataSource } from "../database/data-source.js";
 import { CardGame } from "../database/entities/card-game.js";
 import { Match } from "../database/entities/match.js";
@@ -25,7 +24,6 @@ class CardGameService {
   private matchRepository = AppDataSource.getRepository(Match);
   private participationRepository = AppDataSource.getRepository(Participation);
 
-  // Crée une partie
 
   async createCardGame(userId: number, data: CreateCardGameDTO) {
     const card = this.repo.create({
@@ -66,16 +64,12 @@ class CardGameService {
     return card;
   }
 
-  // Récupère les parties d'un utilisateur
-
   async getByUser(userId: number) {
     return this.repo.find({
       where: { author_id: userId },
       order: { created_at: "DESC" },
     });
   }
-
-  // Récupère les résultats d'un match (multiplayer)
 
   async getMatchResults(matchId: string) {
     return this.repo.find({
@@ -84,8 +78,6 @@ class CardGameService {
       select: ["player_name", "final_score", "is_win"],
     });
   }
-
-  // Récupère la dernière partie SINGLE d'un utilisateur
 
   async getLastSingleResult(userId: number) {
     return this.repo.findOne({
@@ -99,24 +91,32 @@ class CardGameService {
   }
 
   async finishMatch(matchId: string) {
-    // reset
-    await this.repo.query(`
-      UPDATE card_game
-      SET is_win = false
-      WHERE match_id = $1
-    `, [matchId]);
-
-    // winner(s)
-    await this.repo.query(`
-      UPDATE card_game
-      SET is_win = true
-      WHERE match_id = $1
-      AND final_score = (
-        SELECT MAX(final_score)
-        FROM card_game
+      await this.repo.query(`
+        UPDATE card_game
+        SET is_win = false
         WHERE match_id = $1
-      )
-    `, [matchId]);
+      `, [matchId]);
+
+      await this.repo.query(`
+          WITH stats AS (
+            SELECT 
+              match_id,
+              COUNT(*) AS cnt,
+              MAX(final_score) AS max_score
+            FROM card_game
+            WHERE match_id = $1
+            GROUP BY match_id
+          )
+          UPDATE card_game cg
+          SET is_win = CASE
+            WHEN stats.cnt = 1 THEN (cg.final_score > 0)
+            WHEN cg.final_score = stats.max_score THEN true
+            ELSE false
+          END
+          FROM stats
+          WHERE cg.match_id = stats.match_id
+            AND cg.match_id = $1;
+      `, [matchId]);
 
     const match = await this.matchRepository.findOne({
       where: { id: matchId },

@@ -1,4 +1,3 @@
-// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/components/CardGameResultMulti.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAtomValue } from "jotai";
@@ -13,82 +12,90 @@ interface GameResult {
 }
 
 export default function CardGameMultiResult() {
-    const { roomId } = useParams();
-    const navigate = useNavigate();
-    const [results, setResults] = useState<GameResult[]>([]);
-    const socket = socketStore.getSocket();
-    const isCreator = useAtomValue(isCreatorAtom);
+  const { roomId } = useParams();
+  const navigate = useNavigate();
+  const [results, setResults] = useState<GameResult[]>([]);
+  const socket = socketStore.getSocket();
+  const isCreator = useAtomValue(isCreatorAtom);
 
-    useEffect(() => {
+  useEffect(() => {
+    const handleSocketResults = (data: any) => {
+      const formatted: GameResult[] = data.map((r: any) => ({
+        player_name: r.player_name ?? r.playerName,
+        final_score: r.final_score ?? r.finalScore,
+        is_win: r.is_win ?? r.isWin
+      }));
+
+      formatted.sort((a, b) => b.final_score - a.final_score);
+      setResults(formatted);
+    };
+
+    if (socket) {
+      socket.on("match:result", handleSocketResults);
+    }
+
+    return () => {
+      if (socket) socket.off("match:result", handleSocketResults);
+    };
+  }, [socket]);
+
+  useEffect(() => {
     const fetchResults = async () => {
-        try {
-            const data: GameResult[] = await apiService.get(`card-games/match/${roomId}`);
-            setResults(data);
+      if (!roomId) return;
 
-            if (isCreator && socket) {
-                socket.emit("match:results", {
-                matchId: roomId,
-                results: data
-                });
-            }
+      try {
+        const data: GameResult[] = await apiService.get(`card-games/match/${roomId}`);
+        const sorted = data.sort((a, b) => b.final_score - a.final_score);
+        setResults(sorted);
 
-        } catch (err) {
-            console.error("Error fetching results", err);
+        if (isCreator && socket) {
+          socket.emit("match:publish");
         }
+      } catch (err) {
+        console.error("Error fetching results", err);
+      }
     };
 
-    if (roomId) fetchResults();
-    }, [roomId, isCreator, socket]);
+    if (isCreator || results.length === 0) {
+      fetchResults();
+    }
+  }, [roomId, isCreator, socket]);
 
-    const handleBackHome = () => {
-    navigate("/games");
-    };
+  const handleBackHome = () => navigate("/games");
 
   return (
     <div className="container mt-5">
-
       <h2 className="mb-4 text-center">Match Result</h2>
 
-        <table className="table table-striped table-bordered text-center">
+      <table className="table table-striped table-bordered text-center">
         <thead style={{ backgroundColor: "#343a40", color: "white" }}>
-            {/* ligne du header colorée */}
-            <tr>
+          <tr>
             <th>Rank</th>
             <th>Player</th>
             <th>Score</th>
             <th>Result</th>
-            </tr>
+          </tr>
         </thead>
 
         <tbody>
-            {results.map((r, i) => {
-                // is_win vient de la base de données après finishMatch du créateur
-                const isWinner = r.is_win;
-
-                return (
-                <tr
-                    key={i}
-                    className={isWinner ? "table-success fw-bold" : ""}
-                >
-                    <td>
-                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-                    </td>
-                    <td>{r.player_name}</td>
-                    <td>{r.final_score}</td>
-                    <td>{isWinner ? "🏆 Winner" : "❌ Lose"}</td>
-                </tr>
-                );
-            })}
+          {results.map((r, i) => (
+            <tr key={i} className={r.is_win ? "table-success fw-bold" : ""}>
+              <td>
+                {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+              </td>
+              <td>{r.player_name}</td>
+              <td>{r.final_score}</td>
+              <td>{r.is_win ? "🏆 Winner" : "❌ Lose"}</td>
+            </tr>
+          ))}
         </tbody>
-        </table>
+      </table>
 
       <div className="text-center">
         <button className="btn btn-primary" onClick={handleBackHome}>
           Back to Games
         </button>
       </div>
-
     </div>
   );
-
 }
