@@ -1,11 +1,11 @@
 import { Response } from 'express';
 import { AuthRequest } from "../middlewares/auth.middleware.js";
-import { kodGamesService } from '../services/Kod.service.js';
+import { kodService } from '../services/Kod.service.js';
 
 export async function getKodGames(req: AuthRequest, res: Response): Promise<void> {
   try {
     const userId: number = req.user!.userId;
-    const games = await kodGamesService.getKodGames(userId);
+    const games = await kodService.getKodGames(userId);
     res.json(games);
   } catch (err) {
     console.error('[KodGamesController] getKodGames error:', err);
@@ -27,7 +27,7 @@ export async function getKodMatchParticipants(req: AuthRequest, res: Response): 
       return;
     }
 
-    const participants = await kodGamesService.getKodMatchParticipants(match_id);
+    const participants = await kodService.getKodMatchParticipants(match_id);
     res.json(participants);
   } catch (err) {
     console.error('[KodGamesController] getKodMatchParticipants error:', err);
