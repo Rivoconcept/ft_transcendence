@@ -4,21 +4,17 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { currentUserAtom } from '../../../providers';
 import { refreshGameHistoryAtom } from '../../dashboard/providers/gameHistoryAtom';
 import { socketStore } from '../../../store/socketStore';
-import './kod.css';
+import './kod.scss';
 
 // ── Timeout configuration ────────────────────────────────────────────────────
 
 /** How long (ms) a player has to pick a number before 0 is auto-submitted. */
-const PICK_TIMEOUT_MS = 120_000;
+const PICK_TIMEOUT_MS = 1_120_000;
 
 /** How long (ms) the result screen waits before automatically advancing. (invisible) */
-const RESULT_TIMEOUT_MS = 10_000;
+const RESULT_TIMEOUT_MS = 500_000;
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-interface GameProps {
-	onBack: () => void;
-}
 
 type Phase = 'waiting' | 'picking' | 'submitted' | 'result' | 'spectating' | 'ended';
 
@@ -181,9 +177,7 @@ function HistoryPanel({ history, onClose }: { history: HistoryEntry[]; onClose: 
 				<button className="kod-btn" onClick={onClose}>close</button>
 			</div>
 
-			{history.length === 0 && (
-				<p className="kod-history__empty">No rounds yet.</p>
-			)}
+			{history.length === 0 && (<p className="kod-history__empty">No rounds yet.</p>)}
 
 			{[...history].reverse().map(h => (
 				<div key={h.roundNumber} className="kod-history-entry">
@@ -234,7 +228,7 @@ function CountdownRing({ remainingMs }: CountdownRingProps) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element {
+export default function KingOfDiamond(): React.JSX.Element {
 	const { roomId } = useParams<{ roomId: string }>();
 	const navigate = useNavigate();
 	const matchId = roomId || '';
@@ -366,6 +360,9 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 			socket.off('error', onError);
 			clearPickTimer();
 			clearResultTimer();
+			// Only leave if the game was actually in progress
+			if (phase !== 'waiting' && phase !== 'ended')
+				socket.emit('kod:leave', { matchId });
 		};
 	}, [socket, matchId, currentUserId, startPickTimer, clearPickTimer, clearResultTimer, refreshGameHistory]);
 
@@ -475,6 +472,13 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 		);
 	};
 
+	// ── Leave game handler ────────────────────────────────────────────────────
+
+	const onleave = () => {
+		socketStore.emit('kod:leave', { matchId });
+		navigate('/games');
+	};
+
 	// ── Render ────────────────────────────────────────────────────────────────
 
 	return (
@@ -491,11 +495,9 @@ export default function KingOfDiamond({ onBack }: GameProps): React.JSX.Element 
 				</div>
 				<div className="kod-header__actions">
 					{phase === 'picking' && history.length > 0 && (
-						<button className="kod-btn" onClick={() => setShowHistory(true)}>
-							History
-						</button>
+						<button className="kod-btn" onClick={() => setShowHistory(true)}>History</button>
 					)}
-					<button className="kod-btn" onClick={onBack}>Leave</button>
+					<button className="kod-btn" onClick={onleave}>Leave</button>
 				</div>
 			</div>
 

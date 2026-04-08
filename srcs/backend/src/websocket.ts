@@ -1,4 +1,4 @@
-
+// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/websocket.ts
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { authService } from "./services/auth.service.js";
@@ -6,7 +6,7 @@ import { userService } from "./services/user.service.js";
 import { AppDataSource } from "./database/data-source.js";
 import { ChatMember } from "./database/entities/chat-member.js";
 import { matchService } from "./services/match.service.js";
-import { kodGameManager } from "./services/KodGameManager.js";
+import { kodService } from "./services/Kod.service.js";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -79,6 +79,13 @@ class SocketService {
         if (socket.userId) {
           try {
             await userService.setOnlineStatus(socket.userId, false);
+
+            // gracefull disconnection
+            const currentMatch = await matchService.getMatchById(socket.matchId || "")
+            if (currentMatch && currentMatch.gameId === 1 && !currentMatch.match_over && socket.userId && socket.matchId) {
+              await kodService.eliminatePlayer(socket.userId, socket.matchId);
+            }
+
             console.log(`User ${socket.username} set offline successfully`);
           } catch (error) {
             console.error(`Failed to set user ${socket.username} offline:`, error);
@@ -109,6 +116,8 @@ class SocketService {
           console.log("joinMatchRoom refused: unauthenticated socket");
           return;
         }
+
+        socket.matchId = matchId;
 
         const room = `match.${matchId}`;
 
@@ -212,23 +221,6 @@ class SocketService {
           matchId: data.matchId,
           players: participants,
         });
-
-        // // Start kod game
-        // try {
-        //   if (data.gameSlug == "kingOfDiamond") {
-        //     let kodPlayers = await matchService.initKodGame(socket.userId, data.matchId);
-        //     this.io?.to(room).emit("kod:initialized", {
-        //       matchId: data.matchId,
-        //       players: kodPlayers
-        //     });
-        //     console.log("KOD game inited: ", kodPlayers);
-        //   }
-        // } catch (err: any) {
-        //   socket.emit("error", { error: err.message });
-        // }
-
-        console.log("");
-        console.log("");
       });
 
       socket.on("publish_result", (data: { matchId: string; finalScore: number; playerName: string }) => {
@@ -258,7 +250,7 @@ class SocketService {
             const finalResults = results.map(r => ({
               playerName: r.playerName,
               finalScore: r.finalScore,
-              isWin: isSinglePlayer 
+              isWin: isSinglePlayer
                 ? r.finalScore > 0
                 : r.finalScore === maxScore
             }));
@@ -268,7 +260,7 @@ class SocketService {
 
             this.matchResults.delete(data.matchId);
 
-    
+
           }
         });
       });
@@ -279,6 +271,7 @@ class SocketService {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
 
+          // Build participants with real names from connected sockets
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
           const seen = new Set<number>();
           const participants: { userId: number; playerName: string }[] = [];
@@ -293,7 +286,8 @@ class SocketService {
             }
           });
 
-          let kodPlayers = await matchService.initKodGame(socket.userId, matchId, participants);
+          let kodPlayers = await kodService.initKodGame(socket.userId, matchId, participants);
+          // let kodPlayers = await matchService.initKodGame(socket.userId, matchId, participants);
           this.io?.to(`match.${matchId}`).emit("kod:initialized", {
             matchId: matchId,
             players: kodPlayers
@@ -308,7 +302,8 @@ class SocketService {
       socket.on("kod:submit", async ({ matchId, value }: { matchId: string; value: number }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
-          await matchService.submitKodChoice(
+          // await matchService.submitKodChoice(
+          await kodService.submitKodChoice(
             socket.userId,
             matchId,
             socket.playerName || socket.username || `Player ${socket.userId}`,
@@ -317,6 +312,37 @@ class SocketService {
         } catch (err: any) {
           socket.emit("error", { error: err.message });
         }
+      });
+
+      socket.on("kod:leave", async ({ matchId }: { matchId: string }) => {
+        if (!socket.userId) return;
+
+        const room = `match.${matchId}`;
+        socket.leave(room);
+        if (socket.matchId)
+          await kodService.eliminatePlayer(socket.userId, socket.matchId);
+
+
+        // Rebuild participant list from remaining sockets
+        const participants: { id: number; name: string; ready: boolean }[] = [];
+        const seen = new Set<number>();
+        const roomSockets = await this.io?.in(room).fetchSockets();
+        roomSockets?.forEach((s: any) => {
+          if (s.userId && !seen.has(s.userId)) {
+            participants.push({ id: s.userId, name: s.playerName || s.username, ready: false });
+            seen.add(s.userId);
+          }
+        });
+
+
+        // Notify remaining players
+        this.io?.to(room).emit("match:player-left", {
+          userId: socket.userId,
+          playerName: socket.playerName || socket.username,
+          participants,
+        });
+
+        console.log(`${socket.playerName || socket.username} left ${room}`);
       });
 
     });

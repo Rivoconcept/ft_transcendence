@@ -48,7 +48,7 @@ class KodGameManager {
     for (const { userId, playerName } of participants) {
       players.set(userId, {
         userId,
-        playerName, // real name passed in directly
+        playerName,
         points: STARTING_POINTS,
         isActive: true,
         hasSubmitted: false,
@@ -185,6 +185,29 @@ class KodGameManager {
       gameWinnerId: gameWinner?.userId ?? null,
       gameWinnerName: gameWinner?.playerName ?? null,
     };
+  }
+
+  eliminatePlayer(matchId: string, userId: number): boolean {
+    const state = this.games.get(matchId);
+    if (!state) return false;
+
+    const player = state.players.get(userId);
+    if (!player || !player.isActive) return false;
+
+    player.isActive = false;
+    player.points = 0;
+
+    // If they hadn't submitted yet, auto-submit 0 so the round can still resolve
+    if (!state.choices.has(userId)) {
+      state.choices.set(userId, {
+        userId,
+        playerName: player.playerName,
+        value: 0,
+      });
+      player.hasSubmitted = true;
+    }
+
+    return true;
   }
 
   getState(matchId: string): KodMatchState | undefined {
