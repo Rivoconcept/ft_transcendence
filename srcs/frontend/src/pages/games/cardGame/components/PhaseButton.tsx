@@ -1,4 +1,5 @@
 // /src/components/PhaseButton.tsx
+import { useEffect } from "react";
 import { useAtomValue } from "jotai";
 import { Phase } from "../typescript/cardPhase";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
@@ -6,12 +7,27 @@ import { useCardGameState } from "../context/CardGameContext";
 
 type Props = {
   phase: Phase;
-  onClick: () => void; // navigation /result
+  onClick: () => void; // navigation /result ou passer à la phase suivante
 };
 
 export default function PhaseButton({ phase, onClick }: Props) {
   const mode = useAtomValue(gameModeAtom);
   const { turn, maxTurns, timeLeft } = useCardGameState();
+
+  // --------------------- AUTO-PLAY pour la phase PLAY ---------------------
+  useEffect(() => {
+    if (phase === Phase.PLAY) {
+      // Pour SINGLE : on attend maxTurns
+      // Pour MULTI : on attend maxTurns ou timeLeft <= 0
+      if ((mode === "SINGLE" && turn < maxTurns) ||
+          (mode === "MULTI" && turn < maxTurns && timeLeft > 0)) {
+        const timer = setTimeout(() => {
+          onClick(); // passe automatiquement à BEGIN ou SHOW_RESULT
+        }, 500); // délai pour simuler le joueur
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [phase, turn, maxTurns, mode, timeLeft, onClick]);
 
   // --------------------- PHASE BEGIN ---------------------
   if (phase === Phase.BEGIN) {
@@ -50,36 +66,17 @@ export default function PhaseButton({ phase, onClick }: Props) {
   }
 
   // --------------------- PHASE PLAY ---------------------
-if (phase === Phase.PLAY) {
-  if (
-    (mode === "MULTI" && (turn >= maxTurns || timeLeft <= 0)) ||
-    (mode === "SINGLE" && turn >= maxTurns)
-  ) {
-    return <div className="waiting-message">⏳ Awaiting results...</div>;
+  if (phase === Phase.PLAY) {
+    return <div className="waiting-message">🎮 Playing...</div>;
   }
-
-  return (
-    <button onClick={onClick} className="button3">
-      <span>Restart</span>
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 74 74" height="34" width="34">
-        <circle strokeWidth="3" stroke="black" r="35.5" cy="37" cx="37" />
-        <path
-          fill="black"
-          d="M25 35.5C24.1716 35.5 23.5 36.1716 23.5 37C23.5 37.8284 24.1716 38.5 25 38.5V35.5ZM49.0607 38.0607C49.6464 37.4749 49.6464 36.5251 49.0607 35.9393L39.5147 26.3934C38.9289 25.8076 37.9792 25.8076 37.3934 26.3934C36.8076 26.9792 36.8076 27.9289 37.3934 28.5147L45.8787 37L37.3934 45.4853C36.8076 46.0711 36.8076 47.0208 37.3934 47.6066C37.9792 48.1924 38.9289 48.1924 39.5147 47.6066L49.0607 38.0607ZM25 38.5L48 38.5V35.5L25 35.5V38.5Z"
-        />
-      </svg>
-    </button>
-  );
-}
 
   // --------------------- PHASE SHOW_RESULT ---------------------
   if (phase === Phase.SHOW_RESULT) {
-    // For MULTI: no button, auto navigation handles it
     if (mode === "MULTI") {
       return <div className="waiting-message">⏳ Preparing results...</div>;
     }
 
-    // For SINGLE: show the "View State" button
+    // Pour SINGLE, afficher bouton "View State"
     return (
       <button
         className="btn btn-success"
@@ -89,7 +86,6 @@ if (phase === Phase.PLAY) {
       </button>
     );
   }
-  
 
   return null;
 }

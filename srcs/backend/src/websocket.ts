@@ -1,4 +1,4 @@
-// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/websocket.ts
+
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { authService } from "./services/auth.service.js";
@@ -236,26 +236,39 @@ class SocketService {
 
         const room = `match.${data.matchId}`;
 
-        if (!this.matchResults.has(data.matchId)) this.matchResults.set(data.matchId, []);
+        if (!this.matchResults.has(data.matchId)) {
+          this.matchResults.set(data.matchId, []);
+        }
+
         const results = this.matchResults.get(data.matchId)!;
 
-        // Ajouter ou remplacer le résultat du joueur
         const existingIndex = results.findIndex(r => r.playerName === data.playerName);
-        if (existingIndex >= 0) results[existingIndex] = { playerName: data.playerName, finalScore: data.finalScore };
-        else results.push({ playerName: data.playerName, finalScore: data.finalScore });
+        if (existingIndex >= 0) {
+          results[existingIndex].finalScore = data.finalScore;
+        } else {
+          results.push({ playerName: data.playerName, finalScore: data.finalScore });
+        }
 
-        // Vérifier si tous les joueurs ont publié
         this.io?.in(room).fetchSockets().then(sockets => {
           if (results.length === sockets.length) {
-            // Calculer le(s) gagnant(s)
-            let maxScore = Math.max(...results.map(r => r.finalScore));
-            const finalResults = results.map(r => ({ ...r, isWin: r.finalScore === maxScore }));
+            const isSinglePlayer = results.length === 1;
 
-            // Émettre le résultat final à tous
+            const maxScore = Math.max(...results.map(r => r.finalScore));
+
+            const finalResults = results.map(r => ({
+              playerName: r.playerName,
+              finalScore: r.finalScore,
+              isWin: isSinglePlayer 
+                ? r.finalScore > 0
+                : r.finalScore === maxScore
+            }));
+
             this.io?.to(room).emit("match:result", finalResults);
 
-            // Nettoyer la mémoire
+
             this.matchResults.delete(data.matchId);
+
+    
           }
         });
       });
@@ -266,7 +279,6 @@ class SocketService {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
 
-          // Build participants with real names from connected sockets
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
           const seen = new Set<number>();
           const participants: { userId: number; playerName: string }[] = [];
