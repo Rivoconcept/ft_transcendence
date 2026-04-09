@@ -1,3 +1,12 @@
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/typescript/CardGameContextType.ts
+
+export interface PlayerScore {
+  id: number;
+  name: string;
+  scores: number[];
+  totalScore: number;
+  isWin?: boolean;
+}
 
 export type CardGameContextType = {
   turn: number;
@@ -14,4 +23,6 @@ export type CardGameContextType = {
   isWin: boolean;
   isLose: boolean;
   isFinished: boolean;
+  players: PlayerScore[];
+  addPlayerScore: (playerId: number, score: number) => void;
 };

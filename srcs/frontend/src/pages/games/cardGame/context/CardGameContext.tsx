@@ -1,10 +1,10 @@
-// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/context/CardGameContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCardState } from "./CardContext";
-import type { CardGameContextType } from "../typescript/CardGameContextType";
+import type { CardGameContextType, PlayerScore } from "../typescript/CardGameContextType";
 import { TIME_LIMIT, timeLeftAtom } from "../cardAtoms/cardAtoms";
 import { useAtom, useAtomValue } from "jotai";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
+import { socketStore } from "../../../../websocket";
 
 const GameContext = createContext<CardGameContextType | null>(null);
 
@@ -21,66 +21,112 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
   const mode = useAtomValue(gameModeAtom);
   const [startTime, setStartTime] = useState<number | null>(null);
 
+  const [players, setPlayers] = useState<PlayerScore[]>([]);
+
+  // ------------------- SOCKET PLAYERS -------------------
   useEffect(() => {
-    if (timeLeft <= 0) {
-      setIsTimerRunning(false);
-    }
-  }, [timeLeft]);
+    if (!socketStore) return;
 
+    const handlePlayers = (data: { participants: { id: number; name: string }[] }) => {
+      setPlayers(data.participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        scores: [],
+        totalScore: 0,
+      })));
+    };
 
+    socketStore.on("match:player-joined", handlePlayers);
+    socketStore.on("match:player-left", handlePlayers);
 
-      const isWin = mode === "SINGLE" ? totalScore >= MAX_SCORE && turn <= MAX_TURNS : false;
-      const isLose = mode === "SINGLE" ? (totalScore < MAX_SCORE && (timeLeft <= 0 || turn >= MAX_TURNS)) : false;
-      const isFinished = mode === "SINGLE" ? (isWin || isLose || turn >= MAX_TURNS) : timeLeft <= 0;
+    return () => {
+      socketStore.off("match:player-joined", handlePlayers);
+      socketStore.off("match:player-left", handlePlayers);
+    };
+  }, []);
 
-  /* ================= TIMER ================= */
+  // ------------------- TIMER -------------------
   useEffect(() => {
     if (!isTimerRunning || startTime === null) return;
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = Math.max(0, TIME_LIMIT - elapsed);
-
       setTimeLeft(remaining);
-
-      if (remaining <= 0) {
-        setIsTimerRunning(false);
-      }
-    }, 250); // plus fluide
+      if (remaining <= 0) setIsTimerRunning(false);
+    }, 250);
 
     return () => clearInterval(interval);
   }, [isTimerRunning, startTime]);
 
-  /* ================= GAMEPLAY ================= */
+  // ------------------- GAMEPLAY -------------------
   const playTurn = () => {
     if (isFinished || turn >= MAX_TURNS) return;
     drawAll();
     setTimeout(() => setTurn(t => t + 1), 0);
   };
 
-  /* ================= AUTO SCORE ================= */
+  const addPlayerScore = (playerId: number, score: number) => {
+    setPlayers(prev =>
+      prev.map(p =>
+        p.id === playerId
+          ? { ...p, scores: [...p.scores, score], totalScore: p.totalScore + score }
+          : p
+      )
+    );
+  };
+
+  // ------------------- AUTO SCORE -------------------
   useEffect(() => {
-    if (cardScore !== null)
-    {
+    if (cardScore !== null) {
+      // Ici tu dois déterminer l'ID du joueur actuel
+      const currentPlayerId = players[0]?.id; // à remplacer par la logique réelle
+      if (currentPlayerId) {
+        addPlayerScore(currentPlayerId, cardScore);
         setTotalScore(prev => prev + cardScore);
+      }
     }
   }, [cardScore]);
 
+    // ------------------- AUTO SCORE -------------------
   useEffect(() => {
-    if (isFinished) setIsTimerRunning(false);
-  }, [isFinished]);
+    if (!socketStore) return;
 
-  /* ================= RESET ================= */
+    const handleScoreUpdate = (data: { playerId: number; score: number }) => {
+      setPlayers(prev =>
+        prev.map(p =>
+          p.id === data.playerId
+            ? { ...p, scores: [...p.scores, data.score], totalScore: p.totalScore + data.score }
+            : p
+        )
+      );
+      // totalScore global si tu veux
+      setTotalScore(prev => prev + data.score);
+    };
+
+    socketStore.on("match:score-updated", handleScoreUpdate);
+
+    return () => {
+      socketStore.off("match:score-updated", handleScoreUpdate);
+    };
+  }, []);
+
+  // ------------------- WIN / LOSE -------------------
+  const isWin = mode === "SINGLE" ? totalScore >= MAX_SCORE && turn <= MAX_TURNS : false;
+  const isLose = mode === "SINGLE" ? (totalScore < MAX_SCORE && (timeLeft <= 0 || turn >= MAX_TURNS)) : false;
+  const isFinished = mode === "SINGLE" ? (isWin || isLose || turn >= MAX_TURNS) : timeLeft <= 0;
+
+  // ------------------- RESET -------------------
   const resetGame = () => {
     setIsTimerRunning(false);
     setTurn(0);
     setTotalScore(0);
     setTimeLeft(TIME_LIMIT);
     resetCards();
+    setPlayers(prev => prev.map(p => ({ ...p, scores: [], totalScore: 0 })));
 
     const now = Date.now();
     setStartTime(now);
-
     setTimeout(() => setIsTimerRunning(true), 0);
   };
 
@@ -109,6 +155,8 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
           }
         },
         addTime: (sec: number) => setTimeLeft(t => Math.min(t + sec, TIME_LIMIT)),
+        players,
+        addPlayerScore,
       }}
     >
       {children}
