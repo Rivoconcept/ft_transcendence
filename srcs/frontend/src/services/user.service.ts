@@ -2,12 +2,8 @@ import apiService from './api.service';
 import type { User, UserCreate, UserUpdate, UserLogin, AuthResponse } from '../models';
 
 class UserService {
-	async register(data: UserCreate): Promise<AuthResponse> {
-		const response = await apiService.post<AuthResponse>('auth/register', data);
-		if (response.tokens?.accessToken && response.tokens?.refreshToken) {
-			apiService.setTokens(response.tokens.accessToken, response.tokens.refreshToken);
-		}
-		return response;
+	async register(data: UserCreate): Promise<{ user: { id: number; username: string; email: string } }> {
+		return apiService.post<{ user: { id: number; username: string; email: string } }>('auth/register', data);
 	}
 
 	async login(data: UserLogin): Promise<AuthResponse> {
@@ -36,6 +32,10 @@ class UserService {
 
 	async resetPassword(userId: number, newPassword: string): Promise<void> {
 		await apiService.post<{ message: string }>('users/reset-password', { userId, newPassword });
+	}
+
+	async checkEmail(email: string): Promise<{ id: number; username: string; email: string; avatar: string }> {
+		return apiService.post<{ id: number; username: string; email: string; avatar: string }>('users/check-email', { email });
 	}
 
 	async getById(id: number): Promise<User> {

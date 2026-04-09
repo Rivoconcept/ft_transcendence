@@ -139,6 +139,29 @@ export async function changePassword(req: AuthRequest, res: Response): Promise<v
   }
 }
 
+// Public: check if an email exists and return account info
+export async function checkEmail(req: Request, res: Response): Promise<void> {
+  try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== "string") {
+      res.status(400).json({ error: "Email is required" });
+      return;
+    }
+
+    const user = await userService.getByEmail(email);
+    if (!user) {
+      res.status(404).json({ error: "No account found with this email address" });
+      return;
+    }
+
+    res.json({ id: user.id, username: user.username, email: user.email, avatar: user.avatar });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to check email";
+    res.status(500).json({ error: message });
+  }
+}
+
 // Public: reset password (after OTP validation on frontend)
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   try {

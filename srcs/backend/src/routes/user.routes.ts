@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { getUserProfile, getProfile, getMyProfile, updateProfile, changePassword, resetPassword } from "../controllers/user.controller.js";
+import { getUserProfile, getProfile, getMyProfile, updateProfile, changePassword, resetPassword, checkEmail } from "../controllers/user.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router: IRouter = Router();
@@ -7,6 +7,7 @@ const router: IRouter = Router();
 router.get("/me", authMiddleware, getMyProfile);
 router.put("/me", authMiddleware, updateProfile);
 router.put("/me/password", authMiddleware, changePassword);
+router.post("/check-email", checkEmail);
 router.post("/reset-password", resetPassword);
 router.get("/:id/profile", authMiddleware, getUserProfile);
 router.get("/:id", authMiddleware, getProfile);

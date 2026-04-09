@@ -33,7 +33,7 @@ export interface TokenPair {
 class AuthService {
   private userRepository = AppDataSource.getRepository(User);
 
-  async register(data: RegisterDTO): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async register(data: RegisterDTO): Promise<{ user: Partial<User> }> {
     const existingUser = await this.userRepository.findOne({
       where: { username: data.username },
     });
@@ -50,6 +50,11 @@ class AuthService {
       throw new Error("Email already exists");
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      throw new Error("Invalid email format");
+    }
+
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     const user = this.userRepository.create({
@@ -63,10 +68,8 @@ class AuthService {
 
     await this.userRepository.save(user);
 
-    const tokens = this.generateTokens(user);
-
     const { password: _, ...userWithoutPassword } = user;
-    return { user: userWithoutPassword, tokens };
+    return { user: userWithoutPassword };
   }
 
   async login(data: LoginDTO): Promise<{ user: Partial<User>; tokens: TokenPair }> {

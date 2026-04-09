@@ -125,16 +125,11 @@ export const loginAtom = atom(
 	}
 );
 
-// Register action
-// Note: we intentionally do NOT set currentUserAtom here.
-// This allows the UI to gate first-time access behind a terms-of-service step
-// before completing authentication and socket connection.
+// Register action - no session created, user must verify email first
 export const registerAtom = atom(
 	null,
 	async (_get, _set, data: { username: string; email: string; avatar: null | string; password: string }) => {
 		const response = await userService.register(data);
-		// Tokens are stored by userService.register; caller can later
-		// finalize authentication (e.g. via initCurrentUserAtom) after ToS acceptance.
 		return response.user;
 	}
 );

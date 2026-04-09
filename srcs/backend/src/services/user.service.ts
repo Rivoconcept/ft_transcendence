@@ -96,6 +96,14 @@ class UserService {
     };
   }
 
+  async getByEmail(email: string): Promise<Partial<User> | null> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) return null;
+
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
   async resetPassword(userId: number, newPassword: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {

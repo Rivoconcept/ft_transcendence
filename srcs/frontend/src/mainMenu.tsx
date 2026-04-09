@@ -86,7 +86,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps): React.JSX.Element {
 		return <Navigate to="/" replace />;
 	}
 	if (!user.is_confirmed) {
-		return <Navigate to="/verify" replace />;
+		return <Navigate to="/" replace />;
 	}
 	return <>{children}</>;
 }
@@ -100,7 +100,7 @@ function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
 	const user = useAtomValue(currentUserAtom);
 
 	if (user) {
-		return <Navigate to={user.is_confirmed ? "/games" : "/verify"} replace />;
+		return <Navigate to={user.is_confirmed ? "/games" : "/"} replace />;
 	}
 	return <>{children}</>;
 }

@@ -34,6 +34,12 @@ export default function RegisterForm(): React.JSX.Element {
             return;
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setError('Please enter a valid email address');
+            return;
+        }
+
         if (formData.password !== formData.confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -54,7 +60,7 @@ export default function RegisterForm(): React.JSX.Element {
                 avatar: formData.avatar,
                 password: formData.password
             });
-            navigate('/login');
+            navigate(`/verify?id=${encodeURIComponent(formData.email)}`);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
