@@ -586,6 +586,111 @@ body {
 	box-shadow: 0 10px 40px var(--shadow-sm);
 }
 
+.queens-gambit-page {
+	min-height: 100%;
+	padding: 2.5rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+	background:
+		radial-gradient(circle at top, rgba(212, 175, 55, 0.18), transparent 34%),
+		linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(49, 46, 129, 0.92));
+}
+
+.queens-gambit-page__backdrop {
+	position: absolute;
+	inset: 0;
+	background:
+		linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+		linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+	background-size: 64px 64px;
+	mask-image: radial-gradient(circle at center, black 40%, transparent 85%);
+}
+
+.queens-gambit-page__card {
+	position: relative;
+	z-index: 1;
+	width: min(760px, 100%);
+	padding: 3rem;
+	border-radius: 28px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.86));
+	box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+	color: #f8fafc;
+	text-align: center;
+}
+
+.queens-gambit-page__badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.45rem 0.85rem;
+	border-radius: 999px;
+	margin-bottom: 1rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: rgba(212, 175, 55, 0.16);
+	color: #f5d97b;
+}
+
+.queens-gambit-page__icon {
+	font-size: 4.5rem;
+	line-height: 1;
+	margin-bottom: 1rem;
+}
+
+.queens-gambit-page__card h1 {
+	font-size: clamp(2.3rem, 6vw, 3.6rem);
+	margin-bottom: 1rem;
+}
+
+.queens-gambit-page__lead {
+	max-width: 34rem;
+	margin: 0 auto 1rem;
+	font-size: 1.1rem;
+	line-height: 1.8;
+	color: rgba(241, 245, 249, 0.92);
+}
+
+.queens-gambit-page__body {
+	max-width: 38rem;
+	margin: 0 auto;
+	line-height: 1.8;
+	color: rgba(203, 213, 225, 0.88);
+}
+
+.queens-gambit-page__actions {
+	margin-top: 2rem;
+	display: flex;
+	justify-content: center;
+}
+
+@media (max-width: 900px) {
+	.game-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 640px) {
+	.game-list {
+		padding: 1.25rem;
+		grid-template-columns: 1fr;
+	}
+
+	.queens-gambit-page {
+		padding: 1.25rem;
+	}
+
+	.queens-gambit-page__card {
+		padding: 2rem 1.25rem;
+		border-radius: 22px;
+	}
+}
+
 .game-header {
 	display: flex;
 	justify-content: space-between;

@@ -53,6 +53,7 @@ import {
 	GameList,
 	kingOfDiamond,
 	CardGamePage,
+	QueensGambitPage,
 	ProfilePage,
 	FriendsPage,
 	MessagesPage,
@@ -66,9 +67,6 @@ import {
 	GameSetup
 } from './pages/games';
 import CardGameMultiResult from './pages/games/cardGame/components/CardGameResultMulti';
-
-// Types
-type GameId = 'kingOfDiamond' | 'cardGame';
 
 // Protected Route Wrapper
 interface ProtectedRouteProps {
@@ -132,13 +130,6 @@ function Layout({ user, theme, onThemeChange, children }: LayoutProps): React.JS
 
 // Game List Wrapper with navigation
 function GameListWrapper(): React.JSX.Element {
-	const navigate = useNavigate();
-
-	const handleStartGame = (gameId: GameId): void => {
-		navigate(`/games/${gameId}`);
-	};
-
-	// return <GameList onStartGame={handleStartGame} />;
 	return <GameList />;
 }
 
@@ -637,6 +628,15 @@ export default function App(): React.JSX.Element {
 						<ProtectedRoute>
 							<CardGameMultiResult />
 						</ProtectedRoute>} />
+
+					<Route
+						path="/games/queens-gambit"
+						element={
+							<ProtectedRoute>
+								<QueensGambitPage />
+							</ProtectedRoute>
+						}
+					/>
 
 					{/* Profile */}
 					<Route
