@@ -18,7 +18,7 @@ export default function FriendsCard() {
   const total = friends.length;
   const onlineFriends = friends.filter(f => f.online);
   const offlineFriends = friends.filter(f => !f.online);
-  const maxVisibleFriends = 5;
+  const maxVisibleFriends = 4;
 
   const renderFullListTooltip = (list: typeof friends, label: string) => (
     <Tooltip.Portal>

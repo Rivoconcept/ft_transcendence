@@ -159,9 +159,9 @@
 }
 
 .friends-avatar-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
+  display: inline-block;
+  //flex-direction: row;
+  gap: 0;
 }
 
 .friend-avatar-button {
