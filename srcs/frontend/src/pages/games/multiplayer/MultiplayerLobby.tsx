@@ -6,6 +6,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { playerNameAtom, isCreatorAtom } from "./matchAtoms";
 import { currentUserAtom } from "../../../providers/user.provider";
 import { apiService } from "../../../services";
+import AvatarUtil from "../../../components/AvatarUtil";
 
 interface Player {
   id: number;
@@ -157,7 +158,8 @@ export default function MultiplayerLobby(): React.JSX.Element {
               key={player.id}
               className="list-group-item d-flex justify-content-between align-items-center"
             >
-              <span>
+              <span className="d-flex align-items-center gap-3">
+                <AvatarUtil id={player.id} radius={52} showStatus={false} />
                 {player.name}
                 {player.id === currentUser?.id && " (you)"}
                 {player.id === players.find(p => isCreator && p.id === currentUser?.id)?.id && (
