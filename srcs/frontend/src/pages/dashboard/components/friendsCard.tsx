@@ -61,7 +61,7 @@ export default function FriendsCard() {
             <Tooltip.Root key={friend.id}>
               <Tooltip.Trigger asChild>
                 <button type="button" className="friend-avatar-button" aria-label={friend.name}>
-                  <AvatarUtil id={friend.id} radius={42} showStatus={friend.online} />
+                  <AvatarUtil id={friend.id} radius={42} showStatus={friend.online} hasInfo={true} />
                 </button>
               </Tooltip.Trigger>
               {renderFullListTooltip([friend], friend.name)}
