@@ -179,6 +179,7 @@ const _remoteCardGamesFamily = atomFamily((_userId: number) =>
 						opponents = matchResults
 							.filter(p => p.player_name !== r.player_name)
 							.map(p => p.player_name);
+						opponents = opponents.length > 0 ? opponents : ['John Doe'];
 					} catch (err) {
 						console.error(`Failed to fetch opponents for match ${r.match_id}:`, err);
 						opponents = ['Multiplayer match'];
@@ -245,6 +246,7 @@ const _remoteKodGamesFamily = atomFamily((_userId: number) =>
 						opponents = matchResults
 							.filter((p) => p.player_name !== r.player_name)
 							.map((p) => p.player_name);
+						opponents = opponents.length > 0 ? opponents : ['John Doe'];
 					} catch (err) {
 						console.error(
 							`Failed to fetch KOD opponents for match ${r.match_id}:`,
