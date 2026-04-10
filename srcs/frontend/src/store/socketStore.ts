@@ -3,7 +3,7 @@
 import { io, Socket } from "socket.io-client";
 import type { createStore } from "jotai";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+const SOCKET_URL = "";
 
 type StatusUpdateCallback = (isOnline: boolean) => void;
 

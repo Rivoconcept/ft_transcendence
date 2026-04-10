@@ -335,4 +335,3 @@ export default function MultiplayerSetup(): React.JSX.Element {
     </div>
   );
 }
-

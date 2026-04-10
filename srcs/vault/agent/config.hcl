@@ -80,20 +80,6 @@ template
 
 template
 {
-  source      = "/vault/templates/certs/frontend.crt.ctmpl"
-  destination = "/run/secrets/GameHub/certs/frontend/frontend.crt"
-  perms       = "0644"
-}
-
-template
-{
-  source      = "/vault/templates/certs/frontend.key.ctmpl"
-  destination = "/run/secrets/GameHub/certs/frontend/frontend.key"
-  perms       = "0600"
-}
-
-template
-{
   source      = "/vault/templates/certs/backend.crt.ctmpl"
   destination = "/run/secrets/GameHub/certs/backend/backend.crt"
   perms       = "0644"

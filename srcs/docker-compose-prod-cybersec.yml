@@ -79,21 +79,19 @@ services:
     ports:
       - "3000:3000"
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-    container_name: frontend
-    environment:
-      DOMAIN_NAME: ${DOMAIN}
-    depends_on:
-      - backend
-    networks:
-      - transcendence-network
-    volumes:
-      - ../secrets/certs:/etc/ssl/private/
-    ports:
-      - "5173:5173"
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.prod
+  #   container_name: frontend
+  #   environment:
+  #     DOMAIN_NAME: ${DOMAIN}
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - transcendence-network
+  #   volumes:
+  #     - ../secrets/certs:/etc/ssl/private/
       
 
 volumes:
