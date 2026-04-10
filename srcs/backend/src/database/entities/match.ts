@@ -19,14 +19,14 @@ export class Match {
   @Column()
   author_id!: number;
 
-  @ManyToOne("User", "created_matches")
+  @ManyToOne("User", "created_matches", { cascade: true })
   @JoinColumn({ name: "author_id" })
   author!: Relation<User>;
 
   @Column({ nullable: true })
   game_id!: number | null;
 
-  @ManyToOne("Game", "matches")
+  @ManyToOne("Game", "matches", { cascade: true })
   @JoinColumn({ name: "game_id" })
   game!: Relation<Game> | null;
 

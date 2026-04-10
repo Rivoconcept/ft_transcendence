@@ -23,6 +23,12 @@ interface MatchItem {
   participantIds: number[];
 }
 
+interface DiscoverMatchItem {
+  id: string;
+  authorId: number;
+  is_private: boolean;
+}
+
 type Tab = "create" | "join" | "discover";
 
 export default function MultiplayerSetup(): React.JSX.Element {
@@ -34,14 +40,15 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [matchmakingLoading, setMatchmakingLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [tab, setTab] = useState<Tab>("create");
   const [discoverLoading, setDiscoverLoading] = useState(false);
-  const [openMatches, setOpenMatches] = useState<string[]>([]);
+  const [openMatches, setOpenMatches] = useState<DiscoverMatchItem[]>([]);
 
   const [isPrivate, setIsPrivate] = useState(false);
-  const [isLimited, setIsLimited] = useState(false);
+  const [isLimited] = useState(false);
   const [participationLimit, setParticipationLimit] = useState(2);
 
   const gameMap: Record<string, number> = {
@@ -86,6 +93,23 @@ export default function MultiplayerSetup(): React.JSX.Element {
     }
   };
 
+  const handleQuickMatch = async () => {
+    setMatchmakingLoading(true);
+    setError("");
+    try {
+      const match = await apiService.post<MatchItem>("/matches/matchmake", {
+        gameId: getGameId(gameSlug),
+      });
+      setPlayerName(playerName);
+      navigate(`/games/${gameSlug}/multiplayer/lobby/${match.id}`);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to find a match");
+    } finally {
+      setMatchmakingLoading(false);
+    }
+  };
+
   // Joining: POST /matches/:id/join, NOT GET /matches/:id
   const handleJoinRoom = async (matchCode: string) => {
     setLoading(true);
@@ -108,13 +132,13 @@ export default function MultiplayerSetup(): React.JSX.Element {
   };
 
 
-  // discovering open matches: GET /matches/discover?gameId=
+  // discovering open matches: GET /matches/discover?gameId=<gameId>
   const handleDiscover = async () => {
     setDiscoverLoading(true);
     setError("");
     try {
-      const ids = await apiService.get<string[]>(`/matches/discover?gameId=${getGameId(gameSlug)}`);
-      setOpenMatches(ids);
+      const matches = await apiService.get<DiscoverMatchItem[]>(`/matches/discover?gameId=${getGameId(gameSlug)}`);
+      setOpenMatches(matches);
     } catch (err: any) {
       setError(err.message || "Failed to fetch open matches");
     } finally {
@@ -122,12 +146,34 @@ export default function MultiplayerSetup(): React.JSX.Element {
     }
   };
 
+  const handleDeleteRoom = async (id: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      await apiService.delete(`/matches/${id}`);
+      setOpenMatches(openMatches.filter((match) => match.id !== id));
+    } catch (err: any) {
+      setError(err.message || "Failed to delete room");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div className="container mt-5">
       <div className="mx-auto" style={{ maxWidth: 500 }}>
         <h2 className="text-center mb-4">
           Multiplayer Setup : {gameSlug}
         </h2>
+
+        <button
+          className="btn btn-primary w-100 mb-4"
+          onClick={handleQuickMatch}
+          disabled={loading || matchmakingLoading}
+        >
+          {matchmakingLoading ? "Finding a room..." : "Quick Match"}
+        </button>
 
         <div className="d-flex justify-content-center mb-4">
           <button
@@ -243,19 +289,32 @@ export default function MultiplayerSetup(): React.JSX.Element {
             )}
 
             <ul className="list-group">
-              {openMatches.map((id) => (
+              {openMatches.map((match) => (
                 <li
-                  key={id}
+                  key={match.id}
                   className="list-group-item d-flex justify-content-between align-items-center"
                 >
-                  <span className="fw-bold font-monospace">{id}</span>
-                  <button
-                    className="btn btn-sm btn-success"
-                    disabled={loading}
-                    onClick={() => handleJoinRoom(id)}
-                  >
-                    Join
-                  </button>
+                  <span className="fw-bold font-monospace">{match.id}</span>
+
+                  <div>
+                    {match.authorId === currentUser.id && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        disabled={loading}
+                        onClick={() => handleDeleteRoom(match.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+
+                    <button
+                      className="btn btn-sm btn-success ms-2"
+                      disabled={loading}
+                      onClick={() => handleJoinRoom(match.id)}
+                    >
+                      Join
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
