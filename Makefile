@@ -15,7 +15,7 @@ NAME = ft_stranscendance
 USER_NAME = $(shell whoami)
 COMPOSE = docker compose
 
-MODE ?= cybersec-dev  # valeur par défaut = cybersec-dev
+MODE ?= dev  # valeur par défaut = cybersec-dev
 
 ifeq ($(MODE),prod)
   COMPOSE_FILE := -f ./srcs/docker-compose-prod.yml
@@ -35,8 +35,10 @@ export DOCKER_BUILDKIT=0
 export COMPOSE_DOCKER_CLI_BUILD=0
 export DATA_PATH = $(HOME)/data
 CERTS_DIR = ./secrets/certs
-CRT_FILE = $(CERTS_DIR)/nginx.crt
-KEY_FILE = $(CERTS_DIR)/nginx.key
+# CRT_FILE = $(CERTS_DIR)/nginx.crt
+# KEY_FILE = $(CERTS_DIR)/nginx.key
+CRT_FILE = $(CERTS_DIR)/vault.crt
+KEY_FILE = $(CERTS_DIR)/vault.key
 
 DATA_DIR = /home/$(USER_NAME)/data/db_data
 
@@ -88,6 +90,7 @@ init-volumes:
 			--opt o=bind; \
 	fi
 
+
 certs:
 	@if [ -f "$(CRT_FILE)" ] && [ -f "$(KEY_FILE)" ]; then \
 		echo "SSL certificates already exist ✔"; \
@@ -97,10 +100,24 @@ certs:
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 			-keyout $(KEY_FILE) \
 			-out $(CRT_FILE) \
-			-subj "/C=FR/ST=France/L=Paris/O=42/OU=Inception/CN=$(DOMAIN)"; \
+			-subj "/CN=vault" \
+			-addext "subjectAltName=DNS:vault,DNS:localhost"; \
 		chmod 600 $(KEY_FILE); \
 		chmod 644 $(CRT_FILE); \
 	fi
+# certs:
+# 	@if [ -f "$(CRT_FILE)" ] && [ -f "$(KEY_FILE)" ]; then \
+# 		echo "SSL certificates already exist ✔"; \
+# 	else \
+# 		echo "Generating SSL certificates..."; \
+# 		mkdir -p $(CERTS_DIR); \
+# 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+# 			-keyout $(KEY_FILE) \
+# 			-out $(CRT_FILE) \
+# 			-subj "/C=FR/ST=France/L=Paris/O=42/OU=Inception/CN=$(DOMAIN)"; \
+# 		chmod 600 $(KEY_FILE); \
+# 		chmod 644 $(CRT_FILE); \
+# 	fi
 
 logback:
 	docker logs -f backend-dev
