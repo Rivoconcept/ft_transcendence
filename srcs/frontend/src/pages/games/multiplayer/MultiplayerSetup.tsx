@@ -23,6 +23,12 @@ interface MatchItem {
   participantIds: number[];
 }
 
+interface DiscoverMatchItem {
+  id: string;
+  authorId: number;
+  is_private: boolean;
+}
+
 type Tab = "create" | "join" | "discover";
 
 export default function MultiplayerSetup(): React.JSX.Element {
@@ -34,14 +40,15 @@ export default function MultiplayerSetup(): React.JSX.Element {
 
   const [roomCode, setRoomCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [matchmakingLoading, setMatchmakingLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [tab, setTab] = useState<Tab>("create");
   const [discoverLoading, setDiscoverLoading] = useState(false);
-  const [openMatches, setOpenMatches] = useState<string[]>([]);
+  const [openMatches, setOpenMatches] = useState<DiscoverMatchItem[]>([]);
 
   const [isPrivate, setIsPrivate] = useState(false);
-  const [isLimited, setIsLimited] = useState(false);
+  const [isLimited] = useState(false);
   const [participationLimit, setParticipationLimit] = useState(2);
 
   const gameMap: Record<string, number> = {
@@ -86,6 +93,23 @@ export default function MultiplayerSetup(): React.JSX.Element {
     }
   };
 
+  const handleQuickMatch = async () => {
+    setMatchmakingLoading(true);
+    setError("");
+    try {
+      const match = await apiService.post<MatchItem>("/matches/matchmake", {
+        gameId: getGameId(gameSlug),
+      });
+      setPlayerName(playerName);
+      navigate(`/games/${gameSlug}/multiplayer/lobby/${match.id}`);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to find a match");
+    } finally {
+      setMatchmakingLoading(false);
+    }
+  };
+
   // Joining: POST /matches/:id/join, NOT GET /matches/:id
   const handleJoinRoom = async (matchCode: string) => {
     setLoading(true);
@@ -108,13 +132,13 @@ export default function MultiplayerSetup(): React.JSX.Element {
   };
 
 
-  // discovering open matches: GET /matches/discover?gameId=
+  // discovering open matches: GET /matches/discover?gameId=<gameId>
   const handleDiscover = async () => {
     setDiscoverLoading(true);
     setError("");
     try {
-      const ids = await apiService.get<string[]>(`/matches/discover?gameId=${getGameId(gameSlug)}`);
-      setOpenMatches(ids);
+      const matches = await apiService.get<DiscoverMatchItem[]>(`/matches/discover?gameId=${getGameId(gameSlug)}`);
+      setOpenMatches(matches);
     } catch (err: any) {
       setError(err.message || "Failed to fetch open matches");
     } finally {
@@ -122,12 +146,34 @@ export default function MultiplayerSetup(): React.JSX.Element {
     }
   };
 
+  const handleDeleteRoom = async (id: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      await apiService.delete(`/matches/${id}`);
+      setOpenMatches(openMatches.filter((match) => match.id !== id));
+    } catch (err: any) {
+      setError(err.message || "Failed to delete room");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div className="container mt-5">
       <div className="mx-auto" style={{ maxWidth: 500 }}>
         <h2 className="text-center mb-4">
           Multiplayer Setup : {gameSlug}
         </h2>
+
+        <button
+          className="btn btn-primary w-100 mb-4"
+          onClick={handleQuickMatch}
+          disabled={loading || matchmakingLoading}
+        >
+          {matchmakingLoading ? "Finding a room..." : "Quick Match"}
+        </button>
 
         <div className="d-flex justify-content-center mb-4">
           <button
@@ -172,7 +218,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
               </label>
             </div>
 
-            <div className="form-check form-switch mb-3">
+            {/* <div className="form-check form-switch mb-3">
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -183,7 +229,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
               <label className="form-check-label" htmlFor="isLimited">
                 Limit number of participants
               </label>
-            </div>
+            </div> */}
 
             {isLimited && (
               <div className="mb-3">
@@ -243,19 +289,32 @@ export default function MultiplayerSetup(): React.JSX.Element {
             )}
 
             <ul className="list-group">
-              {openMatches.map((id) => (
+              {openMatches.map((match) => (
                 <li
-                  key={id}
+                  key={match.id}
                   className="list-group-item d-flex justify-content-between align-items-center"
                 >
-                  <span className="fw-bold font-monospace">{id}</span>
-                  <button
-                    className="btn btn-sm btn-success"
-                    disabled={loading}
-                    onClick={() => handleJoinRoom(id)}
-                  >
-                    Join
-                  </button>
+                  <span className="fw-bold font-monospace">{match.id}</span>
+
+                  <div>
+                    {match.authorId === currentUser.id && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        disabled={loading}
+                        onClick={() => handleDeleteRoom(match.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+
+                    <button
+                      className="btn btn-sm btn-success ms-2"
+                      disabled={loading}
+                      onClick={() => handleJoinRoom(match.id)}
+                    >
+                      Join
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -277,211 +336,3 @@ export default function MultiplayerSetup(): React.JSX.Element {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// MultiplayerSetup.tsx
-
-function MultiplayerSetup2(): React.JSX.Element {
-  const { gameSlug } = useParams();
-  const navigate = useNavigate();
-
-  const currentUser = useAtomValue(currentUserAtom);
-  const setPlayerName = useSetAtom(playerNameAtom);
-
-  const [tab, setTab] = useState<Tab>("create");
-  const [roomCode, setRoomCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [openMatches, setOpenMatches] = useState<string[]>([]);
-  const [discoverLoading, setDiscoverLoading] = useState(false);
-
-  const gameMap: Record<string, number> = { kingOfDiamond: 1, cardGame: 2 };
-  const getGameId = (slug: string | undefined): number => gameMap[slug ?? ""] ?? 1;
-
-  if (!currentUser) {
-    return (
-      <div className="container mt-5">
-        <div className="alert alert-danger text-center">
-          You must be logged in to play multiplayer.
-        </div>
-      </div>
-    );
-  }
-
-  const playerName = currentUser.username;
-
-  const handleCreateRoom = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const data = await apiService.post<MatchItem>("/matches", {
-        is_private: false,
-        set: 1,
-        game_id: getGameId(gameSlug),
-        player_name: playerName,
-      });
-      setPlayerName(playerName);
-      navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to create room");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoinRoom = async (matchCode: string) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const code = matchCode.trim().toUpperCase();
-      if (code.length !== 4) {
-        setError("Room code must be 4 characters");
-        return;
-      }
-      await apiService.post(`/matches/${code}/join`, { gameId: getGameId(gameSlug) });
-      setPlayerName(playerName);
-      navigate(`/games/${gameSlug}/multiplayer/lobby/${code}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to join room");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDiscover = async () => {
-    setDiscoverLoading(true);
-    setError("");
-    try {
-      const ids = await apiService.get<string[]>(`/matches/discover?gameId=${getGameId(gameSlug)}`);
-      setOpenMatches(ids);
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch open matches");
-    } finally {
-      setDiscoverLoading(false);
-    }
-  };
-
-  // Fetch when switching to discover tab
-  const handleTabChange = (next: Tab) => {
-    setTab(next);
-    setError("");
-    if (next === "discover") handleDiscover();
-  };
-
-  return (
-    <div className="container mt-5">
-      <div className="mx-auto" style={{ maxWidth: 500 }}>
-        <h2 className="text-center mb-4">Multiplayer Setup : {gameSlug}</h2>
-
-        {/* Tabs */}
-        <div className="d-flex justify-content-center mb-4 gap-2">
-          {(["create", "join", "discover"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              className={`tab-btn ${tab === t ? "active" : ""}`}
-              onClick={() => handleTabChange(t)}
-            >
-              {t === "create" ? "Create Room" : t === "join" ? "Join Room" : "Discover"}
-            </button>
-          ))}
-        </div>
-
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        {/* Create */}
-        {tab === "create" && (
-          <form onSubmit={handleCreateRoom}>
-            <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
-            </button>
-          </form>
-        )}
-
-        {/* Join by code */}
-        {tab === "join" && (
-          <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(roomCode); }}>
-            <div className="mb-3">
-              <label className="form-label">Enter the room code:</label>
-              <input
-                className="form-control"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="ABCD"
-                maxLength={4}
-              />
-            </div>
-            <button className="btn btn-success w-100" disabled={loading}>
-              {loading ? "Connecting..." : "Join"}
-            </button>
-          </form>
-        )}
-
-        {/* Discover */}
-        {tab === "discover" && (
-          <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <span className="text-muted">
-                {openMatches.length} open room{openMatches.length !== 1 ? "s" : ""}
-              </span>
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                onClick={handleDiscover}
-                disabled={discoverLoading}
-              >
-                {discoverLoading ? "Refreshing…" : "↻ Refresh"}
-              </button>
-            </div>
-
-            {discoverLoading && (
-              <div className="text-center text-muted py-3">Loading…</div>
-            )}
-
-            {!discoverLoading && openMatches.length === 0 && (
-              <div className="alert alert-warning text-center">
-                No open rooms right now.
-              </div>
-            )}
-
-            <ul className="list-group">
-              {openMatches.map((id) => (
-                <li
-                  key={id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  <span className="fw-bold font-monospace">{id}</span>
-                  <button
-                    className="btn btn-sm btn-success"
-                    disabled={loading}
-                    onClick={() => handleJoinRoom(id)}
-                  >
-                    Join
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}

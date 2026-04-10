@@ -3,6 +3,7 @@ import { Router, type IRouter } from "express";
 import {
   createMatch,
   discoverMatches,
+  matchmake,
   getMatchById,
   joinMatch,
   startMatch,
@@ -10,6 +11,7 @@ import {
   setVisibility,
   endMatch,
   updateScore,
+  deleteMatch,
 } from "../controllers/match.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -17,6 +19,9 @@ const router: IRouter = Router();
 
 // Créer un match
 router.post("/", authMiddleware, createMatch);
+
+// Matchmaking automatique
+router.post("/matchmake", authMiddleware, matchmake);
 
 // Découvrir les matchs publics ouverts
 router.get("/discover", authMiddleware, discoverMatches);
@@ -38,6 +43,9 @@ router.patch("/:id/visibility", authMiddleware, setVisibility);
 
 // Terminer un match (créateur uniquement)
 router.post("/:id/end", authMiddleware, endMatch);
+
+// Supprimer un match (créateur uniquement)
+router.delete("/:id", authMiddleware, deleteMatch);
 
 // Mettre à jour le score (participant uniquement)
 router.patch("/:id/score", authMiddleware, updateScore);

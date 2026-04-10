@@ -35,6 +35,12 @@ interface MatchItem {
   participants: Participant[];
 }
 
+interface DiscoverMatchItem {
+  id: string;
+  authorId: number;
+  is_private: boolean;
+}
+
 class MatchService {
   private matchRepository = AppDataSource.getRepository(Match);
   private participationRepository = AppDataSource.getRepository(Participation);
@@ -82,6 +88,29 @@ class MatchService {
     };
   }
 
+  private async findJoinableMatch(gameId: number): Promise<Match | null> {
+    const openMatches = await this.matchRepository.find({
+      where: {
+        is_open: true,
+        is_private: false,
+        match_over: false,
+        has_begun: false,
+        game_id: gameId,
+      },
+      order: { created_at: "ASC" },
+    });
+    for (const match of openMatches) {
+      if (match.is_limited && match.participations_limit) {
+        const currentParticipants = await this.participationRepository.count({ where: { match_id: match.id } });
+        if (currentParticipants >= match.participations_limit) {
+          continue;
+        }
+      }
+      return match;
+    }
+    return null;
+  }
+
   async createMatch(userId: number, data?: CreateMatchDTO): Promise<MatchItem> {
     const uniqueId = await this.generateUniqueId();
 
@@ -121,6 +150,17 @@ class MatchService {
     return this.buildMatchItem(match, participations, participants);
   }
 
+  async deleteMatch(userId: number, matchId: string): Promise<void> {
+    const match = await this.matchRepository.findOne({ where: { id: matchId } });
+    if (!match)
+      throw new Error("Match not found");
+    if (match.author_id !== userId)
+      throw new Error("Only the match creator can delete the match");
+    if (match.has_begun)
+      throw new Error("Cannot delete a match that has already begun");
+    await this.matchRepository.delete({ id: matchId });
+  }
+
   async leaveMatch(userId: number, matchId: string): Promise<void> {
     await this.participationRepository.delete({
       user_id: userId,
@@ -128,7 +168,7 @@ class MatchService {
     });
   }
 
-  async discoverMatches(gameId?: number): Promise<string[]> {
+  async discoverMatches(gameId?: number): Promise<DiscoverMatchItem[]> {
     const whereClause: Record<string, unknown> = {
       is_open: true,
       is_private: false,
@@ -142,10 +182,33 @@ class MatchService {
     const matches = await this.matchRepository.find({
       where: whereClause,
       order: { created_at: "DESC" },
-      select: ["id"],
+      select: ["id", "author_id", "is_private"],
     });
 
-    return matches.map((m) => m.id);
+    return matches.map((m) => ({
+      id: m.id,
+      authorId: m.author_id,
+      is_private: m.is_private,
+    }));
+  }
+
+  async matchmake(userId: number, data: CreateMatchDTO): Promise<MatchItem> {
+    if (data.game_id === undefined || data.game_id === null) {
+      throw new Error("Game ID is required");
+    }
+
+    const joinableMatch = await this.findJoinableMatch(data.game_id);
+    if (joinableMatch) {
+      return this.joinMatch(userId, joinableMatch.id, data.game_id);
+    }
+
+    return this.createMatch(userId, {
+      game_id: data.game_id,
+      set: data.set ?? 1,
+      is_private: false,
+      is_limited: false,
+      participations_limit: 100,
+    });
   }
 
   async joinMatch(userId: number, matchId: string, gameID: number): Promise<MatchItem> {

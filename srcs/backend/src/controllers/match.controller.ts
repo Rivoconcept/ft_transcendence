@@ -22,11 +22,58 @@ export async function createMatch(req: AuthRequest, res: Response): Promise<void
 
 export async function discoverMatches(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const gameId = req.query.game_id ? Number(req.query.game_id) : undefined;
+    const gameId = req.query.gameId ? Number(req.query.gameId) : undefined;
     const matches = await matchService.discoverMatches(gameId);
     res.json(matches);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to discover matches";
+    res.status(500).json({ error: message });
+  }
+}
+
+export async function matchmake(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const rawGameId = req.body.gameId ?? req.query.gameId;
+    const gameId = Number(rawGameId);
+
+    if (!rawGameId || Number.isNaN(gameId)) {
+      res.status(400).json({ error: "gameId is required" });
+      return;
+    }
+
+    const match = await matchService.matchmake(req.user!.userId, {
+      game_id: gameId,
+      set: req.body.set ? Number(req.body.set) : undefined,
+    });
+
+    res.json(match);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to find a match";
+    res.status(400).json({ error: message });
+  }
+}
+
+export async function deleteMatch(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length !== 4) {
+      res.status(400).json({ error: "Invalid match ID" });
+      return;
+    }
+
+    await matchService.deleteMatch(req.user!.userId, id);
+    res.status(204).send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete match";
+    if (message === "Match not found") {
+      res.status(404).json({ error: message });
+      return;
+    }
+    if (message === "Only the match creator can delete the match") {
+      res.status(403).json({ error: message });
+      return;
+    }
     res.status(500).json({ error: message });
   }
 }

@@ -18,7 +18,7 @@ export class Participation {
   @Column({ type: "char", length: 4 })
   match_id!: string;
 
-  @ManyToOne("Match", "participations")
+  @ManyToOne("Match", "participations", { onDelete: "CASCADE" })
   @JoinColumn({ name: "match_id" })
   match!: Relation<Match>;
 
