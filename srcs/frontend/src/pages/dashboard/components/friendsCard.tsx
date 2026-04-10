@@ -100,14 +100,12 @@ export default function FriendsCard() {
       <div className="friends-status">
         <div className="status-group">
           <div className="friends-group-header">
-            <span className="status-dot online"></span>
             <span className="status-text">Online: {onlineFriends.length}</span>
           </div>
           {renderFriendAvatars(onlineFriends, 'Online Friends')}
         </div>
         <div className="status-group">
           <div className="friends-group-header">
-            <span className="status-dot offline"></span>
             <span className="status-text">Offline: {offlineFriends.length}</span>
           </div>
           {renderFriendAvatars(offlineFriends, 'Offline Friends')}
