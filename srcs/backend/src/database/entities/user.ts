@@ -1,6 +1,6 @@
 // /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/database/entities/user.ts
 
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, type Relation } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, type Relation } from "typeorm";
 import type { Invitation } from "./invitation.js";
 import type { Participation } from "./participation.js";
 import type { ChatMember } from "./chat-member.js";
@@ -37,6 +37,9 @@ export class User {
 
   @Column({ type: "timestamp", nullable: true })
   otp_expiration!: Date | null;
+
+  @CreateDateColumn()
+  created_at!: Date;
 
   @OneToMany("Invitation", "sender")
   sent_invitations!: Relation<Invitation>[];
