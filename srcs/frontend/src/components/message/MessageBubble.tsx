@@ -49,7 +49,7 @@ function ReaderRow({ userId }: { userId: number }) {
 
 	return (
 		<div className="d-flex align-items-center gap-2 px-3 py-2">
-			<AvatarUtil id={userId} radius={32} showStatus={false} />
+			<AvatarUtil id={userId} radius={32} showStatus={false} hasInfo={true} />
 			<span style={{ fontSize: 14, color: "var(--app-text-primary)" }}>{username}</span>
 		</div>
 	);
@@ -79,7 +79,7 @@ export default function MessageBubble({ message, fromMe, formatTime, isBlocked, 
 			<div className={`d-flex mb-2 ${fromMe ? "justify-content-end" : "justify-content-start"}`}>
 				{!fromMe && (
 					<div className="me-2 align-self-end">
-						<AvatarUtil id={message.authorId} radius={30} showStatus={false} />
+						<AvatarUtil id={message.authorId} radius={30} showStatus={false} hasInfo={true} />
 					</div>
 				)}
 

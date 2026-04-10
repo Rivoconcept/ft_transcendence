@@ -208,6 +208,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
             id={currentUser?.id || 0}
             radius={32}
             showStatus={false}
+            hasInfo={true}
           />
         </div>
       <div className="card-group">
