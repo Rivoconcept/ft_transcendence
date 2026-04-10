@@ -117,6 +117,11 @@ class ApiService {
 					}
 				}
 
+				// Propagate 403 requiresVerification as-is for login flow
+				if (error.response?.status === 403 && error.response?.data?.requiresVerification) {
+					return Promise.reject(error.response.data);
+				}
+
 				// Extract error message from response if available
 				const errorMessage = error.response?.data?.error
 					|| error.response?.data?.message

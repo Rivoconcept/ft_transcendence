@@ -25,16 +25,17 @@ export default function LoginForm(): React.JSX.Element {
         setIsLoading(true);
 
         try {
-            const user = await login({
+            await login({
                 username: formData.username,
                 password: formData.password
             });
-            if (user.is_confirmed) {
-                navigate('/games');
-            } else {
-                navigate(`/verify?id=${encodeURIComponent(user.email)}`);
-            }
+            navigate('/games');
         } catch (err: unknown) {
+            if (err && typeof err === 'object' && 'requiresVerification' in err) {
+                const verErr = err as { requiresVerification: true; email: string };
+                navigate(`/verify?id=${encodeURIComponent(verErr.email)}`);
+                return;
+            }
             if (err instanceof Error) {
                 setError(err.message);
             } else {

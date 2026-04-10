@@ -125,6 +125,12 @@ export const loginAtom = atom(
 	}
 );
 
+// Verification required error type
+export interface VerificationRequired {
+	requiresVerification: true;
+	email: string;
+}
+
 // Register action - no session created, user must verify email first
 export const registerAtom = atom(
 	null,

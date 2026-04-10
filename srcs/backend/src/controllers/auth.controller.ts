@@ -29,6 +29,15 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     const result = await authService.login({ username, password });
+
+    if (result.requiresVerification) {
+      res.status(403).json({
+        requiresVerification: true,
+        email: result.user.email,
+      });
+      return;
+    }
+
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Login failed";

@@ -72,7 +72,7 @@ class AuthService {
     return { user: userWithoutPassword };
   }
 
-  async login(data: LoginDTO): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async login(data: LoginDTO): Promise<{ user: Partial<User>; tokens?: TokenPair; requiresVerification?: boolean }> {
     const user = await this.userRepository.findOne({
       where: { username: data.username },
     });
@@ -87,9 +87,13 @@ class AuthService {
       throw new Error("Invalid credentials");
     }
 
-    const tokens = this.generateTokens(user);
-
     const { password: _, ...userWithoutPassword } = user;
+
+    if (!user.is_confirmed) {
+      return { user: userWithoutPassword, requiresVerification: true };
+    }
+
+    const tokens = this.generateTokens(user);
     return { user: userWithoutPassword, tokens };
   }
 
