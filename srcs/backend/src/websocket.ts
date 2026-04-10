@@ -270,12 +270,10 @@ class SocketService {
       socket.on("kod:init", async ({ matchId }: { matchId: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
         try {
-
           // Build participants with real names from connected sockets
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
           const seen = new Set<number>();
           const participants: { userId: number; playerName: string }[] = [];
-
           sockets?.forEach((s: any) => {
             if (s.userId && !seen.has(s.userId)) {
               participants.push({
@@ -286,8 +284,16 @@ class SocketService {
             }
           });
 
+          const isInitialized = await kodService.isInitialized(matchId);
+          if (isInitialized) {
+            this.io?.to(`match.${matchId}`).emit("kod:initialized", {
+              matchId: matchId,
+              players: isInitialized
+            });
+            return;
+          }
+
           let kodPlayers = await kodService.initKodGame(socket.userId, matchId, participants);
-          // let kodPlayers = await matchService.initKodGame(socket.userId, matchId, participants);
           this.io?.to(`match.${matchId}`).emit("kod:initialized", {
             matchId: matchId,
             players: kodPlayers

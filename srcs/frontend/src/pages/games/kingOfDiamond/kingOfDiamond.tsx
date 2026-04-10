@@ -4,15 +4,16 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import { currentUserAtom } from '../../../providers';
 import { refreshGameHistoryAtom } from '../../dashboard/providers/gameHistoryAtom';
 import { socketStore } from '../../../store/socketStore';
+import AvatarUtil from "../../../components/AvatarUtil";
 import './kod.scss';
 
 // ── Timeout configuration ────────────────────────────────────────────────────
 
 /** How long (ms) a player has to pick a number before 0 is auto-submitted. */
-const PICK_TIMEOUT_MS = 1_120_000;
+const PICK_TIMEOUT_MS = 120_000;
 
 /** How long (ms) the result screen waits before automatically advancing. (invisible) */
-const RESULT_TIMEOUT_MS = 500_000;
+const RESULT_TIMEOUT_MS = 60_000;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,15 +62,6 @@ interface HistoryEntry {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function initials(name: string): string {
-	return name
-		.split(' ')
-		.map(w => w[0])
-		.join('')
-		.toUpperCase()
-		.slice(0, 2);
-}
 
 function avatarColor(userId: number): string {
 	const colors = ['#7C3AED', '#B45309', '#0F766E', '#9D174D', '#1D4ED8', '#065F46'];
@@ -136,7 +128,7 @@ function PlayerCard({ player, isMe, phase, myChoice, choice, pointsLostAnim }: P
 				className={`player-card__avatar${isMe ? ' player-card__avatar--me' : ''}`}
 				style={{ background: avatarColor(player.userId) }}
 			>
-				{initials(player.playerName)}
+				<AvatarUtil id={player.userId} radius={52} showStatus={false} />
 			</div>
 
 			<div className={`player-card__name${isWinner ? ' player-card__name--winner' : ''}`}>
@@ -218,12 +210,7 @@ interface CountdownRingProps {
 
 function CountdownRing({ remainingMs }: CountdownRingProps) {
 	const seconds = Math.ceil(remainingMs / 1000);
-	const isUrgent = seconds <= 5;
-	return (
-		<div className={`kod-countdown${isUrgent ? ' kod-countdown--urgent' : ''}`}>
-			<span className="kod-countdown__label">{seconds}</span>
-		</div>
-	);
+	return (<span>{seconds}</span>);
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -397,7 +384,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 		}, RESULT_TIMEOUT_MS);
 
 		return () => clearResultTimer();
-	}, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [phase]);
 
 	// ── Actions ───────────────────────────────────────────────────────────────
 
@@ -489,9 +476,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 				<div className="kod-header__title">
 					<span className="kod-header__diamond">♦</span>
 					<span className="kod-header__name">King of Diamond</span>
-					{lastResult && (
-						<span className="kod-header__round">round {lastResult.roundNumber}</span>
-					)}
+					{lastResult && <span className="kod-header__round">round {lastResult.roundNumber}</span>}
 				</div>
 				<div className="kod-header__actions">
 					{phase === 'picking' && history.length > 0 && (
@@ -520,16 +505,13 @@ export default function KingOfDiamond(): React.JSX.Element {
 				{phase === 'waiting' && (
 					<div className="phase-panel kod-waiting">
 						<div className="kod-waiting__icon">♦</div>
-						<p className="kod-waiting__text">Waiting for the game to begin…</p>
+						<p className="kod-waiting__text">An error has occured</p>
 					</div>
 				)}
 
 				{/* ── Picking ──────────────────────────────────────────────── */}
 				{phase === 'picking' && (
 					<div className="phase-panel kod-numgrid">
-						<div className="kod-numgrid__timer-row">
-							<CountdownRing remainingMs={pickRemaining} />
-						</div>
 
 						<div className="kod-numgrid__grid">
 							{Array.from({ length: 101 }, (_, i) => i).map(num => (
@@ -556,7 +538,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 							onClick={handleSubmit}
 							disabled={selectedNumber === null}
 						>
-							Submit
+							Submit (<CountdownRing remainingMs={pickRemaining} />)
 						</button>
 					</div>
 				)}
@@ -615,16 +597,13 @@ export default function KingOfDiamond(): React.JSX.Element {
 				{/* ── Ended ────────────────────────────────────────────────── */}
 				{phase === 'ended' && (
 					<div className="phase-panel kod-ended">
-						<div className="kod-ended__crown">♛</div>
-
 						{gameWinner ? (
 							<>
 								<div>
-									<div className="kod-ended__title-label">King of Diamond</div>
+									<div className="kod-ended__crown">♛</div>
+									<AvatarUtil id={gameWinner.id} radius={150} showStatus={false} />
 									<div className="kod-ended__winner-name">{gameWinner.name}</div>
-									{gameWinner.id === currentUserId && (
-										<div className="kod-ended__you-note">That's you ✦</div>
-									)}
+									<div className="kod-ended__title-label">King of Diamond</div>
 								</div>
 
 								<div className="kod-standings">
@@ -640,6 +619,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 													<span className="kod-standings__rank">
 														{i === 0 ? '♛' : `${i + 1}.`}
 													</span>
+													<AvatarUtil id={p.userId} radius={52} showStatus={false} />
 													<span className="kod-standings__name">
 														{p.playerName}{p.userId === currentUserId ? ' (you)' : ''}
 													</span>

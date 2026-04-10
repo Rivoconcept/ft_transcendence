@@ -684,7 +684,7 @@ export default function App(): React.JSX.Element {
 						}
 					/>
 					{/* Fallback */}
-					{/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</Layout>
 		</BrowserRouter>

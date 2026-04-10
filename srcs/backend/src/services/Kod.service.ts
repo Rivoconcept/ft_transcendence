@@ -115,77 +115,89 @@ export class KodService {
     return players;
   }
 
+  async isInitialized(matchId: string): Promise<KodPlayer[] | null> {
+    const state = kodGameManager.getState(matchId);
+    if (!state) return null;
+    return Array.from(state.players.values());
+  }
+
   async submitKodChoice(
     userId: number,
     matchId: string,
     playerName: string,
     value: number
   ): Promise<{ allSubmitted: boolean; result: KodRoundResult | null }> {
-    // Validate against DB (match exists, not over)
-    const match = await this.matchRepo.findOne({ where: { id: matchId } });
-    if (!match) throw new Error("Match not found");
-    if (match.match_over) throw new Error("Match is already over");
+    try {
+      // Validate against DB (match exists, not over)
+      const match = await this.matchRepo.findOne({ where: { id: matchId } });
+      if (!match) throw new Error("Match not found");
+      if (match.match_over) throw new Error("Match is already over");
 
-    const participation = await this.participationRepo.findOne({ where: { user_id: userId, match_id: matchId } });
-    if (!participation) throw new Error("You are not a participant in this match");
+      const participation = await this.participationRepo.findOne({ where: { user_id: userId, match_id: matchId } });
+      if (!participation) throw new Error("You are not a participant in this match");
 
-    // Enrich name in manager (player may have changed their display name)
-    kodGameManager.setPlayerName(matchId, userId, playerName);
+      // Enrich name in manager (player may have changed their display name)
+      kodGameManager.setPlayerName(matchId, userId, playerName);
 
-    const { allSubmitted, result } = kodGameManager.submitChoice(matchId, userId, playerName, value);
+      const { allSubmitted, result } = kodGameManager.submitChoice(matchId, userId, playerName, value);
 
-    const io = socketService.getIO();
+      const io = socketService.getIO();
 
-    // Notify others that this player submitted (without revealing the value)
-    if (!allSubmitted) {
-      if (io)
-        io.to(`match.${matchId}`).emit("kod:choice-submitted", { matchId, userId });
-      return { allSubmitted: false, result: null };
-    }
-
-    // All submitted — persist the round and update scores in DB
-    await this._persistKodRound(matchId, result!);
-
-    if (result!.gameOver) {
-      // Persist winner summary
-      await this.kodWinnerRepo.save(
-        this.kodWinnerRepo.create({
-          match_id: matchId,
-          winner_user_id: result!.gameWinnerId!,
-          winner_name: result!.gameWinnerName!,
-          remaining_points: result!.players.find(p => p.userId === result!.gameWinnerId)?.points ?? 0,
-          total_rounds: result!.roundNumber,
-        }),
-      );
-
-      // Mark match as over and set winner
-      match.match_over = true;
-      await this.matchRepo.save(match);
-
-      if (io) {
-        io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
-        io.to(`match.${matchId}`).emit("kod:game-over", {
-          matchId,
-          winnerId: result!.gameWinnerId,
-          winnerName: result!.gameWinnerName,
-        });
-        result!.players.forEach((p) => {
-          io.to(`user.${p.userId}`).emit("game-history:updated", {
-            userId: p.userId,
-            game: "kingOfDiamond",
-            matchId,
-          });
-        });
-        result!.players.forEach(p => socketService.leaveMatchRoom(p.userId, matchId));
+      // Notify others that this player submitted (without revealing the value)
+      if (!allSubmitted) {
+        if (io)
+          io.to(`match.${matchId}`).emit("kod:choice-submitted", { matchId, userId });
+        return { allSubmitted: false, result: null };
       }
 
-      kodGameManager.cleanup(matchId);
-    } else {
-      if (io)
-        io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
+      // All submitted — persist the round and update scores in DB
+      await this._persistKodRound(matchId, result!);
+
+      if (result!.gameOver) {
+        // Persist winner summary
+        await this.kodWinnerRepo.save(
+          this.kodWinnerRepo.create({
+            match_id: matchId,
+            winner_user_id: result!.gameWinnerId!,
+            winner_name: result!.gameWinnerName!,
+            remaining_points: result!.players.find(p => p.userId === result!.gameWinnerId)?.points ?? 0,
+            total_rounds: result!.roundNumber,
+          }),
+        );
+
+        // Mark match as over and set winner
+        match.match_over = true;
+        await this.matchRepo.save(match);
+
+        if (io) {
+          io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
+          io.to(`match.${matchId}`).emit("kod:game-over", {
+            matchId,
+            winnerId: result!.gameWinnerId,
+            winnerName: result!.gameWinnerName,
+          });
+          result!.players.forEach((p) => {
+            io.to(`user.${p.userId}`).emit("game-history:updated", {
+              userId: p.userId,
+              game: "kingOfDiamond",
+              matchId,
+            });
+          });
+          result!.players.forEach(p => socketService.leaveMatchRoom(p.userId, matchId));
+        }
+
+        kodGameManager.cleanup(matchId);
+      } else {
+        if (io)
+          io.to(`match.${matchId}`).emit("kod:round-result", { matchId, result });
+      }
+
+      return { allSubmitted: true, result };
+    }
+    catch (err) {
+      throw err;
     }
 
-    return { allSubmitted: true, result };
   }
 
   async eliminatePlayer(userId: number, matchId: string): Promise<{ allSubmitted: boolean; result: KodRoundResult | null }> {
