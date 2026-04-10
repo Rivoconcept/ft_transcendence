@@ -87,6 +87,11 @@ RUN mkdir -p /var/log/nginx && \
 # Copy frontend build
 COPY --from=frontend /app/dist /var/www/frontend
 
+# Redirect logs to stdout/stderr for docker logs
+RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
+    ln -sf /dev/stderr /var/log/nginx/error.log && \
+    ln -sf /dev/stderr /var/log/nginx/modsecurity_audit.log
+
 # Copy configs
 COPY waf/nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY waf/modsecurity.conf /etc/nginx/modsecurity.d/modsecurity.conf
