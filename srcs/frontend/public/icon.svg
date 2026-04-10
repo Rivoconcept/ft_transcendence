@@ -1,0 +1,39 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Neon gradient -->
+    <linearGradient id="gamerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"></stop>
+      <stop offset="50%" stop-color="#8A2BE2"></stop>
+      <stop offset="100%" stop-color="#FF0055"></stop>
+    </linearGradient>
+
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"></feGaussianBlur>
+      <feMerge>
+        <feMergeNode in="coloredBlur"></feMergeNode>
+        <feMergeNode in="SourceGraphic"></feMergeNode>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background (dark gamer style) -->
+  <rect width="256" height="256" rx="48" fill="#0D0D0D"></rect>
+
+  <!-- Stylized G -->
+  <path d="M128 48
+       A80 80 0 1 0 128 208
+       A70 70 0 1 1 128 68
+       L128 120
+       L200 120
+       L200 144
+       L104 144
+       L104 96
+       L128 96" fill="none" stroke="url(#gamerGradient)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"></path>
+
+  <!-- Controller hint (small D-pad style detail) -->
+  <g fill="#00F0FF" opacity="0.9">
+    <rect x="150" y="150" width="8" height="24" rx="2"></rect>
+    <rect x="138" y="158" width="24" height="8" rx="2"></rect>
+  </g>
+</svg>

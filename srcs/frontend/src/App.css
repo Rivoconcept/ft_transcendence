@@ -595,7 +595,7 @@ body {
 	position: relative;
 	overflow: hidden;
 	background:
-		radial-gradient(circle at top, rgba(212, 175, 55, 0.18), transparent 34%),
+		radial-gradient(circle at top, rgba(212, 175, 55, 0.142), transparent 34%),
 		linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(49, 46, 129, 0.92));
 }
 
