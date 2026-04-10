@@ -13,7 +13,7 @@ const Toast = Swal.mixin({
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import "./pages/message/message.css"
-import { refreshGameHistoryAtom, startOnlineSessionAtom, stopOnlineSessionAtom } from './pages/dashboard/atoms/dashboardData';
+import { refreshGameHistoryAtom, startOnlineSessionAtom, stopOnlineSessionAtom, flushOnlineSessionAtom, onlineTimeLiveTickAtom } from './pages/dashboard/atoms/dashboardData';
 
 import { Navigation } from './components';
 import { apiService } from './services';
@@ -470,6 +470,8 @@ export default function App(): React.JSX.Element {
 	const logout = useSetAtom(logoutAtom);
 	const startOnlineSession = useSetAtom(startOnlineSessionAtom);
 	const stopOnlineSession = useSetAtom(stopOnlineSessionAtom);
+	const flushOnlineSession = useSetAtom(flushOnlineSessionAtom);
+	const tickOnlineTime = useSetAtom(onlineTimeLiveTickAtom);
 	const [theme, setTheme] = useState<'default' | 'dark'>('dark');
 
 	// Load token and fetch user on mount
@@ -495,15 +497,24 @@ export default function App(): React.JSX.Element {
 		if (!user) return;
 
 		startOnlineSession();
+		const tickInterval = window.setInterval(() => {
+			tickOnlineTime((prev) => prev + 1);
+		}, 1000);
+		const flushInterval = window.setInterval(() => {
+			flushOnlineSession();
+		}, 60000);
 		const onBeforeUnload = () => stopOnlineSession();
 		window.addEventListener('beforeunload', onBeforeUnload);
 		return () => {
+			window.clearInterval(tickInterval);
+			window.clearInterval(flushInterval);
 			window.removeEventListener('beforeunload', onBeforeUnload);
 			stopOnlineSession();
 		};
-	}, [user, startOnlineSession, stopOnlineSession]);
+	}, [user, startOnlineSession, stopOnlineSession, flushOnlineSession, tickOnlineTime]);
 
 	const handleLogout = (): void => {
+		stopOnlineSession();
 		logout();
 	};
 

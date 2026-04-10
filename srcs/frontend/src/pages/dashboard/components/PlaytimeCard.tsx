@@ -1,22 +1,21 @@
 import { useAtom } from 'jotai';
-import { playtimeAtom, onlineTimeRefreshTriggerAtom } from '../providers/timeAtom';
-import { usePollingAtom } from '../utils/poll';
+import { playtimeSecondsAtom } from '../providers/timeAtom';
 import '../Dashboard.scss';
 
-function formatMinutes(minutes: number) {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours}h ${mins}m`;
+function formatPlaytime(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours}h ${minutes}m ${seconds}s`;
 }
 
 export default function PlaytimeCard() {
-  const [playtime] = useAtom(playtimeAtom);
+  const [playtimeSeconds] = useAtom(playtimeSecondsAtom);
 
-  usePollingAtom(onlineTimeRefreshTriggerAtom, 60000);
   return (
     <div className="dashboard-card">
       <h3>Playtime</h3>
-      <div className="kpi-value">{formatMinutes(playtime)}</div>
+      <div className="kpi-value">{formatPlaytime(playtimeSeconds)}</div>
     </div>
   );
 }

@@ -31,7 +31,16 @@ function safeSortDescByTimestamp<T extends { timestamp: number }>(items: T[]): T
 	return [...items].sort((a, b) => b.timestamp - a.timestamp);
 }
 
+function mergeDailyOnlineTime(days: DailyOnlineTime[], date: string, minutesToAdd: number): DailyOnlineTime[] {
+	if (minutesToAdd <= 0) return days;
+
+	return days.some((entry) => entry.date === date)
+		? days.map((entry) => (entry.date === date ? { ...entry, minutes: entry.minutes + minutesToAdd } : entry))
+		: [...days, { date, minutes: minutesToAdd }];
+}
+
 export const onlineTimeRefreshTriggerAtom = atom(0);
+export const onlineTimeLiveTickAtom = atom(0);
 export const gameHistoryRefreshTriggerAtom = atom(0);
 export const refreshGameHistoryAtom = atom(null, (get, set) => {
 	set(gameHistoryRefreshTriggerAtom, get(gameHistoryRefreshTriggerAtom) + 1);
@@ -70,24 +79,24 @@ export const startOnlineSessionAtom = atom(null, (get, set) => {
 	if (!currentUser) return;
 	if (get(_sessionStartMsAtom) !== null) return;
 	set(_sessionStartMsAtom, Date.now());
+	set(onlineTimeLiveTickAtom, get(onlineTimeLiveTickAtom) + 1);
 });
 
-export const stopOnlineSessionAtom = atom(null, (get, set) => {
+export const flushOnlineSessionAtom = atom(null, (get, set) => {
 	const currentUser = get(currentUserAtom);
 	const startedAt = get(_sessionStartMsAtom);
 	if (!currentUser || startedAt === null) return;
 
 	const now = Date.now();
-	const minutes = Math.max(0, Math.round((now - startedAt) / 60000));
-	set(_sessionStartMsAtom, null);
-	if (minutes === 0) return;
+	const elapsedMs = now - startedAt;
+	const minutes = Math.floor(elapsedMs / 60000);
+	if (minutes <= 0) return;
 
 	const today = isoDate(new Date());
 	const existing = get(_onlineTimeAtom);
-	const next = existing.some((e) => e.date === today)
-		? existing.map((e) => (e.date === today ? { ...e, minutes: e.minutes + minutes } : e))
-		: [...existing, { date: today, minutes }];
+	const next = mergeDailyOnlineTime(existing, today, minutes);
 	set(_onlineTimeAtom, next);
+	set(_sessionStartMsAtom, startedAt + (minutes * 60000));
 
 	// Sync to backend
 	apiService.post('user-online-time/add', { date: today, minutes }).catch((err) => {
@@ -95,6 +104,17 @@ export const stopOnlineSessionAtom = atom(null, (get, set) => {
 	});
 
 	set(onlineTimeRefreshTriggerAtom, get(onlineTimeRefreshTriggerAtom) + 1);
+	set(onlineTimeLiveTickAtom, get(onlineTimeLiveTickAtom) + 1);
+});
+
+export const stopOnlineSessionAtom = atom(null, (get, set) => {
+	const currentUser = get(currentUserAtom);
+	const startedAt = get(_sessionStartMsAtom);
+	if (!currentUser || startedAt === null) return;
+
+	set(flushOnlineSessionAtom);
+	set(_sessionStartMsAtom, null);
+	set(onlineTimeLiveTickAtom, get(onlineTimeLiveTickAtom) + 1);
 });
 
 export const onlineTimeAtom = atom(async (get) => {
@@ -117,7 +137,28 @@ export const onlineTimeAtom = atom(async (get) => {
 
 export const playtimeAtom = atom(async (get) => {
 	const days = await get(onlineTimeAtom);
-	return days.reduce((sum, d) => sum + d.minutes, 0);
+	const storedMinutes = days.reduce((sum, d) => sum + d.minutes, 0);
+
+	get(onlineTimeLiveTickAtom);
+	const startedAt = get(_sessionStartMsAtom);
+	if (startedAt === null) {
+		return storedMinutes;
+	}
+
+	return storedMinutes + Math.floor((Date.now() - startedAt) / 60000);
+});
+
+export const playtimeSecondsAtom = atom(async (get) => {
+	const days = await get(onlineTimeAtom);
+	const storedSeconds = days.reduce((sum, d) => sum + (d.minutes * 60), 0);
+
+	get(onlineTimeLiveTickAtom);
+	const startedAt = get(_sessionStartMsAtom);
+	if (startedAt === null) {
+		return storedSeconds;
+	}
+
+	return storedSeconds + Math.max(Math.floor((Date.now() - startedAt) / 1000), 0);
 });
 
 // ===== Game history persistence (client-side) =====
