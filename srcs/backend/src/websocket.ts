@@ -22,6 +22,7 @@ class SocketService {
   private static instance: SocketService;
   private io: Server | null = null;
   private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
+  private matchTimers: Map<string, number> = new Map();
   private constructor() { }
 
   static getInstance(): SocketService {
@@ -132,6 +133,10 @@ class SocketService {
           return;
         }
 
+        if (socket.matchId) {
+          socket.leave(`match.${socket.matchId}`);
+        }
+
         socket.matchId = matchId;
 
         const room = `match.${matchId}`;
@@ -226,6 +231,7 @@ class SocketService {
         });
 
         // Start the match
+        
         const participants = Array.from(users.keys());
         if (participants.length < 2) {
           socket.emit("error", { error: "Not enough players" });

@@ -44,6 +44,8 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
   const hasCalledFinishMatchRef = useRef(false);
   const { totalScore } = useCardGameState();
   const [finalScoreSnapshot, setFinalScoreSnapshot] = useState<number | null>(null);
+  const hasJoinedRef = useRef(false);
+
 
   if (!mode)
   {
@@ -72,6 +74,32 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
     );
 
   }
+
+  useEffect(() => {
+    if (!roomId || hasJoinedRef.current) return;
+
+    hasJoinedRef.current = true;
+
+    socketStore.emit("joinMatchRoom", {
+      matchId: roomId,
+      playerName,
+    });
+  }, [roomId]);
+
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (roomId) {
+        socketStore.emit("leaveMatchRoom", { matchId: roomId });
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [roomId]);
   
   useEffect(() => {
     if (score === null || !roomId || mode !== "MULTI") return;
