@@ -1,3 +1,7 @@
+export interface Player {
+  id: number;
+  name: string;
+}
 
 export type CardGameContextType = {
   turn: number;
@@ -14,4 +18,5 @@ export type CardGameContextType = {
   isWin: boolean;
   isLose: boolean;
   isFinished: boolean;
+  players: Player[];
 };

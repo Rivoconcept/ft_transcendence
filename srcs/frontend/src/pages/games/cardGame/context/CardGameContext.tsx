@@ -1,10 +1,10 @@
-// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/context/CardGameContext.tsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { useCardState } from "./CardContext";
-import type { CardGameContextType } from "../typescript/CardGameContextType";
+import type { CardGameContextType, Player } from "../typescript/CardGameContextType";
 import { TIME_LIMIT, timeLeftAtom } from "../cardAtoms/cardAtoms";
 import { useAtom, useAtomValue } from "jotai";
 import { gameModeAtom } from "../cardAtoms/gameMode.atom";
+import { socketStore } from "../../../../websocket";
 
 const GameContext = createContext<CardGameContextType | null>(null);
 
@@ -20,6 +20,7 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
   const [timeLeft, setTimeLeft] = useAtom(timeLeftAtom);
   const mode = useAtomValue(gameModeAtom);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -32,6 +33,23 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
       const isWin = mode === "SINGLE" ? totalScore >= MAX_SCORE && turn <= MAX_TURNS : false;
       const isLose = mode === "SINGLE" ? (totalScore < MAX_SCORE && (timeLeft <= 0 || turn >= MAX_TURNS)) : false;
       const isFinished = mode === "SINGLE" ? (isWin || isLose || turn >= MAX_TURNS) : timeLeft <= 0;
+
+    useEffect(() => {
+      if (!socketStore) return;
+
+      const handlePlayers = (data: { participants: { id: number; name: string }[] }) => {
+        setPlayers(data.participants);
+      };
+
+      socketStore.on("match:player-joined", handlePlayers);
+      socketStore.on("match:player-left", handlePlayers);
+
+      return () => {
+        socketStore.off("match:player-joined", handlePlayers);
+        socketStore.off("match:player-left", handlePlayers);
+      };
+    }, []);
+
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -109,6 +127,7 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
           }
         },
         addTime: (sec: number) => setTimeLeft(t => Math.min(t + sec, TIME_LIMIT)),
+        players,
       }}
     >
       {children}

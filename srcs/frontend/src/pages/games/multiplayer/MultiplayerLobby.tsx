@@ -1,3 +1,4 @@
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/multiplayer/MultiplayerLobby.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { socketStore } from "../../../store/socketStore";

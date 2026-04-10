@@ -265,6 +265,18 @@ class SocketService {
         });
       });
 
+
+      socket.on("match:player-score", ({ matchId, score }) => {
+        if (!socket.userId) return;
+
+        const room = `match.${matchId}`;
+
+        this.io?.to(room).emit("match:score-updated", {
+          playerId: socket.userId,
+          score,
+        });
+      });
+
       //----------------- Kod game specific logic -----------------
 
       socket.on("kod:init", async ({ matchId }: { matchId: string }) => {

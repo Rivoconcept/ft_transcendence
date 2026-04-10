@@ -1,4 +1,4 @@
-// src/store/socketStore.ts
+// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/store/socketStore.ts
 
 import { io, Socket } from "socket.io-client";
 import type { createStore } from "jotai";

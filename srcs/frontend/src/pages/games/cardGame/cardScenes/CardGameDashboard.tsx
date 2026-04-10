@@ -1,5 +1,3 @@
-// /home/rhanitra/Videos/ft_transcendence/srcs/frontend/src/pages/games/cardGame/cardScenes/CardGameDashboard.tsx
-
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PhaseButton from "../components/PhaseButton";
@@ -75,7 +73,14 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
   }
   
+  useEffect(() => {
+    if (score === null || !roomId || mode !== "MULTI") return;
 
+    socketStore.emit("match:player-score", {
+      matchId: roomId,
+      score,
+    });
+  }, [score]);
 
   /* ------------------ FULL RESET ------------------ */
   const handleNewGame = () => {
