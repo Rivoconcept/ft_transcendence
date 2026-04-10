@@ -153,13 +153,20 @@ class MatchService {
       where: { id: matchId },
     });
 
+    const existingParticipation = await this.participationRepository.findOne({
+      where: { user_id: userId, match_id: matchId },
+    });
+
+    // if (existingParticipation)
+    //   throw new Error("You are already in this match");
+
     if (!match)
       throw new Error("Match not found");
 
     if (match.match_over)
       throw new Error("Match is already over");
 
-    if (match.has_begun)
+    if (match.has_begun && !existingParticipation)
       throw new Error("Match has already begun");
 
     if (!match.is_open)
@@ -173,13 +180,6 @@ class MatchService {
       if (currentParticipants >= match.participations_limit)
         throw new Error("Match is full");
     }
-
-    const existingParticipation = await this.participationRepository.findOne({
-      where: { user_id: userId, match_id: matchId },
-    });
-
-    if (existingParticipation)
-      throw new Error("You are already in this match");
 
     // Delete any existing participation (in case of reconnection/multiple joins)
     await this.participationRepository.delete({
@@ -462,6 +462,14 @@ class MatchService {
       participantId: userId,
     };
   }
+
+  async hasStarted(matchId: string): Promise<boolean> {
+    const match = await this.matchRepository.findOne({ where: { id: matchId } });
+    if (!match)
+      throw new Error("Match not found");
+    return match.has_begun;
+  }
+
 }
 
 export const matchService = new MatchService();

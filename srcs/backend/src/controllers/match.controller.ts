@@ -73,7 +73,7 @@ export async function joinMatch(req: AuthRequest, res: Response): Promise<void> 
       res.status(404).json({ error: message });
       return;
     }
-    if (message === "Match is already over" || message === "Match is not open for joining" || message === "You are already in this match") {
+    if (message === "Match is already over" || message === "Match is not open for joining") {
       res.status(400).json({ error: message });
       return;
     }
