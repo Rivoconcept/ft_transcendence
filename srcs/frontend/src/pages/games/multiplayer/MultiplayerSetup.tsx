@@ -172,7 +172,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
               </label>
             </div>
 
-            <div className="form-check form-switch mb-3">
+            {/* <div className="form-check form-switch mb-3">
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -183,7 +183,7 @@ export default function MultiplayerSetup(): React.JSX.Element {
               <label className="form-check-label" htmlFor="isLimited">
                 Limit number of participants
               </label>
-            </div>
+            </div> */}
 
             {isLimited && (
               <div className="mb-3">
