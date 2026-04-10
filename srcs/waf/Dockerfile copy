@@ -1,12 +1,3 @@
-# Build Frontend
-FROM node:22-alpine AS frontend
-WORKDIR /app
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
-COPY frontend/ .
-RUN pnpm build
-
-# Build ModSecurity + Nginx
 FROM alpine:3.19 AS builder
 
 RUN apk add --no-cache \
@@ -84,13 +75,10 @@ RUN mkdir -p /var/log/nginx && \
 #     mv /etc/nginx/coreruleset-4.7.0 /etc/nginx/owasp-crs && \
 #     rm /tmp/crs.tar.gz
 
-# Copy frontend build
-COPY --from=frontend /app/dist /var/www/frontend
-
 # Copy configs
-COPY waf/nginx.conf /usr/local/nginx/conf/nginx.conf
-COPY waf/modsecurity.conf /etc/nginx/modsecurity.d/modsecurity.conf
-COPY waf/crs-setup.conf /etc/nginx/modsecurity.d/owasp-crs/crs-setup.conf
+COPY nginx.conf /usr/local/nginx/conf/nginx.conf
+COPY modsecurity.conf /etc/nginx/modsecurity.d/modsecurity.conf
+COPY crs-setup.conf /etc/nginx/modsecurity.d/owasp-crs/crs-setup.conf
 EXPOSE 80 443
 
 CMD ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]

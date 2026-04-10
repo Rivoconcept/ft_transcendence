@@ -55,7 +55,7 @@ function ReaderRow({ userId }: { userId: number }) {
 	);
 }
 
-export default function MessageBubble({ message, fromMe, formatTime, isBlocked, currentUserId, canDelete, onDelete }: MessageBubbleProps) {
+export default function MessageBubble({ message, fromMe, formatTime, isBlocked, canDelete, onDelete }: MessageBubbleProps) {
 	const [revealed, setRevealed] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const hidden = isBlocked && !revealed;
