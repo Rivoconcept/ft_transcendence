@@ -90,8 +90,8 @@ class KodGameManager {
 
     const player = state.players.get(userId);
     if (!player) throw new Error("You are not a participant in this game");
-    if (!player.isActive) throw new Error("You have been eliminated");
-    if (state.choices.has(userId)) throw new Error("You have already submitted");
+    // if (!player.isActive) throw new Error("You have been eliminated");
+    // if (state.choices.has(userId)) throw new Error("You have already submitted");
 
     player.playerName = playerName;
     state.choices.set(userId, { userId, playerName, value });
@@ -208,6 +208,14 @@ class KodGameManager {
     }
 
     return true;
+  }
+
+  isPlayerEliminated(matchId: string, userId: number): boolean {
+    const state = this.games.get(matchId);
+    if (!state) return false;
+
+    const player = state.players.get(userId);
+    return player ? !player.isActive : false;
   }
 
   getState(matchId: string): KodMatchState | undefined {

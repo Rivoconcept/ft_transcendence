@@ -7,6 +7,7 @@ import { AppDataSource } from "./database/data-source.js";
 import { ChatMember } from "./database/entities/chat-member.js";
 import { matchService } from "./services/match.service.js";
 import { kodService } from "./services/Kod.service.js";
+import { kodGameManager } from "./game/KodGameManager.js";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -83,6 +84,20 @@ class SocketService {
             // gracefull disconnection
             const currentMatch = await matchService.getMatchById(socket.matchId || "")
             if (currentMatch && currentMatch.gameId === 1 && !currentMatch.match_over && socket.userId && socket.matchId) {
+              const participants: { id: number; name: string; ready: boolean }[] = [];
+              const seen = new Set<number>();
+              const roomSockets = await this.io?.in(socket.matchId).fetchSockets();
+              roomSockets?.forEach((s: any) => {
+                if (s.userId && !seen.has(s.userId)) {
+                  participants.push({ id: s.userId, name: s.playerName || s.username, ready: false });
+                  seen.add(s.userId);
+                }
+              });
+              this.io?.to(socket.matchId).emit("match:player-left", {
+                userId: socket.userId,
+                playerName: socket.playerName || socket.username,
+                participants,
+              });
               await kodService.eliminatePlayer(socket.userId, socket.matchId);
             }
 
@@ -281,6 +296,13 @@ class SocketService {
 
       socket.on("kod:init", async ({ matchId }: { matchId: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
+
+        const isEliminated = kodGameManager.isPlayerEliminated(matchId, socket.userId);
+        if (isEliminated) {
+          socket.emit("error", { error: "You have been eliminated" });
+          return;
+        }
+
         try {
           // Build participants with real names from connected sockets
           const sockets = await this.io?.in(`match.${matchId}`).fetchSockets();
@@ -298,7 +320,7 @@ class SocketService {
 
           const isInitialized = await kodService.isInitialized(matchId);
           if (isInitialized) {
-            this.io?.to(`match.${matchId}`).emit("kod:initialized", {
+            socket.emit("kod:initialized", {
               matchId: matchId,
               players: isInitialized
             });
