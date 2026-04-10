@@ -57,16 +57,11 @@ export default function CardScene() {
   return (
     <div className="cardScene d-flex">
 
-      {/* {mode === "MULTI" && (
-        <div style={{ width: "250px", marginRight: "1rem" }}>
-          <PlayerList />
-        </div>
-      )} */}
-
-
       <div className="flex-grow-1">
         <div className="cardsRow">
-          <PlayerList />
+          {mode === "MULTI" && (
+              <PlayerList />
+          )}
 
           {[0, 1, 2].map(i => (
             <div key={i} className="cardSlot">

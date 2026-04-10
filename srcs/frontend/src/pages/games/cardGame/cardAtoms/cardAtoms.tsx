@@ -1,8 +1,7 @@
-// /home/rhanitra/Music/ft_transcendence/srcs/frontend/src/pages/games/cardGame/cardAtoms/cardAtoms.tsx
 import { atom } from "jotai";
 import { Phase } from "../typescript/cardPhase";
 
-export const TIME_LIMIT = 15;
+export const TIME_LIMIT = 30;
 
 export const FinalScore = atom(0);
 
