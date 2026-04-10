@@ -1,5 +1,4 @@
 import { atom } from 'jotai';
-import { atomFamily } from 'jotai-family';
 import { atomWithStorage } from 'jotai/utils';
 import { currentUserAtom } from '../../../providers/user.provider';
 import { friendsListAtom } from '../../../providers/friend.provider';
@@ -32,7 +31,7 @@ function safeSortDescByTimestamp<T extends { timestamp: number }>(items: T[]): T
 	return [...items].sort((a, b) => b.timestamp - a.timestamp);
 }
 
-export const onlineTimeRefresTriggerAtom = atom(0);
+export const onlineTimeRefreshTriggerAtom = atom(0);
 export const gameHistoryRefreshTriggerAtom = atom(0);
 export const refreshGameHistoryAtom = atom(null, (get, set) => {
 	set(gameHistoryRefreshTriggerAtom, get(gameHistoryRefreshTriggerAtom) + 1);
@@ -42,28 +41,28 @@ export const refreshGameHistoryAtom = atom(null, (get, set) => {
 // This is "real" app usage time, independent of backend support.
 const _sessionStartMsAtom = atom<number | null>(null);
 
-const _onlineTimeByUserAtomFamily = atomFamily((userId: number) =>
-	atomWithStorage<DailyOnlineTime[]>(`dashboard.onlineTime.v1.user.${userId}`, [])
+const _onlineTimeAtom = atomWithStorage<DailyOnlineTime[]>(
+	'dashboard.onlineTime.v1',
+	[]
 );
 
 // Fetch online time from backend
-const _remoteOnlineTimeFamily = atomFamily((userId: number) =>
-	atom(async () => {
-		try {
-			const rows = await apiService.get<DailyOnlineTime[]>('user-online-time');
-			return rows;
-		} catch (err) {
-			console.error('Failed to fetch remote online time:', err);
-			return [] as DailyOnlineTime[];
-		}
-	})
-);
+const _remoteOnlineTimeAtom = atom(async (get) => {
+	get(onlineTimeRefreshTriggerAtom);
+
+	try {
+		const rows = await apiService.get<DailyOnlineTime[]>('user-online-time');
+		return rows;
+	} catch (err) {
+		console.error('Failed to fetch remote online time:', err);
+		return [] as DailyOnlineTime[];
+	}
+});
 
 export const remoteOnlineTimeAtom = atom(async (get) => {
-	get(onlineTimeRefresTriggerAtom);
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as DailyOnlineTime[];
-	return await get(_remoteOnlineTimeFamily(currentUser.id));
+	return await get(_remoteOnlineTimeAtom);
 });
 
 export const startOnlineSessionAtom = atom(null, (get, set) => {
@@ -83,18 +82,19 @@ export const stopOnlineSessionAtom = atom(null, (get, set) => {
 	set(_sessionStartMsAtom, null);
 	if (minutes === 0) return;
 
-	const keyAtom = _onlineTimeByUserAtomFamily(currentUser.id);
 	const today = isoDate(new Date());
-	const existing = get(keyAtom);
+	const existing = get(_onlineTimeAtom);
 	const next = existing.some((e) => e.date === today)
 		? existing.map((e) => (e.date === today ? { ...e, minutes: e.minutes + minutes } : e))
 		: [...existing, { date: today, minutes }];
-	set(keyAtom, next);
+	set(_onlineTimeAtom, next);
 
 	// Sync to backend
 	apiService.post('user-online-time/add', { date: today, minutes }).catch((err) => {
 		console.error('Failed to sync online time to backend:', err);
 	});
+
+	set(onlineTimeRefreshTriggerAtom, get(onlineTimeRefreshTriggerAtom) + 1);
 });
 
 export const onlineTimeAtom = atom(async (get) => {
@@ -112,7 +112,7 @@ export const onlineTimeAtom = atom(async (get) => {
 	}
 
 	// Fall back to localStorage data
-	return get(_onlineTimeByUserAtomFamily(currentUser.id));
+	return get(_onlineTimeAtom);
 });
 
 export const playtimeAtom = atom(async (get) => {
@@ -121,8 +121,9 @@ export const playtimeAtom = atom(async (get) => {
 });
 
 // ===== Game history persistence (client-side) =====
-const _gameHistoryByUserAtomFamily = atomFamily((userId: number) =>
-	atomWithStorage<GameHistoryEntry[]>(`dashboard.gameHistory.v1.user.${userId}`, [])
+const _gameHistoryAtom = atomWithStorage<GameHistoryEntry[]>(
+	'dashboard.gameHistory.v1',
+	[]
 );
 
 export const appendGameHistoryAtom = atom(
@@ -141,9 +142,8 @@ export const appendGameHistoryAtom = atom(
 			...entry,
 		};
 
-		const historyAtom = _gameHistoryByUserAtomFamily(currentUser.id);
-		const current = get(historyAtom);
-		set(historyAtom, safeSortDescByTimestamp([nextEntry, ...current]));
+		const current = get(_gameHistoryAtom);
+		set(_gameHistoryAtom, safeSortDescByTimestamp([nextEntry, ...current]));
 	}
 );
 
@@ -159,56 +159,53 @@ interface CardGameApiRow {
 	author_id: number;
 }
 
-const _remoteCardGamesFamily = atomFamily((_userId: number) =>
-	atom(async (get) => {
-		get(gameHistoryRefreshTriggerAtom);
-		// atomFamily(_userId) creates a separate cached atom per user
-		// Backend enforces auth and returns only the current user's card games
-		const rows = await apiService.get<CardGameApiRow[]>('card-games');
+const _remoteCardGamesAtom = atom(async (get) => {
+	get(gameHistoryRefreshTriggerAtom);
 
-		return Promise.all(
-			rows.map(async (r) => {
-				const ts = Date.parse(r.created_at);
+	const rows = await apiService.get<CardGameApiRow[]>('card-games');
 
-				let opponents: string[] = ['Computer'];
+	return Promise.all(
+		rows.map(async (r) => {
+			const ts = Date.parse(r.created_at);
 
-				// For multiplayer matches, fetch real opponent names
-				if (r.mode === 'MULTI' && r.match_id) {
-					try {
-						const matchResults = await apiService.get<Array<{ player_name: string }>>(`card-games/match/${r.match_id}`);
-						opponents = matchResults
-							.filter(p => p.player_name !== r.player_name)
-							.map(p => p.player_name);
-						opponents = opponents.length > 0 ? opponents : ['John Doe'];
-					} catch (err) {
-						console.error(`Failed to fetch opponents for match ${r.match_id}:`, err);
-						opponents = ['Multiplayer match'];
-					}
+			let opponents: string[] = ['Computer'];
+
+			// For multiplayer matches, fetch real opponent names
+			if (r.mode === 'MULTI' && r.match_id) {
+				try {
+					const matchResults = await apiService.get<Array<{ player_name: string }>>(`card-games/match/${r.match_id}`);
+					opponents = matchResults
+						.filter(p => p.player_name !== r.player_name)
+						.map(p => p.player_name);
+					opponents = opponents.length > 0 ? opponents : ['John Doe'];
+				} catch (err) {
+					console.error(`Failed to fetch opponents for match ${r.match_id}:`, err);
+					opponents = ['Multiplayer match'];
 				}
+			}
 
-				return {
-					id: `card-remote-${r.id}`,
-					gameType: 'cardGame' as const,
-					user: r.player_name ?? 'You',
-					result: (r.is_win ? 'win' : 'loss') as GameResultKind,
-					opponents,
-					isMultiplayer: r.mode === 'MULTI',
-					timestamp: Number.isFinite(ts) ? ts : Date.now(),
-					meta: {
-						matchId: r.match_id,
-						finalScore: r.final_score,
-					},
-				} satisfies GameHistoryEntry;
-			})
-		).then(entries => entries.sort((a, b) => b.timestamp - a.timestamp));
-	})
-);
+			return {
+				id: `card-remote-${r.id}`,
+				gameType: 'cardGame' as const,
+				user: r.player_name ?? 'You',
+				result: (r.is_win ? 'win' : 'loss') as GameResultKind,
+				opponents,
+				isMultiplayer: r.mode === 'MULTI',
+				timestamp: Number.isFinite(ts) ? ts : Date.now(),
+				meta: {
+					matchId: r.match_id,
+					finalScore: r.final_score,
+				},
+			} satisfies GameHistoryEntry;
+		})
+	).then(entries => entries.sort((a, b) => b.timestamp - a.timestamp));
+});
 
 export const remoteCardGamesAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 	try {
-		return await get(_remoteCardGamesFamily(currentUser.id));
+		return await get(_remoteCardGamesAtom);
 	} catch (err) {
 		console.error('Failed to fetch remote card games:', err);
 		return [] as GameHistoryEntry[];
@@ -228,58 +225,56 @@ interface KodGameApiRow {
 	mode: 'SINGLE' | 'MULTI';
 }
 
-const _remoteKodGamesFamily = atomFamily((_userId: number) =>
-	atom(async (get) => {
-		get(gameHistoryRefreshTriggerAtom);
-		const rows = await apiService.get<KodGameApiRow[]>('kod-games');
+const _remoteKodGamesAtom = atom(async (get) => {
+	get(gameHistoryRefreshTriggerAtom);
+	const rows = await apiService.get<KodGameApiRow[]>('kod-games');
 
-		return Promise.all(
-			rows.map(async (r) => {
-				const ts = Date.parse(r.created_at);
-				let opponents: string[] = ['Computer'];
+	return Promise.all(
+		rows.map(async (r) => {
+			const ts = Date.parse(r.created_at);
+			let opponents: string[] = ['Computer'];
 
-				if (r.mode === 'MULTI' && r.match_id) {
-					try {
-						const matchResults = await apiService.get<Array<{ player_name: string }>>(
-							`kod-games/match/${r.match_id}`
-						);
-						opponents = matchResults
-							.filter((p) => p.player_name !== r.player_name)
-							.map((p) => p.player_name);
-						opponents = opponents.length > 0 ? opponents : ['John Doe'];
-					} catch (err) {
-						console.error(
-							`Failed to fetch KOD opponents for match ${r.match_id}:`,
-							err
-						);
-						opponents = ['Multiplayer match'];
-					}
+			if (r.mode === 'MULTI' && r.match_id) {
+				try {
+					const matchResults = await apiService.get<Array<{ player_name: string }>>(
+						`kod-games/match/${r.match_id}`
+					);
+					opponents = matchResults
+						.filter((p) => p.player_name !== r.player_name)
+						.map((p) => p.player_name);
+					opponents = opponents.length > 0 ? opponents : ['John Doe'];
+				} catch (err) {
+					console.error(
+						`Failed to fetch KOD opponents for match ${r.match_id}:`,
+						err
+					);
+					opponents = ['Multiplayer match'];
 				}
+			}
 
-				return {
-					id: `kod-remote-${r.id}`,
-					gameType: 'kingOfDiamond' as const,
-					user: r.player_name,
-					result: (r.is_win ? 'win' : 'loss') as GameResultKind,
-					opponents,
-					isMultiplayer: r.mode === 'MULTI',
-					timestamp: Number.isFinite(ts) ? ts : Date.now(),
-					meta: {
-						matchId: r.match_id,
-						remainingPoints: r.remaining_points,  // KOD-specific
-						totalRounds: r.total_rounds,           // KOD-specific
-					},
-				} satisfies GameHistoryEntry;
-			})
-		).then((entries) => entries.sort((a, b) => b.timestamp - a.timestamp));
-	})
-);
+			return {
+				id: `kod-remote-${r.id}`,
+				gameType: 'kingOfDiamond' as const,
+				user: r.player_name,
+				result: (r.is_win ? 'win' : 'loss') as GameResultKind,
+				opponents,
+				isMultiplayer: r.mode === 'MULTI',
+				timestamp: Number.isFinite(ts) ? ts : Date.now(),
+				meta: {
+					matchId: r.match_id,
+					remainingPoints: r.remaining_points,
+					totalRounds: r.total_rounds,
+				},
+			} satisfies GameHistoryEntry;
+		})
+	).then((entries) => entries.sort((a, b) => b.timestamp - a.timestamp));
+});
 
 export const remoteKodGamesAtom = atom(async (get) => {
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 	try {
-		return await get(_remoteKodGamesFamily(currentUser.id));
+		return await get(_remoteKodGamesAtom);
 	} catch (err) {
 		console.error('Failed to fetch remote KOD games:', err);
 		return [] as GameHistoryEntry[];
@@ -287,11 +282,10 @@ export const remoteKodGamesAtom = atom(async (get) => {
 });
 
 export const gameHistoryAtom = atom(async (get) => {
-	get(gameHistoryRefreshTriggerAtom);
 	const currentUser = get(currentUserAtom);
 	if (!currentUser) return [] as GameHistoryEntry[];
 
-	const local = get(_gameHistoryByUserAtomFamily(currentUser.id));
+	const local = get(_gameHistoryAtom);
 
 	let remoteCard: GameHistoryEntry[] = [];
 	let remoteKod: GameHistoryEntry[] = [];

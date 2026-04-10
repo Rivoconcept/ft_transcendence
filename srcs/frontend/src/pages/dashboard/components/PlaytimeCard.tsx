@@ -1,5 +1,6 @@
 import { useAtom } from 'jotai';
-import { playtimeAtom } from '../providers/timeAtom';
+import { playtimeAtom, onlineTimeRefreshTriggerAtom } from '../providers/timeAtom';
+import { usePollingAtom } from '../utils/poll';
 import '../Dashboard.scss';
 
 function formatMinutes(minutes: number) {
@@ -11,6 +12,7 @@ function formatMinutes(minutes: number) {
 export default function PlaytimeCard() {
   const [playtime] = useAtom(playtimeAtom);
 
+  usePollingAtom(onlineTimeRefreshTriggerAtom, 60000);
   return (
     <div className="dashboard-card">
       <h3>Playtime</h3>
