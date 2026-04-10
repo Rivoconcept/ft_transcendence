@@ -1,0 +1,3 @@
+{{ with secret "secret/data/GameHub/postgres" }}
+{{ .Data.data.POSTGRES_DB }}
+{{ end }}

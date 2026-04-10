@@ -1,8 +1,15 @@
 import "reflect-metadata";
-import { loadSecrets } from "./vault.js";
+// import fs from 'fs';
+import dotenv from 'dotenv';
 
-await loadSecrets();
+dotenv.config({ path: "/run/secrets/GameHub/backend/backend.env" });
 
+// const httpsOptions = {
+//   cert: fs.readFileSync('/run/secrets/GameHub/certs/backend/backend.crt'),
+//   key: fs.readFileSync('/run/secrets/GameHub/certs/backend/backend.key')
+// };
+
+// const { createServer } = await import("https");
 const { createServer } = await import("http");
 const { AppDataSource } = await import("./database/data-source.js");
 const { socketService } = await import("./websocket.js");
@@ -10,6 +17,7 @@ const { default: app } = await import("./app.js");
 const { Game } = await import("./database/entities/game.js");
 const { cleanupService } = await import("./services/cleanup.service.js");
 
+// const httpsServer = createServer(httpsOptions, app);
 const httpServer = createServer(app);
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -30,6 +38,8 @@ AppDataSource.initialize()
   .then(async () => {
     console.log("Database connected");
     await seedGames();
+    // socketService.init(httpsServer);
+    // httpsServer.listen(PORT, () => {
     socketService.init(httpServer);
     httpServer.listen(PORT, () => {
       console.log(`Backend running on port ${PORT}`);
