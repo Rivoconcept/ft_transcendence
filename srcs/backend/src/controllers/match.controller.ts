@@ -22,7 +22,7 @@ export async function createMatch(req: AuthRequest, res: Response): Promise<void
 
 export async function discoverMatches(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const gameId = req.query.game_id ? Number(req.query.game_id) : undefined;
+    const gameId = req.query.gameId ? Number(req.query.gameId) : undefined;
     const matches = await matchService.discoverMatches(gameId);
     res.json(matches);
   } catch (error) {
