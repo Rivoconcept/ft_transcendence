@@ -135,7 +135,7 @@ function PlayerCard({ player, isMe, phase, myChoice, choice, pointsLostAnim }: P
 				{player.playerName}{isMe ? ' ✦' : ''}
 			</div>
 
-			<div className="player-card__points-wrap">
+			<div className="player-card__points-wrap position-relative d-flex align-items-center gap-1">
 				<span className={pointsClasses}>{player.points}</span>
 				<span className="player-card__pts-label">pts</span>
 
@@ -164,22 +164,22 @@ function PlayerCard({ player, isMe, phase, myChoice, choice, pointsLostAnim }: P
 function HistoryPanel({ history, onClose }: { history: HistoryEntry[]; onClose: () => void }) {
 	return (
 		<div className="kod-history">
-			<div className="kod-history__header">
+			<div className="kod-history__header d-flex justify-content-between align-items-center mb-2">
 				<span className="kod-history__title">Round History</span>
 				<button className="kod-btn" onClick={onClose}>close</button>
 			</div>
 
-			{history.length === 0 && (<p className="kod-history__empty">No rounds yet.</p>)}
+			{history.length === 0 && (<p className="kod-history__empty text-center">No rounds yet.</p>)}
 
 			{[...history].reverse().map(h => (
 				<div key={h.roundNumber} className="kod-history-entry">
-					<div className="kod-history-entry__meta">
+					<div className="kod-history-entry__meta d-flex justify-content-between mb-2">
 						<span className="kod-history-entry__round">Round {h.roundNumber}</span>
 						<span className="kod-history-entry__winner">
 							♛ {h.winnerName}{h.isExactHit ? ' · exact hit' : ''}
 						</span>
 					</div>
-					<div className="kod-history-entry__choices">
+					<div className="kod-history-entry__choices d-flex flex-wrap gap-1">
 						{h.choices.map(c => (
 							<div
 								key={c.userId}
@@ -193,7 +193,7 @@ function HistoryPanel({ history, onClose }: { history: HistoryEntry[]; onClose: 
 							</div>
 						))}
 					</div>
-					<div className="kod-history-entry__formula">
+					<div className="kod-history-entry__formula mt-2">
 						avg {h.average.toFixed(1)} × 0.8 = {h.target.toFixed(2)} → <span>{h.targetRounded}</span>
 					</div>
 				</div>
@@ -347,7 +347,6 @@ export default function KingOfDiamond(): React.JSX.Element {
 			socket.off('error', onError);
 			clearPickTimer();
 			clearResultTimer();
-			// Only leave if the game was actually in progress
 			if (phase !== 'waiting' && phase !== 'ended')
 				socket.emit('kod:leave', { matchId });
 		};
@@ -359,7 +358,6 @@ export default function KingOfDiamond(): React.JSX.Element {
 		if (phase !== 'picking') return;
 		if (pickRemaining > 0) return;
 
-		// Timer expired — auto-submit 0
 		const valueToSubmit = selectedNumber !== null ? selectedNumber : 0;
 		socketStore.emit('kod:submit', { matchId, value: valueToSubmit });
 		setPhase('submitted');
@@ -439,7 +437,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 		if (!lastResult) return null;
 		const values = lastResult.choices.map(c => c.value);
 		return (
-			<div className="kod-calculus">
+			<div className="kod-calculus mt-3">
 				<div className="kod-calculus__label">Calculus</div>
 				<div className="kod-calculus__formula">
 					<span>({values.join(' + ')})</span>
@@ -472,13 +470,13 @@ export default function KingOfDiamond(): React.JSX.Element {
 		<div className="kod-container">
 
 			{/* Header */}
-			<div className="kod-header">
-				<div className="kod-header__title">
+			<div className="kod-header d-flex align-items-center justify-content-between">
+				<div className="kod-header__title d-flex align-items-center gap-2">
 					<span className="kod-header__diamond">♦</span>
 					<span className="kod-header__name">King of Diamond</span>
 					{lastResult && <span className="kod-header__round">round {lastResult.roundNumber}</span>}
 				</div>
-				<div className="kod-header__actions">
+				<div className="kod-header__actions d-flex gap-2">
 					{phase === 'picking' && history.length > 0 && (
 						<button className="kod-btn" onClick={() => setShowHistory(true)}>History</button>
 					)}
@@ -488,7 +486,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 			{/* Error banner */}
 			{error && error !== 'Only the match creator can start the game' && (
-				<div className="kod-error">
+				<div className="kod-error d-flex justify-content-between align-items-center gap-3 mx-3 my-2">
 					<span>{error}</span>
 					<button className="kod-error__close" onClick={() => setError(null)}>✕</button>
 				</div>
@@ -503,7 +501,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Waiting ──────────────────────────────────────────────── */}
 				{phase === 'waiting' && (
-					<div className="phase-panel kod-waiting">
+					<div className="phase-panel kod-waiting text-center pt-5">
 						<div className="kod-waiting__icon">♦</div>
 						<p className="kod-waiting__text">An error has occured</p>
 					</div>
@@ -511,9 +509,9 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Picking ──────────────────────────────────────────────── */}
 				{phase === 'picking' && (
-					<div className="phase-panel kod-numgrid">
+					<div className="phase-panel kod-numgrid d-flex flex-column align-items-center gap-3">
 
-						<div className="kod-numgrid__grid">
+						<div className="kod-numgrid__grid d-flex flex-wrap justify-content-center gap-1">
 							{Array.from({ length: 101 }, (_, i) => i).map(num => (
 								<button
 									key={num}
@@ -525,7 +523,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 							))}
 						</div>
 
-						<div className="kod-selection-display">
+						<div className="kod-selection-display d-flex align-items-center justify-content-center">
 							{selectedNumber !== null ? (
 								<div className="kod-selection-display__number">{selectedNumber}</div>
 							) : (
@@ -545,10 +543,10 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Submitted ────────────────────────────────────────────── */}
 				{phase === 'submitted' && (
-					<div className="phase-panel kod-submitted">
-						<div className="kod-submitted__label">Waiting for others</div>
+					<div className="phase-panel kod-submitted d-flex flex-column gap-3">
+						<div className="kod-submitted__label text-center text-uppercase">Waiting for others</div>
 
-						<div className="kod-submitted__dots">
+						<div className="kod-submitted__dots d-flex align-items-center justify-content-center gap-2 mb-2">
 							{activePlayers.map(p => (
 								<div
 									key={p.userId}
@@ -569,13 +567,13 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Result ───────────────────────────────────────────────── */}
 				{phase === 'result' && lastResult && (
-					<div className="phase-panel kod-result">
-						<div className="kod-result__label">
+					<div className="phase-panel kod-result d-flex flex-column gap-3">
+						<div className="kod-result__label text-center text-uppercase">
 							Round {lastResult.roundNumber} — reveal
 						</div>
 						{renderPlayerGrid(true)}
 						{renderCalculus()}
-						<div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+						<div className="d-flex justify-content-center mt-2">
 							<button className="kod-btn--gold" onClick={handleNextRound}>
 								Next round →
 							</button>
@@ -585,8 +583,8 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Spectating ───────────────────────────────────────────── */}
 				{phase === 'spectating' && (
-					<div className="phase-panel kod-spectating">
-						<div className="kod-spectating__banner">
+					<div className="phase-panel kod-spectating d-flex flex-column gap-3">
+						<div className="kod-spectating__banner text-center">
 							You have been eliminated. Watching…
 						</div>
 						{renderPlayerGrid(lastResult !== null)}
@@ -596,7 +594,7 @@ export default function KingOfDiamond(): React.JSX.Element {
 
 				{/* ── Ended ────────────────────────────────────────────────── */}
 				{phase === 'ended' && (
-					<div className="phase-panel kod-ended">
+					<div className="phase-panel kod-ended d-flex flex-column align-items-center gap-4 pt-4 text-center">
 						{gameWinner ? (
 							<>
 								<div>
@@ -606,16 +604,16 @@ export default function KingOfDiamond(): React.JSX.Element {
 									<div className="kod-ended__title-label">King of Diamond</div>
 								</div>
 
-								<div className="kod-standings">
+								<div className="kod-standings w-100">
 									{players
 										.slice()
 										.sort((a, b) => b.points - a.points)
 										.map((p, i) => (
 											<div
 												key={p.userId}
-												className={`kod-standings__row${i === 0 ? ' kod-standings__row--first' : ''}`}
+												className={`kod-standings__row d-flex justify-content-between align-items-center${i === 0 ? ' kod-standings__row--first' : ''}`}
 											>
-												<div className="kod-standings__left">
+												<div className="kod-standings__left d-flex align-items-center gap-3">
 													<span className="kod-standings__rank">
 														{i === 0 ? '♛' : `${i + 1}.`}
 													</span>

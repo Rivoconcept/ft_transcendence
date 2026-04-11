@@ -87,22 +87,12 @@
   color: var(--text-primary);
   font-family: var(--font-serif);
   padding: 0 0 48px;
-  // overflow: hidden;
 }
 
 /* // ── Header ──────────────────────────────────────────────────────────────────── */
 .kod-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--border-header);
-
-  .kod-header__title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
 
   .kod-header__diamond {
     font-size: 22px;
@@ -121,11 +111,6 @@
     color: var(--text-muted);
     margin-left: 4px;
   }
-
-  .kod-header__actions {
-    display: flex;
-    gap: 8px;
-  }
 }
 
 /* // ── Buttons ─────────────────────────────────────────────────────────────────── */
@@ -134,7 +119,6 @@
   border: 1px solid var(--border-input);
   color: var(--text-secondary);
   border-radius: var(--radius-num);
-  /* padding: 7px 16px;              // slightly more padding */
   cursor: pointer;
   font-size: 14px;
   font-family: var(--font-serif);
@@ -188,17 +172,12 @@
 
 /* // ── Error Banner ────────────────────────────────────────────────────────────── */
 .kod-error {
-  margin: 12px 24px;
   padding: 12px 16px;
   background: var(--bg-error);
   border: 1px solid var(--border-error);
   border-radius: var(--radius-num);
   color: var(--text-error);
   font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
 
   .kod-error__close {
     background: none;
@@ -224,7 +203,6 @@
 
 /* // ── Waiting Phase ───────────────────────────────────────────────────────────── */
 .kod-waiting {
-  text-align: center;
   padding-top: 72px;
 
   .kod-waiting__icon {
@@ -242,16 +220,7 @@
 
 /* // ── Number Grid (Picking Phase) ─────────────────────────────────────────────── */
 .kod-numgrid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  align-items: center;
-
   .kod-numgrid__grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
     max-width: 540px;
   }
 }
@@ -289,9 +258,6 @@
 /* // Selected number display */
 .kod-selection-display {
   height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
   .kod-selection-display__number {
     font-size: 58px;
@@ -411,13 +377,6 @@
     }
   }
 
-  .player-card__points-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
   .player-card__points {
     font-size: 22px;
     font-weight: 700;
@@ -487,25 +446,11 @@
 
 /* // ── Submitted Phase ─────────────────────────────────────────────────────────── */
 .kod-submitted {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
   .kod-submitted__label {
-    text-align: center;
     font-size: 13px;
     color: var(--text-muted);
     letter-spacing: 2px;
-    text-transform: uppercase;
     margin-bottom: 4px;
-  }
-
-  .kod-submitted__dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 8px;
   }
 
   .kod-submitted__dot {
@@ -529,16 +474,10 @@
 
 /* // ── Result Phase ────────────────────────────────────────────────────────────── */
 .kod-result {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
   .kod-result__label {
-    text-align: center;
     font-size: 13px;
     color: var(--gold);
     letter-spacing: 2px;
-    text-transform: uppercase;
   }
 }
 
@@ -549,7 +488,6 @@
   border-radius: var(--radius-panel);
   padding: 18px 22px;
   text-align: center;
-  margin-top: 16px;
 
   .kod-calculus__label {
     font-size: 13px;
@@ -594,12 +532,7 @@
 
 /* // ── Spectating Phase ────────────────────────────────────────────────────────── */
 .kod-spectating {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
   .kod-spectating__banner {
-    text-align: center;
     padding: 12px 18px;
     background: #1a0a0a;
     border: 1px solid var(--border-elim);
@@ -612,13 +545,6 @@
 
 /* // ── Ended Phase ─────────────────────────────────────────────────────────────── */
 .kod-ended {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 26px;
-  padding-top: 28px;
-  text-align: center;
-
   .kod-ended__crown {
     font-size: 56px;
     color: var(--gold);
@@ -657,13 +583,9 @@
   border: 1px solid #1e1e30;
   border-radius: var(--radius-panel);
   padding: 18px 22px;
-  width: 100%;
   max-width: 380px;
 
   .kod-standings__row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 9px 0;
     border-bottom: 1px solid var(--border-subtle);
 
@@ -672,12 +594,6 @@
     &--first .kod-standings__rank  { color: var(--gold); }
     &--first .kod-standings__name  { color: var(--gold); font-weight: 600; }
     &--first .kod-standings__pts   { color: var(--gold); }
-  }
-
-  .kod-standings__left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
   }
 
   .kod-standings__rank {
@@ -711,13 +627,6 @@
   flex-direction: column;
   gap: 14px;
 
-  .kod-history__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
   .kod-history__title {
     color: var(--gold);
     font-size: 15px;
@@ -729,7 +638,6 @@
   .kod-history__empty {
     color: var(--text-dimmer);
     font-size: 14px;
-    text-align: center;
   }
 }
 
@@ -739,12 +647,6 @@
   border-radius: 10px;
   padding: 14px 16px;
 
-  .kod-history-entry__meta {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
   .kod-history-entry__round {
     color: var(--text-muted);
     font-size: 13px;
@@ -753,12 +655,6 @@
   .kod-history-entry__winner {
     color: var(--gold);
     font-size: 13px;
-  }
-
-  .kod-history-entry__choices {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
   }
 
   .kod-history-entry__chip {
@@ -782,7 +678,6 @@
   }
 
   .kod-history-entry__formula {
-    margin-top: 10px;
     font-size: 12px;
     color: var(--text-dimmer);
 
@@ -932,5 +827,5 @@
     max-width: 100%;
   }
 
-  .kod-error { font-size: 13px; margin: 10px 14px; }
+  .kod-error { font-size: 13px; }
 }
