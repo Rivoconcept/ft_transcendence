@@ -92,10 +92,10 @@ export default function MultiplayerLobby(): React.JSX.Element {
     };
 
     // match:player-joined now carries the full participant list with names
-    // because the socket handler fetches all sockets in the room
     const handlePlayersUpdate = (data: { participants: Player[] }) => {
       setPlayers(data.participants);
     };
+
     const handlePlayerLeft = (data: { userId: number; playerName: string; participants: Player[] }) => {
       setPlayers(data.participants);
     };
@@ -104,12 +104,18 @@ export default function MultiplayerLobby(): React.JSX.Element {
       navigate(`/games/${gameSlug}/${roomId}/play`);
     };
 
+    const handleMatchCancelled = (data: { userId: number; playerName: string; participants: Player[] }) => {
+      setPlayers(data.participants);
+      navigate(`/games/${gameSlug}/multiplayer/setup`);
+    };
+
     const handleError = ({ error }: { error: string }) => {
       console.error("Socket error:", error);
     };
 
     if (socket.connected) joinRoom();
-    socket.once("connect", joinRoom);
+    socket.on("connect", joinRoom);
+    socket.on("match:cancelled", handleMatchCancelled);
     socket.on("match:player-joined", handlePlayersUpdate);
     socket.on("match:player-left", handlePlayerLeft);
     socket.on("match:started", handleStart);
@@ -146,6 +152,17 @@ export default function MultiplayerLobby(): React.JSX.Element {
     navigate(`/games/${gameSlug}/multiplayer/setup`);
   };
 
+  const cancelMatch = async () => {
+    const socket = socketStore.getSocket();
+    if (socket && roomId)
+      socket.emit("cancelMatch", { matchId: roomId });
+    try {
+      await apiService.delete(`/matches/${roomId}`);
+    } catch {
+    }
+    navigate(`/games/${gameSlug}/multiplayer/setup`);
+  };
+
   return (
     <div className="container mt-5">
       <div className="card shadow p-4 mx-auto" style={{ maxWidth: 500 }}>
@@ -176,10 +193,17 @@ export default function MultiplayerLobby(): React.JSX.Element {
           </div>
         )}
 
-        {isCreator && players.length > 1 && (
-          <button className="btn btn-success w-100" onClick={startGame}>
-            Start game
-          </button>
+        {isCreator && (
+          <>
+            {players.length > 1 && (
+              <button className="btn btn-success w-100" onClick={startGame}>
+                Start game
+              </button>
+            )}
+            <button className="btn btn-outline-danger w-100 mt-2" onClick={cancelMatch}>
+              Cancel Match
+            </button>
+          </>
         )}
 
         {!isCreator && (

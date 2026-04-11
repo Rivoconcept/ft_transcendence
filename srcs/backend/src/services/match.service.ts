@@ -185,6 +185,13 @@ class MatchService {
     });
   }
 
+  async playerInMatch(userId: number, matchId: string): Promise<boolean> {
+    const participation = await this.participationRepository.findOne({
+      where: { user_id: userId, match_id: matchId },
+    });
+    return !!participation;
+  }
+
   async discoverMatches(gameId?: number): Promise<DiscoverMatchItem[]> {
     const whereClause: Record<string, unknown> = {
       is_open: true,

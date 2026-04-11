@@ -27,10 +27,10 @@ class SocketService {
   private matchTimers: Map<string, number> = new Map();
   private matchTimerRepository = AppDataSource.getRepository(MatchTimer);
   private matchRepository = AppDataSource.getRepository(Match);
-  
+
   private constructor() { }
 
-  
+
   static getInstance(): SocketService {
     if (!SocketService.instance) {
       SocketService.instance = new SocketService();
@@ -159,7 +159,6 @@ class SocketService {
       //----------------- match specific logic -----------------
       socket.on("joinMatchRoom", async ({ matchId, playerName }: { matchId: string; playerName: string }) => {
         if (!socket.userId) {
-          console.log("joinMatchRoom refused: unauthenticated socket");
           return;
         }
 
@@ -174,12 +173,9 @@ class SocketService {
         socket.playerName = playerName || socket.username;
         socket.join(room);
 
-        console.log(`${socket.playerName} joined ${room}`);
-
         const sockets = await this.io?.in(room).fetchSockets();
         const participants: { id: number; name: string; ready: boolean }[] = [];
         const seen = new Set<number>();
-
         sockets?.forEach((s: any) => {
           if (s.userId && !seen.has(s.userId)) {
             participants.push({
@@ -196,6 +192,19 @@ class SocketService {
           participants,
           creatorId,
         });
+      });
+
+      socket.on("cancelMatch", async ({ matchId }: { matchId: string }) => {
+        if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
+
+        try {
+          await matchService.deleteMatch(socket.userId, matchId);
+          this.io?.to(`match.${matchId}`).emit("match:cancelled", {});
+          this.io?.in(`match.${matchId}`).socketsLeave(`match.${matchId}`);
+        } catch (err: any) {
+          console.error("Error cancelling match:", err);
+          socket.emit("error", { error: err.message });
+        }
       });
 
       socket.on("leaveMatchRoom", async ({ matchId }: { matchId: string }) => {
