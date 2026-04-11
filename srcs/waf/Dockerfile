@@ -78,12 +78,6 @@ RUN mkdir -p /var/log/nginx && \
     mv /etc/nginx/modsecurity.d/coreruleset-4.7.0 /etc/nginx/modsecurity.d/owasp-crs && \
     rm /tmp/crs.tar.gz
 
-# RUN wget -O /tmp/crs.tar.gz \
-#     https://github.com/coreruleset/coreruleset/archive/refs/tags/v4.7.0.tar.gz && \
-#     tar -xzf /tmp/crs.tar.gz -C /etc/nginx/ && \
-#     mv /etc/nginx/coreruleset-4.7.0 /etc/nginx/owasp-crs && \
-#     rm /tmp/crs.tar.gz
-
 # Copy frontend build
 COPY --from=frontend /app/dist /var/www/frontend
 

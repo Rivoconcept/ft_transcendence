@@ -1,6 +1,5 @@
 #!/bin/sh
-set -e 
-set -x
+set -e
 
 export VAULT_CACERT=/run/secrets/vault.crt
 export VAULT_ADDR=https://vault:8200
@@ -24,6 +23,7 @@ if ! vault status -tls-skip-verify | grep -q "Initialized.*true"; then
 else
   UNSEAL_KEY=$(cat /run/secrets/vault/unseal_key)
   ROOT_TOKEN=$(cat /run/secrets/vault/root_token)
+  echo "ROOT_TOKEN: $ROOT_TOKEN"
   export VAULT_TOKEN=$ROOT_TOKEN
 fi
 

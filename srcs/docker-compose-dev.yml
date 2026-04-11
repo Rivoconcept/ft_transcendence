@@ -53,6 +53,8 @@ services:
         target: vault.crt
       - source: vault_key
         target: vault.key
+      - source: init_json
+        target: init.json
 
   vault-agent:
     build:
@@ -90,10 +92,9 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: frontend-dev
     volumes:
-      - vault-secrets:/run/secrets/GameHub:ro
       - ./frontend:/app
     ports:
       - "${FRONTEND_PORT}:5173"
@@ -110,7 +111,7 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
-      - vault-secrets:/run/secrets/GameHub:ro
+      - vault-secrets:/run/secrets/GameHub/backend:ro
     ports:
       - "${BACKEND_PORT}:3000"
     environment:

@@ -15,16 +15,12 @@ NAME = ft_stranscendance
 USER_NAME = $(shell whoami)
 COMPOSE = docker compose
 
-MODE ?= dev  # valeur par défaut = cybersec-dev
+MODE ?= prod
 
-ifeq ($(MODE),prod)
-  COMPOSE_FILE := -f ./srcs/docker-compose-prod.yml
-else ifeq ($(MODE),cybersec-dev)
-  COMPOSE_FILE := -f ./srcs/docker-compose-dev-cybersec.yml
-else ifeq ($(MODE),cybersec-prod)
-  COMPOSE_FILE := -f ./srcs/docker-compose-prod-cybersec.yml
-else
+ifeq ($(MODE),dev)
   COMPOSE_FILE := -f ./srcs/docker-compose-dev.yml
+else
+  COMPOSE_FILE := -f ./srcs/docker-compose-prod.yml
 endif
 
 ENV_FILE = --env-file ./srcs/.env

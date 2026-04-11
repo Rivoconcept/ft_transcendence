@@ -418,3 +418,5 @@ same game in real-time.
 ### arajaona
 
 ### tramanan
+- **Cybersecurity Module**: Implemented HashiCorp Vault for secrets management and ModSecurity for Web Application Firewall (WAF) integration.
+- **Chat Foundation**: Developed the core architecture and foundation for the real-time chat system.
