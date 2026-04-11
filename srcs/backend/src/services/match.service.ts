@@ -89,6 +89,21 @@ class MatchService {
     };
   }
 
+  private async assertNotInActiveMatch(userId: number, excludeMatchId?: string): Promise<void> {
+    const query = this.participationRepository
+      .createQueryBuilder('p')                        // SELECT from participations table, alias = 'p'
+      .innerJoin('Match', 'm', 'm.id = p.match_id') // JOIN matches table, alias = 'm', on match_id
+      .where('p.user_id = :userId', { userId })       // WHERE participation belongs to this user
+      .andWhere('m.has_begun = false');               // AND the match is not finished
+    if (excludeMatchId)
+      query.andWhere('p.match_id != :excludeMatchId', { excludeMatchId }); // AND it's not the match they're trying to join
+
+    const activeParticipation = await query.getOne();
+
+    if (activeParticipation)
+      throw new Error("You are already in an active match");
+  }
+
   private async findJoinableMatch(gameId: number): Promise<Match | null> {
     const openMatches = await this.matchRepository.find({
       where: {
@@ -113,8 +128,9 @@ class MatchService {
   }
 
   async createMatch(userId: number, data?: CreateMatchDTO): Promise<MatchItem> {
-    const uniqueId = await this.generateUniqueId();
+    await this.assertNotInActiveMatch(userId);
 
+    const uniqueId = await this.generateUniqueId();
     const match = this.matchRepository.create({
       id: uniqueId,
       author_id: userId,
@@ -199,9 +215,8 @@ class MatchService {
     }
 
     const joinableMatch = await this.findJoinableMatch(data.game_id);
-    if (joinableMatch) {
+    if (joinableMatch)
       return this.joinMatch(userId, joinableMatch.id, data.game_id);
-    }
 
     return this.createMatch(userId, {
       game_id: data.game_id,
@@ -213,6 +228,8 @@ class MatchService {
   }
 
   async joinMatch(userId: number, matchId: string, gameID: number): Promise<MatchItem> {
+    await this.assertNotInActiveMatch(userId, matchId);
+
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
     });
@@ -221,8 +238,6 @@ class MatchService {
       where: { user_id: userId, match_id: matchId },
     });
 
-    // if (existingParticipation)
-    //   throw new Error("You are already in this match");
 
     if (!match)
       throw new Error("Match not found");
@@ -245,18 +260,22 @@ class MatchService {
         throw new Error("Match is full");
     }
 
-    // Delete any existing participation (in case of reconnection/multiple joins)
-    await this.participationRepository.delete({
-      user_id: userId,
-      match_id: matchId,
-    });
+    // // Delete any existing participation (in case of reconnection/multiple joins)
+    // await this.participationRepository.delete({
+    //   user_id: userId,
+    //   match_id: matchId,
+    // });
 
     // Ajouter le participant
-    const participation = this.participationRepository.create({
-      user_id: userId,
-      match_id: matchId,
-      score: 0,
-    });
+    var participation;
+    if (!existingParticipation)
+      participation = this.participationRepository.create({
+        user_id: userId,
+        match_id: matchId,
+        score: 0,
+      });
+    else
+      participation = existingParticipation;
 
     // Récupérer tous les participants
     await this.participationRepository.save(participation);
