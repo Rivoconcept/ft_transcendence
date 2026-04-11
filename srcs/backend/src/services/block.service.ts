@@ -14,7 +14,6 @@ export async function blockUser(blockerId: number, blockedId: number): Promise<B
     throw new Error("User already blocked");
   }
 
-  // Supprimer l'amitié (invitations accepted dans les deux sens)
   const deletedFriendship = await invitationRepo.findOne({
     where: [
       { sender_id: blockerId, receiver_id: blockedId, status: InvitationStatus.ACCEPTED },
@@ -27,13 +26,11 @@ export async function blockUser(blockerId: number, blockedId: number): Promise<B
     { sender_id: blockedId, receiver_id: blockerId, status: InvitationStatus.ACCEPTED },
   ]);
 
-  // Supprimer les invitations en attente dans les deux sens
   await invitationRepo.delete([
     { sender_id: blockerId, receiver_id: blockedId, status: InvitationStatus.PENDING },
     { sender_id: blockedId, receiver_id: blockerId, status: InvitationStatus.PENDING },
   ]);
 
-  // Notifier l'utilisateur bloqué que l'amitié a été supprimée
   if (deletedFriendship) {
     const io = socketService.getIO();
     if (io) {

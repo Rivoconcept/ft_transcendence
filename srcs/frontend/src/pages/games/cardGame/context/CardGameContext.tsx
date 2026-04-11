@@ -89,7 +89,7 @@ export function CardGameContextProvider({ children }: { children: React.ReactNod
       const handlePlayers = (data: any) => {
         if (!data.participants) return;
 
-        setPlayers(data.participants); // 👈 RESET complet ici
+        setPlayers(data.participants);
       };
 
       socketStore.on("match:player-joined", handlePlayers);

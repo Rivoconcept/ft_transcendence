@@ -273,7 +273,6 @@ class MatchService {
     //   match_id: matchId,
     // });
 
-    // Ajouter le participant
     var participation;
     if (!existingParticipation)
       participation = this.participationRepository.create({
@@ -284,7 +283,6 @@ class MatchService {
     else
       participation = existingParticipation;
 
-    // Récupérer tous les participants
     await this.participationRepository.save(participation);
     const participations = await this.participationRepository.find({
       where: { match_id: matchId },
@@ -314,7 +312,6 @@ class MatchService {
       throw new Error("Match has already started");
     }
 
-    // Vérifier qu'il y a au moins 2 participants
     const participations = await this.participationRepository.find({
       where: { match_id: matchId },
     });
@@ -323,14 +320,12 @@ class MatchService {
       throw new Error("Need at least 2 players to start the match");
     }
 
-    // Fermer le match aux nouveaux joueurs
     match.is_open = false;
     match.has_begun = true;
     await this.matchRepository.save(match);
 
     const participantIds = participations.map((p) => p.user_id);
 
-    // Notifier tous les participants que le match commence
     const io = socketService.getIO();
     if (io) {
       io.to(`match.${matchId}`).emit("match:started", {
@@ -360,10 +355,7 @@ class MatchService {
       throw new Error("Match is already over");
     }
 
-    // Incrémenter le current_set
     match.current_set += 1;
-
-    // Si current_set dépasse set, terminer le match
     if (match.current_set > match.set) {
       match.match_over = true;
       match.is_open = false;
@@ -377,7 +369,6 @@ class MatchService {
 
     const participantIds = participations.map((p) => p.user_id);
 
-    // Notifier tous les participants
     const io = socketService.getIO();
     if (io) {
       if (match.match_over) {
@@ -387,7 +378,6 @@ class MatchService {
           participantIds,
         });
 
-        // Faire quitter la room à tous les participants
         participantIds.forEach((id) => {
           socketService.leaveMatchRoom(id, matchId);
         });
@@ -447,7 +437,6 @@ class MatchService {
     const participantIds = participations.map((p) => p.user_id);
     const participants = await this.resolveParticipants(participations);
 
-    // Notifier tous les participants
     const io = socketService.getIO();
     if (io) {
       io.to(`match.${matchId}`).emit("match:visibility-changed", {
@@ -514,7 +503,6 @@ class MatchService {
       throw new Error("Match is already over");
     }
 
-    // Vérifier que l'utilisateur fait partie du match
     const participation = await this.participationRepository.findOne({
       where: { user_id: userId, match_id: matchId },
     });
@@ -533,7 +521,6 @@ class MatchService {
 
     await this.participationRepository.save(participation);
 
-    // Notifier tous les participants
     const io = socketService.getIO();
     if (io) {
       io.to(`match.${matchId}`).emit("match:score-updated", {

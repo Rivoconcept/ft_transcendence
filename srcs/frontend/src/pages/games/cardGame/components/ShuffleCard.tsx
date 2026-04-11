@@ -38,13 +38,13 @@ const back = useLoader(THREE.TextureLoader, "/diamonds/back.png");
         <meshBasicMaterial color={0x000000} />
       </mesh>
 
-      {/* Carte qui flippe */}
+      {/* Flipping card */}
       <mesh>
         <planeGeometry args={[2.5, 3.5]} />
         <meshStandardMaterial
           map={showBack ? back : fronts[index]}
           side={THREE.DoubleSide}
-          transparent={true} // utile si les textures ont des zones transparentes
+          transparent={true}
         />
       </mesh>
     </group>

@@ -28,27 +28,22 @@ export const currentUserAtom = atom<User | null>(null);
 // Loading state for current user — starts true if a token exists to prevent premature redirect
 export const currentUserLoadingAtom = atom<boolean>(apiService.isAuthenticated());
 
-// === PRIVATE: Cache brut ===
 const _userCacheFamily = atomFamily(
 	(_userId: number) => atom<User | null>(null)
 );
 
-// === PRIVATE: Async family avec fetch auto si pas en cache ===
 const _userAsyncFamily = atomFamily((userId: number) =>
 	atom(async (get) => {
 		const cached = get(_userCacheFamily(userId));
 		if (cached) return cached;
-		// Fetch si pas en cache
 		return await userService.getById(userId);
 	})
 );
 
-// === PUBLIC: Pour l'UI avec loading state ===
 export const userFamily = atomFamily((userId: number) =>
 	loadable(_userAsyncFamily(userId))
 );
 
-// === PUBLIC: Cache pour lecture/écriture synchrone (providers, socket events) ===
 export const userCacheFamily = _userCacheFamily;
 
 // Action to update user in cache

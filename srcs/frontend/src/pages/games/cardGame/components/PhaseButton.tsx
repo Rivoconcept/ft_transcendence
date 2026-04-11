@@ -7,23 +7,21 @@ import { useCardGameState } from "../context/CardGameContext";
 
 type Props = {
   phase: Phase;
-  onClick: () => void; // navigation /result ou passer à la phase suivante
+  onClick: () => void;
 };
 
 export default function PhaseButton({ phase, onClick }: Props) {
   const mode = useAtomValue(gameModeAtom);
   const { turn, maxTurns, timeLeft } = useCardGameState();
 
-  // --------------------- AUTO-PLAY pour la phase PLAY ---------------------
+  // --------------------- AUTO-PLAY ---------------------
   useEffect(() => {
     if (phase === Phase.PLAY) {
-      // Pour SINGLE : on attend maxTurns
-      // Pour MULTI : on attend maxTurns ou timeLeft <= 0
       if ((mode === "SINGLE" && turn < maxTurns) ||
           (mode === "MULTI" && turn < maxTurns && timeLeft > 0)) {
         const timer = setTimeout(() => {
-          onClick(); // passe automatiquement à BEGIN ou SHOW_RESULT
-        }, 500); // délai pour simuler le joueur
+          onClick();
+        }, 500);
         return () => clearTimeout(timer);
       }
     }
@@ -76,7 +74,6 @@ export default function PhaseButton({ phase, onClick }: Props) {
       return <div className="waiting-message">⏳ Preparing results...</div>;
     }
 
-    // Pour SINGLE, afficher bouton "View State"
     return (
       <button
         className="btn btn-success"

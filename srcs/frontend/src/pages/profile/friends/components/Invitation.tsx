@@ -21,14 +21,12 @@ export default function Invitation(): React.JSX.Element {
 	const [error, setError] = useState<string | null>(null);
 	const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
 
-	// Invitations reçues
 	const receivedInvitations = useAtomValue(receivedInvitationsListAtom);
 	const isLoadingReceived = useAtomValue(receivedInvitationsLoadingAtom);
 	const fetchReceivedInvitations = useSetAtom(fetchReceivedInvitationsAtom);
 	const acceptInvitation = useSetAtom(acceptInvitationAtom);
 	const declineInvitation = useSetAtom(declineInvitationAtom);
 
-	// Invitations envoyées
 	const sentInvitations = useAtomValue(sentInvitationsListAtom);
 	const isLoadingSent = useAtomValue(sentInvitationsLoadingAtom);
 	const fetchSentInvitations = useSetAtom(fetchSentInvitationsAtom);
@@ -112,7 +110,7 @@ export default function Invitation(): React.JSX.Element {
 
 	return (
 		<>
-			{/* Message d'erreur global */}
+			{/* Global error message */}
 			{error && (
 				<div style={{
 					color: '#ef4444',
@@ -126,7 +124,7 @@ export default function Invitation(): React.JSX.Element {
 				</div>
 			)}
 
-			{/* Formulaire d'envoi */}
+			{/* Send form */}
 			<div style={{ marginBottom: '1.5rem' }}>
 				<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Send Friend Request</label>
 				<div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -169,7 +167,6 @@ export default function Invitation(): React.JSX.Element {
 				</div>
 			</div>
 
-			{/* Invitations reçues */}
 			<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Received Invitations</label>
 			{isLoadingReceived && receivedInvitations.length === 0 ? (
 				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)', marginBottom: '1.5rem' }}>Loading...</p>
@@ -209,7 +206,6 @@ export default function Invitation(): React.JSX.Element {
 				</div>
 			)}
 
-			{/* Invitations envoyées */}
 			<label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: 500 }}>Sent Invitations</label>
 			{isLoadingSent && sentInvitations.length === 0 ? (
 				<p style={{ textAlign: 'center', color: 'var(--app-text-secondary)' }}>Loading...</p>

@@ -30,7 +30,6 @@ export default function PlayerList() {
     const exists = players.some(p => p.id === selectedPlayerId);
 
     if (!exists) {
-      // fallback intelligent au lieu de null
       if (players.length > 0) {
         setSelectedPlayerId(players[0].id);
       } else {
@@ -83,7 +82,6 @@ export default function PlayerList() {
     // local update
     setSelectedPlayerId(newSelected);
 
-    // 🔥 broadcast aux autres joueurs
     socketStore.emit("match:select-player", {
       matchId: roomId,
       playerId: newSelected,

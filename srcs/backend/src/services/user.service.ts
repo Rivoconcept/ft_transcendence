@@ -63,7 +63,6 @@ class UserService {
 
     const participationRepo = AppDataSource.getRepository(Participation);
 
-    // Toutes les participations à des matchs terminés
     const participations = await participationRepo.find({
       where: { user_id: userId },
       relations: ["match", "match.participations"],

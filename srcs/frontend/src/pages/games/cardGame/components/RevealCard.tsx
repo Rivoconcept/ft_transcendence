@@ -82,20 +82,20 @@ export default function RevealCard({ cardId }: { cardId: string }) {
 
 
 
-  if (index === null) return null; // 👈 évite un render invalide
+  if (index === null) return null;
 
   /* ======================
      RENDER
   ====================== */
   return (
     <group ref={group}>
-      {/* Fond noir */}
+      {/* Black background */}
       <mesh position={[0, 0, -0.01]}>
         <planeGeometry args={[2.5, 3.5]} />
         <meshBasicMaterial color={0x000000} />
       </mesh>
 
-      {/* Carte */}
+      {/* Card */}
       <mesh>
         <primitive object={geometry} />
         <meshStandardMaterial

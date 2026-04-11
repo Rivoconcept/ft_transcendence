@@ -70,7 +70,6 @@ class SocketService {
 
           socket.join(`user.${payload.userId}`);
 
-          // Rejoindre toutes les rooms de chat de l'utilisateur
           await this.joinUserChatRooms(socket, payload.userId);
 
           await userService.setOnlineStatus(payload.userId, true);
@@ -479,28 +478,24 @@ class SocketService {
     return this.io !== null;
   }
 
-  // Faire rejoindre un utilisateur à une room de chat
   joinChatRoom(userId: number, channelId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;
     this.io.in(room).socketsJoin(`chat.${channelId}`);
   }
 
-  // Faire quitter un utilisateur d'une room de chat
   leaveChatRoom(userId: number, channelId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;
     this.io.in(room).socketsLeave(`chat.${channelId}`);
   }
 
-  // Faire rejoindre un utilisateur à une room de match
   joinMatchRoom(userId: number, matchId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;
     this.io.in(room).socketsJoin(`match.${matchId}`);
   }
 
-  // Faire quitter un utilisateur d'une room de match
   leaveMatchRoom(userId: number, matchId: string): void {
     if (!this.io) return;
     const room = `user.${userId}`;

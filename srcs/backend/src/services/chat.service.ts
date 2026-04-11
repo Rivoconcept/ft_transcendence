@@ -27,7 +27,6 @@ interface SendMessageDTO {
   socketId?: string;
 }
 
-// Réponses minimalistes - uniquement les IDs
 interface ChatListItem {
   id: number;
   name: string | null;
@@ -90,7 +89,6 @@ class ChatService {
       throw new Error("User not found");
     }
 
-    // Vérifier si un chat direct existe déjà entre ces deux utilisateurs
     const existingChat = await this.findExistingDirectChat(currentUserId, userId);
     if (existingChat) {
       return existingChat;
@@ -103,7 +101,6 @@ class ChatService {
 
     await this.chatRepository.save(chat);
 
-    // Ajouter les deux membres
     const member1 = this.chatMemberRepository.create({
       chat_id: chat.id,
       user_id: currentUserId,
@@ -115,11 +112,9 @@ class ChatService {
 
     await this.chatMemberRepository.save([member1, member2]);
 
-    // Faire rejoindre les deux utilisateurs à la room du chat
     socketService.joinChatRoom(currentUserId, chat.channel_id);
     socketService.joinChatRoom(userId, chat.channel_id);
 
-    // Notifier via la room du chat
     const io = socketService.getIO();
     if (io) {
       io.to(`chat.${chat.channel_id}`).emit("chat:created", {
@@ -143,7 +138,6 @@ class ChatService {
       throw new Error("At least one member is required");
     }
 
-    // Vérifier que tous les utilisateurs existent
     const users = await this.userRepository.findByIds([...memberIds, currentUserId]);
     const allMemberIds = [...new Set([currentUserId, ...memberIds])];
 
@@ -159,7 +153,6 @@ class ChatService {
 
     await this.chatRepository.save(chat);
 
-    // Ajouter tous les membres
     const members = allMemberIds.map((userId) =>
       this.chatMemberRepository.create({
         chat_id: chat.id,
@@ -169,19 +162,16 @@ class ChatService {
 
     await this.chatMemberRepository.save(members);
 
-    // Le créateur est modérateur par défaut
     const moderator = this.chatModeratorRepository.create({
       chat_id: chat.id,
       user_id: currentUserId,
     });
     await this.chatModeratorRepository.save(moderator);
 
-    // Faire rejoindre tous les membres à la room du chat
     allMemberIds.forEach((userId) => {
       socketService.joinChatRoom(userId, chat.channel_id);
     });
 
-    // Notifier via la room du chat
     const io = socketService.getIO();
     if (io) {
       io.to(`chat.${chat.channel_id}`).emit("chat:created", {
@@ -228,9 +218,7 @@ class ChatService {
       where: { chat_id: chatId },
     });
 
-    // Seul membre restant → supprimer le groupe
     if (allMembers.length === 1) {
-      // Supprimer les reads avant les messages (foreign key)
       const messageIds = await this.messageRepository.find({
         where: { chat_id: chatId },
         select: ["id"],
@@ -251,23 +239,18 @@ class ChatService {
       return;
     }
 
-    // Modérateur unique avec d'autres membres → doit désigner un remplaçant
     if (isModerator && allModerators.length === 1) {
       throw new Error("You must assign another moderator before leaving");
     }
 
-    // Retirer le rôle de modérateur si applicable
     if (isModerator) {
       await this.chatModeratorRepository.remove(isModerator);
     }
 
-    // Supprimer le membre du chat
     await this.chatMemberRepository.remove(membership);
 
-    // Faire quitter la room socket
     socketService.leaveChatRoom(userId, chat.channel_id);
 
-    // Notifier les autres membres
     const io = socketService.getIO();
     if (io) {
       io.to(`chat.${chat.channel_id}`).emit("chat:member-left", {
@@ -290,7 +273,6 @@ class ChatService {
   }
 
   async getUserChats(userId: number): Promise<ChatListItem[]> {
-    // Récupérer tous les chats de l'utilisateur
     const chatMembers = await this.chatMemberRepository.find({
       where: { user_id: userId },
       relations: ["chat"],
@@ -302,13 +284,11 @@ class ChatService {
       return [];
     }
 
-    // Récupérer les chats
     const chats = await this.chatRepository
       .createQueryBuilder("chat")
       .where("chat.id IN (:...chatIds)", { chatIds })
       .getMany();
 
-    // Récupérer tous les membres de tous les chats
     const allMembers = await this.chatMemberRepository.find({
       where: chatIds.map((id) => ({ chat_id: id })),
     });
@@ -320,7 +300,6 @@ class ChatService {
       membersByChatId.set(m.chat_id, existing);
     });
 
-    // Récupérer les modérateurs de tous les chats
     const allModerators = await this.chatModeratorRepository.find({
       where: chatIds.map((id) => ({ chat_id: id })),
     });
@@ -332,7 +311,6 @@ class ChatService {
       moderatorsByChatId.set(m.chat_id, existing);
     });
 
-    // Récupérer le dernier message de chaque chat (par date de création)
     const lastMessages = await Promise.all(
       chatIds.map(async (chatId) => {
         const message = await this.messageRepository.findOne({
@@ -352,7 +330,6 @@ class ChatService {
 
     const lastMessageMap = new Map(lastMessages.map((lm) => [lm.chatId, lm]));
 
-    // Compter les messages non lus par chat pour cet utilisateur
     const unreadCounts = await Promise.all(
       chatIds.map(async (chatId) => {
         const count = await this.messageRepository
@@ -371,7 +348,6 @@ class ChatService {
     );
     const unreadMap = new Map(unreadCounts.map((u) => [u.chatId, u.count]));
 
-    // Formater les résultats
     const chatList: ChatListItem[] = chats.map((chat) => {
       const lastMsg = lastMessageMap.get(chat.id);
       return {
@@ -390,7 +366,6 @@ class ChatService {
       };
     });
 
-    // Trier par date de création du dernier message (plus récent en premier)
     chatList.sort((a, b) => {
       const dateA = lastMessageMap.get(a.id)?.createdAt ?? a.created_at;
       const dateB = lastMessageMap.get(b.id)?.createdAt ?? b.created_at;
@@ -406,7 +381,6 @@ class ChatService {
     page: number = 1,
     limit: number = 50
   ): Promise<PaginatedMessages> {
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -417,12 +391,10 @@ class ChatService {
 
     const offset = (page - 1) * limit;
 
-    // Récupérer le total de messages
     const total = await this.messageRepository.count({
       where: { chat_id: chatId },
     });
 
-    // Récupérer les messages avec pagination
     const messages = await this.messageRepository.find({
       where: { chat_id: chatId },
       order: { created_at: "DESC" },
@@ -430,7 +402,6 @@ class ChatService {
       take: limit,
     });
 
-    // Récupérer les réactions pour chaque message
     const messageIds = messages.map((m) => m.id);
     const reactions =
       messageIds.length > 0
@@ -441,7 +412,6 @@ class ChatService {
             .getMany()
         : [];
 
-    // Grouper les réactions par message
     const reactionsByMessage = new Map<number, typeof reactions>();
     reactions.forEach((r) => {
       const existing = reactionsByMessage.get(r.message_id) ?? [];
@@ -449,7 +419,6 @@ class ChatService {
       reactionsByMessage.set(r.message_id, existing);
     });
 
-    // Récupérer les reads pour chaque message
     const reads =
       messageIds.length > 0
         ? await this.messageReadRepository
@@ -465,11 +434,9 @@ class ChatService {
       readsByMessage.set(r.message_id, existing);
     });
 
-    // Formater les messages - uniquement les IDs
     const formattedMessages: MessageItem[] = messages.map((message) => {
       const messageReactions = reactionsByMessage.get(message.id) ?? [];
 
-      // Grouper les réactions par reactionId
       const reactionGroups = new Map<number, number[]>();
 
       messageReactions.forEach((r) => {
@@ -496,7 +463,7 @@ class ChatService {
     });
 
     return {
-      messages: formattedMessages.reverse(), // Ordre chronologique
+      messages: formattedMessages.reverse(),
       total,
       page,
       limit,
@@ -511,7 +478,6 @@ class ChatService {
       throw new Error("Message content is required");
     }
 
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -524,8 +490,6 @@ class ChatService {
     if (!chat) {
       throw new Error("Chat not found");
     }
-
-    // Vérifier le blocage dans les chats directs
     if (chat.type === ChatType.DIRECT) {
       const members = await this.chatMemberRepository.find({
         where: { chat_id: chatId },
@@ -553,7 +517,6 @@ class ChatService {
 
     await this.messageRepository.save(message);
 
-    // L'auteur a automatiquement lu son propre message
     const authorRead = this.messageReadRepository.create({
       user_id: userId,
       message_id: message.id,
@@ -573,7 +536,6 @@ class ChatService {
       readBy: [userId],
     };
 
-    // Notifier les membres du chat (exclure uniquement le socket émetteur)
     const io = socketService.getIO();
     if (io) {
       const broadcast = io.to(`chat.${chat.channel_id}`);
@@ -604,7 +566,6 @@ class ChatService {
       return null;
     }
 
-    // Pour les chats directs, vérifier le membership
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -613,7 +574,6 @@ class ChatService {
       return null;
     }
 
-    // Récupérer les membres
     const members = await this.chatMemberRepository.find({
       where: { chat_id: chatId },
     });
@@ -624,7 +584,6 @@ class ChatService {
       select: ["id", "content", "type", "created_at"],
     });
 
-    // Compter les messages non lus
     const unreadCount = await this.messageRepository
       .createQueryBuilder("m")
       .leftJoin(
@@ -637,7 +596,6 @@ class ChatService {
       .andWhere("mr.id IS NULL")
       .getCount();
 
-    // Récupérer les modérateurs
     const moderators = await this.chatModeratorRepository.find({
       where: { chat_id: chatId },
     });
@@ -667,7 +625,6 @@ class ChatService {
       return null;
     }
 
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: message.chat_id },
     });
@@ -676,7 +633,6 @@ class ChatService {
       return null;
     }
 
-    // Récupérer les réactions
     const userReactions = await this.userReactionRepository.find({
       where: { message_id: messageId },
     });
@@ -688,7 +644,6 @@ class ChatService {
       reactionGroups.set(r.reaction_id, existing);
     });
 
-    // Récupérer les reads
     const messageReads = await this.messageReadRepository.find({
       where: { message_id: messageId },
     });
@@ -719,7 +674,6 @@ class ChatService {
       throw new Error("Message not found");
     }
 
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: message.chat_id },
     });
@@ -728,7 +682,6 @@ class ChatService {
       throw new Error("You are not a member of this chat");
     }
 
-    // Vérifier que la réaction existe
     const reactionRepo = AppDataSource.getRepository("Reaction");
     const reaction = await reactionRepo.findOne({ where: { id: reactionId } });
 
@@ -736,7 +689,6 @@ class ChatService {
       throw new Error("Reaction not found");
     }
 
-    // Vérifier si la réaction existe déjà
     const existingReaction = await this.userReactionRepository.findOne({
       where: { user_id: userId, message_id: messageId, reaction_id: reactionId },
     });
@@ -744,10 +696,8 @@ class ChatService {
     const chat = await this.chatRepository.findOne({ where: { id: message.chat_id } });
 
     if (existingReaction) {
-      // Supprimer la réaction (toggle off)
       await this.userReactionRepository.remove(existingReaction);
 
-      // Notifier via WebSocket
       const io = socketService.getIO();
       if (io && chat) {
         io.to(`chat.${chat.channel_id}`).emit("reaction:removed", {
@@ -759,7 +709,6 @@ class ChatService {
 
       return { added: false };
     } else {
-      // Ajouter la réaction (toggle on)
       const newReaction = this.userReactionRepository.create({
         user_id: userId,
         message_id: messageId,
@@ -767,7 +716,6 @@ class ChatService {
       });
       await this.userReactionRepository.save(newReaction);
 
-      // Notifier via WebSocket
       const io = socketService.getIO();
       if (io && chat) {
         io.to(`chat.${chat.channel_id}`).emit("reaction:added", {
@@ -782,7 +730,6 @@ class ChatService {
   }
 
   async markAsRead(userId: number, chatId: number, messageId: number): Promise<{ readMessageId: number; userId: number }> {
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -791,7 +738,6 @@ class ChatService {
       throw new Error("You are not a member of this chat");
     }
 
-    // Vérifier que le message appartient au chat
     const message = await this.messageRepository.findOne({
       where: { id: messageId, chat_id: chatId },
     });
@@ -800,7 +746,6 @@ class ChatService {
       throw new Error("Message not found in this chat");
     }
 
-    // Marquer ce message et tous les messages antérieurs comme lus
     const unreadMessages = await this.messageRepository
       .createQueryBuilder("m")
       .leftJoin(
@@ -824,7 +769,6 @@ class ChatService {
       await this.messageReadRepository.save(reads);
     }
 
-    // Notifier les participants du chat via WebSocket
     const chat = await this.chatRepository.findOne({ where: { id: chatId } });
     const io = socketService.getIO();
     if (io && chat) {
@@ -844,7 +788,6 @@ class ChatService {
       throw new Error("Group chat not found");
     }
 
-    // Vérifier que l'utilisateur courant est modérateur
     const callerMod = await this.chatModeratorRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -852,7 +795,6 @@ class ChatService {
       throw new Error("Only moderators can change moderator status");
     }
 
-    // Vérifier que la cible est membre
     const targetMember = await this.chatMemberRepository.findOne({
       where: { user_id: targetUserId, chat_id: chatId },
     });
@@ -865,7 +807,6 @@ class ChatService {
     });
 
     if (existingMod) {
-      // Retirer le rôle — vérifier qu'il reste au moins un modérateur
       const allMods = await this.chatModeratorRepository.find({ where: { chat_id: chatId } });
       if (allMods.length <= 1) {
         throw new Error("Cannot remove the last moderator");
@@ -881,7 +822,6 @@ class ChatService {
 
       return { isModerator: false };
     } else {
-      // Ajouter comme modérateur
       const newMod = this.chatModeratorRepository.create({
         user_id: targetUserId,
         chat_id: chatId,
@@ -908,7 +848,6 @@ class ChatService {
       throw new Error("Can only join group chats");
     }
 
-    // Déjà membre ?
     const existing = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: chat.id },
     });
@@ -942,7 +881,6 @@ class ChatService {
       throw new Error("Message not found");
     }
 
-    // Vérifier que l'utilisateur est membre du chat
     const membership = await this.chatMemberRepository.findOne({
       where: { user_id: userId, chat_id: message.chat_id },
     });
@@ -950,7 +888,6 @@ class ChatService {
       throw new Error("You are not a member of this chat");
     }
 
-    // L'auteur ou un modérateur peut supprimer
     const isModerator = await this.chatModeratorRepository.findOne({
       where: { user_id: userId, chat_id: message.chat_id },
     });
@@ -979,7 +916,6 @@ class ChatService {
       throw new Error("Group chat not found");
     }
 
-    // Vérifier que l'utilisateur courant est modérateur
     const callerMod = await this.chatModeratorRepository.findOne({
       where: { user_id: userId, chat_id: chatId },
     });
@@ -991,7 +927,6 @@ class ChatService {
       throw new Error("Cannot kick yourself");
     }
 
-    // Vérifier que la cible est membre
     const targetMembership = await this.chatMemberRepository.findOne({
       where: { user_id: targetUserId, chat_id: chatId },
     });
@@ -999,7 +934,6 @@ class ChatService {
       throw new Error("User is not a member of this chat");
     }
 
-    // Retirer le rôle de modérateur si applicable
     const targetMod = await this.chatModeratorRepository.findOne({
       where: { user_id: targetUserId, chat_id: chatId },
     });
@@ -1007,13 +941,10 @@ class ChatService {
       await this.chatModeratorRepository.remove(targetMod);
     }
 
-    // Retirer le membre
     await this.chatMemberRepository.remove(targetMembership);
 
-    // Faire quitter la room socket
     socketService.leaveChatRoom(targetUserId, chat.channel_id);
 
-    // Notifier les membres du chat
     const io = socketService.getIO();
     if (io) {
       io.to(`chat.${chat.channel_id}`).emit("chat:member-kicked", {
@@ -1022,7 +953,6 @@ class ChatService {
         userId: targetUserId,
         kickedBy: userId,
       });
-      // Notifier le user kické directement
       io.to(`user.${targetUserId}`).emit("chat:member-kicked", {
         chatId: chat.id,
         channelId: chat.channel_id,

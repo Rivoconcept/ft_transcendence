@@ -51,7 +51,6 @@ class ApiService {
 
 	private setupInterceptors(): void {
 		// Request interceptor - add auth token
-// api.service.ts -> vérifier le request interceptor
 		this.instance.interceptors.request.use(
 		(config) => {
 			if (this.accessToken) {

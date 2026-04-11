@@ -184,7 +184,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
 
   /* ------------------ RELOAD PAGE ------------------ */
   useEffect(() => {
-    handleNewGame(); // FULL RESET si F5
+    handleNewGame(); // FULL RESET on F5
   }, []);
 
     useEffect(() => {

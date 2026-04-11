@@ -22,7 +22,6 @@ class InvitationService {
       throw new Error("Cannot send invitation to yourself");
     }
 
-    // Vérifier si le destinataire a bloqué l'expéditeur
     const blockedBySender = await this.blockedUserRepository.findOne({
       where: { blocker_id: senderId, blocked_id: receiver.id },
     });
@@ -30,17 +29,14 @@ class InvitationService {
       where: { blocker_id: receiver.id, blocked_id: senderId },
     });
 
-    // Si le destinataire a bloqué l'expéditeur, refuser
     if (blockedByReceiver) {
       throw new Error("Cannot send invitation: user is blocked");
     }
 
-    // Si l'expéditeur avait bloqué le destinataire, auto-débloquer
     if (blockedBySender) {
       await this.blockedUserRepository.remove(blockedBySender);
     }
 
-    // Vérifier si une invitation existe déjà (dans les deux sens)
     const existingInvitation = await this.invitationRepository.findOne({
       where: [
         { sender_id: senderId, receiver_id: receiver.id },
@@ -63,7 +59,6 @@ class InvitationService {
 
     await this.invitationRepository.save(invitation);
 
-    // Notifier le destinataire via socket (si initialisé)
     const io = socketService.getIO();
     if (io) {
       io.to(`user.${receiver.id}`).emit("invitation:received", {
@@ -71,8 +66,6 @@ class InvitationService {
         senderId,
       });
     }
-
-    // Retourner l'invitation avec les informations du receiver
     invitation.receiver = receiver;
     return invitation;
   }
@@ -90,7 +83,6 @@ class InvitationService {
     invitation.status = InvitationStatus.ACCEPTED;
     await this.invitationRepository.save(invitation);
 
-    // Notifier l'expéditeur que l'invitation est acceptée (si initialisé)
     const io = socketService.getIO();
     if (io) {
       io.to(`user.${invitation.sender_id}`).emit("invitation:accepted", {
@@ -114,7 +106,6 @@ class InvitationService {
     const senderId = invitation.sender_id;
     await this.invitationRepository.remove(invitation);
 
-    // Notifier l'expéditeur (si initialisé)
     const io = socketService.getIO();
     if (io) {
       io.to(`user.${senderId}`).emit("invitation:declined", {
@@ -124,7 +115,6 @@ class InvitationService {
   }
 
   async cancelInvitation(invitationId: number, userId: number): Promise<void> {
-    // Permet à l'expéditeur ou au destinataire d'annuler/refuser l'invitation
     const invitation = await this.invitationRepository.findOne({
       where: [
         { id: invitationId, sender_id: userId, status: InvitationStatus.PENDING },
@@ -139,7 +129,6 @@ class InvitationService {
     const otherUserId = invitation.sender_id === userId ? invitation.receiver_id : invitation.sender_id;
     await this.invitationRepository.remove(invitation);
 
-    // Notifier l'autre utilisateur
     const io = socketService.getIO();
     if (io) {
       io.to(`user.${otherUserId}`).emit("invitation:cancelled", {
@@ -176,7 +165,6 @@ class InvitationService {
 
     await this.invitationRepository.remove(friendship);
 
-    // Notifier l'autre utilisateur
     const io = socketService.getIO();
     if (io) {
       io.to(`user.${friendId}`).emit("friend:removed", { friendId: userId });
@@ -202,7 +190,6 @@ class InvitationService {
     limit: number = 20,
     search?: string
   ): Promise<{ userIds: number[]; total: number; hasMore: boolean }> {
-    // Récupérer les IDs des amis et des invitations en cours
     const existingRelations = await this.invitationRepository.find({
       where: [
         { sender_id: userId },
@@ -210,7 +197,6 @@ class InvitationService {
       ],
     });
 
-    // Récupérer les utilisateurs bloqués (dans les deux sens)
     const blocks = await this.blockedUserRepository.find({
       where: [
         { blocker_id: userId },
@@ -228,7 +214,6 @@ class InvitationService {
       excludedIds.add(block.blocked_id);
     }
 
-    // Requête pour les utilisateurs non-amis
     let query = this.userRepository.createQueryBuilder("user")
       .select("user.id")
       .where("user.id NOT IN (:...excludedIds)", { excludedIds: [...excludedIds] });
