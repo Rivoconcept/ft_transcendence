@@ -624,27 +624,32 @@ The subject's mandatory part requires "email and password authentication with pr
 - **Social & Friend system:** Built friend invitations (send/accept/decline), user blocking via `BlockedUser` entity, and live online status tracking.
 - **User profiles & avatars:** Developed avatar upload handling, profile configuration updates, and play history display (with arajaona).
 - **DevSecOps & Docker:** Contributed to Docker Compose configurations and Nginx reverse proxy setup (with tramanan, rhanitra).
+- **UI/UX styling:** friends page, profile page, avatar styling.
 - **Module contributions:** WebSockets (Major), User interaction (Major), Standard user management (Major), Organization system (Major), Backend framework (Minor), ORM (Minor), Email OTP Authentication (Module of choice).
 
 ### tramanan — Developer
 - **Chat system:** Implemented group and direct messaging with text and image support (with erijania).
 - **DevSecOps & Docker:** Managed `docker-compose-dev.yml` and `docker-compose-prod.yml`, configured Nginx reverse proxy for production, and integrated HashiCorp Vault for secret injection (with rhanitra, erijania).
 - **Cybersecurity:** Compiled and configured ModSecurity 3.0 with OWASP CRS v4.7.0 as a WAF on Nginx, set up HashiCorp Vault with Raft storage and AppRole-based authentication for secrets distribution.
+- **UI/UX styling:** Message page styling.
 - **Module contributions:** Framework (Major), User interaction (Major), Cybersecurity (Major), Organization system (Major), Analytics dashboard (Major), Frontend framework (Minor).
 
 ### arajaona — Project Manager, Developer
 - **User profiles & avatars:** Developed avatar upload handling, profile configuration updates, and play history display (with erijania).
 - **Analytics dashboard:** Built interactive charts (Recharts PieChart for game stats, BarChart for online time), export functionality (PDF via jsPDF, CSV via PapaParse), and game history with filtering.
+- **UI/UX styling:** dashboard, landing page, legals page styling.
 - **Module contributions:** Standard user management (Major), Analytics dashboard (Major), ORM (Minor).
 
 ### safandri — Product Owner, Developer
 - **Frontend architecture:** Set up React 19 project structure with Vite 7, configured Jotai for global state management, and established the base routing with React Router DOM.
 - **King of Diamond game:** Implemented the game mechanics with `KodGameManager` — number selection (0-100), 2/3 average calculation, round-based scoring (10 starting points, 0.8 multiplier), player elimination, and round history tracking.
 - **Lobby system:** Built the match lobby frontend (`MultiplayerLobby.tsx`, `MultiplayerSetup.tsx`) with create/join/quick match flows and real-time player list updates.
+- **UI/UX styling:** genral UI, Games page styling.
 - **Module contributions:** Remote players (Major), Multiplayer 3+ (Major), Another game — King of Diamond (Major), Lobby system (Module of choice).
 
 ### rhanitra — Developer
 - **Card Game engine:** Implemented the Card Game algorithms with phase management (BEGIN, SHUFFLE, PLAY, SHOW_RESULT), server-side score computation, and result synchronization across clients.
 - **3D game integration:** Rendered the Card Game in 3D using React Three Fiber and Three.js — built `RevealCard.tsx` with textured geometry and UV mapping, `CardScene.tsx` with multi-slot canvas, and `CardBack.tsx` with flip/rotation animations.
 - **DevSecOps & Docker:** Contributed to Docker Compose configurations and Nginx reverse proxy setup (with tramanan, erijania).
+- **UI/UX styling:** Card Game page styling.
 - **Module contributions:** Complete web-based game — Card Game (Major), Remote players (Major), Multiplayer 3+ (Major), Advanced 3D graphics (Major).
