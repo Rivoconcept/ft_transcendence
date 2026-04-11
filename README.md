@@ -1,187 +1,420 @@
-*This project has been created as part of the 42 curriculum by rhanitra, tramanan, erijania, arajaona, safandri*
+*This project has been created as part of the 42 curriculum by erijania, safandri, arajaona, tramanan, rhanitra.*
 
-# ft_transcendence
+---
 
 ## Description
-**ft_transcendence** is the final project of the 42 common core curriculum. The goal of this project is to build a modern, real-time web application featuring a fully-functional multiplayer Ping-Pong game, complete with real-time chat, matchmaking, user profiles, and advanced security configurations. 
 
-This project demonstrates proficiency in full-stack web development, real-time communication protocols, database management, and robust DevSecOps practices.
+**GameHub** is a real-time multiplayer web application built as the final project of the 42 Common Core. It features a complete real-time chat system (direct and group), a friend and invitation management platform, two online games (Card Game and King of Diamond), user authentication with email OTP verification, a statistics dashboard, and user profile management. The application supports multiple simultaneous users with live updates via WebSockets.
+
+### Key Features
+- Real-time direct and group chat with image sharing, read receipts, reactions, and moderation tools
+- User authentication with JWT, email OTP verification, forgot/reset password
+- Friend system with invitations, user blocking, and live online status
+- Two multiplayer games: Card Game and King of Diamond with matchmaking and lobbies
+- User profiles with avatar upload, game statistics, and activity tracking
+- Statistics dashboard with game history, playtime tracking, and data visualization
+- Group chat moderation (moderator roles, kick, invite links, soft delete)
+- Containerized deployment with Docker Compose (dev and production configurations)
+
+---
 
 ## Instructions
 
 ### Prerequisites
-To run this project, make sure you have the following installed on your machine:
-- **Docker** and **Docker Compose**
-- **Make**
-- **OpenSSL** (for local certificate generation)
+- Docker & Docker Compose
 
-### Setup & Execution
-1. **Clone the repository:**
+### Installation
+
+1. Clone the repository:
    ```bash
-   git clone https://github.com/42-ft-transcendence/ft_transcendence.git
+   git clone git@vogsphere.42antananarivo.mg:vogsphere/intra-uuid-1875531e-b577-4c64-9541-51ec09420cbc-7151775-arajaona 
    cd ft_transcendence
    ```
 
-2. **Environment Variables:**
-   A `.env.example` file is provided in the `srcs/` directory. Create a `.env` file from it:
+2. Copy and configure environment files:
    ```bash
-   cp srcs/.env.example srcs/.env
-   # Update the values inside srcs/.env as needed
+   cp .env.example .env
    ```
 
-3. **Compilation and Execution:**
-   The project is managed via a `Makefile` at the root. To build and start the project in development mode:
-   ```bash
-   make
+3. Edit `.env` with your configuration:
+   ```env
+   DOMAIN_NAME=localhost
+   DATA_PATH=/path/to/your/data
+   USER=your_username
+   FRONTEND_PORT=5173
+   BACKEND_PORT=3000
+   PGADMIN_PORT=5050
+   WAF_BLOCKING_PARANOIA=3
+   WAF_DETECTION_PARANOIA=3
+   WAF_MODSEC_RULE_ENGINE=On
+   WAF_MODSEC_AUDIT_ENGINE=On
+   WAF_MODSEC_REQ_BODY_ACCESS=On
    ```
-   *Note: This will automatically build the images, create data directories, initialize the Docker volumes, generate local Vault SSL certificates if missing, and start the development environment.*
 
-4. **Production Mode:**
-   To launch the production environment featuring the WAF (ModSecurity Nginx proxy) and the production-ready backend:
-   ```bash
-   make MODE=prod re
+4. Create secrets directory and file `init.json` in it and edit configuration:
+   ```secrets/init.json
+   {
+       "DB_HOST": "postgres",
+       "DB_PORT": "5432",
+       "POSTGRES_DB": "postgres",
+       "POSTGRES_USER": "postgres",
+       "POSTGRES_PASSWORD": "your_db_password",
+       "PGADMIN_SERVER_NAME": "postgres",
+       "PGADMIN_DEFAULT_EMAIL": "your_pgadmin_email",
+       "PGADMIN_DEFAULT_PASSWORD": "your_pgadmin_password",
+       "NODE_ENV": "development",
+       "BACKEND_PORT": "3000",
+       "JWT_SECRET": "your_jwt_secret",
+       "JWT_EXPIRES_IN": "15m",
+       "REFRESH_SECRET": "your_refresh_secret",
+       "REFRESH_EXPIRES_IN": "7d",
+       "SMTP_HOST": "smtp.gmail.com",
+       "SMTP_PORT": "587",
+       "SMTP_USER": "your_address_email",
+       "SMTP_PASS": "your_app_password",
+       "SMTP_FROM": "your_address_email"
+   }
    ```
 
-5. **Stop and Clean:**
-   ```bash
-   make down     # Stops containers and removes volumes
-   make fclean   # Performs a complete cleanup (prune)
-   ```
+### Running the project
+
+**Development:**
+```bash
+make MODE=dev
+```
+
+**Production:**
+```bash
+make
+```
+
+### Access
+
+| Service | URL |
+|---------|-----|
+| Frontend | `http://localhost:5173` (dev) / `https://localhost:8081` (prod) |
+| Backend API | `http://localhost:3000/api` (dev) / `https://localhost:8080/api` (prod) |
+| PgAdmin | `http://localhost:5050` |
+
+---
 
 ## Resources
-During the development of this project, the following resources were instrumental:
-- [React Documentation](https://react.dev/)
-- [Socket.io Documentation](https://socket.io/docs/v4/)
-- [ViteJS Guide](https://vitejs.dev/guide/)
-- [TypeORM Documentation](https://typeorm.io/)
-- [HashiCorp Vault Documentation](https://developer.hashicorp.com/vault/docs)
-- [ModSecurity Reference Manual](https://github.com/SpiderLabs/ModSecurity/wiki)
 
-**AI Usage:**
-*(Note: Briefly describe how you used AI for this project, e.g., "AI assistants like Gemini/ChatGPT were used to help configure the Nginx ModSecurity proxy syntax, troubleshoot React-Three-Fiber rendering issues, and assist in automating the Vault initiation scripting.")*
+### Frontend
+- [React 19](https://react.dev/) : UI component library
+- [Vite 7](https://vitejs.dev/) : Build tool and dev server
+- [React Router DOM 7](https://reactrouter.com/) : Client-side routing
+- [Bootstrap 5](https://getbootstrap.com/docs/5.3/) : CSS framework for responsive design
+- [Jotai](https://jotai.org/) : Atomic state management for React
+- [jotai-family](https://www.npmjs.com/package/jotai-family) : Family atoms for parameterized state
+- [Axios](https://axios-http.com/) : HTTP client for API calls
+- [Socket.IO Client](https://socket.io/docs/v4/client-api/) : Real-time WebSocket communication
+- [Recharts](https://recharts.org/) : Data visualization and charting library
+- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/) : React renderer for Three.js (3D graphics)
+- [Three.js](https://threejs.org/) : 3D JavaScript library
+- [SweetAlert2](https://sweetalert2.github.io/) : Toast notifications and alert dialogs
+- [FontAwesome React](https://docs.fontawesome.com/web/use-with/react/) : Icon library
+- [Radix UI Tooltip](https://www.radix-ui.com/primitives/docs/components/tooltip) : Accessible tooltip component
+- [jsPDF](https://artskydj.github.io/jsPDF/docs/jsPDF.html) : PDF generation in the browser
+- [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable) : Table plugin for jsPDF
+- [PapaParse](https://www.papaparse.com/) : CSV parser for data import/export
+- [file-saver](https://github.com/eligrey/FileSaver.js) : File download utility
+- [Lucide React](https://lucide.dev/) : Icon set
+- [Sass](https://sass-lang.com/) : CSS preprocessor
+
+### Backend
+- [Express.js 5](https://expressjs.com/) : Web framework for Node.js
+- [TypeORM](https://typeorm.io/) : ORM for TypeScript and PostgreSQL
+- [Socket.IO](https://socket.io/docs/v4/) : Real-time bidirectional event-based communication
+- [PostgreSQL 16](https://www.postgresql.org/docs/16/) : Relational database
+- [pg (node-postgres)](https://node-postgres.com/) : PostgreSQL client for Node.js
+- [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) : JWT token creation and verification
+- [bcrypt](https://github.com/kelektiv/node.bcrypt.js) : Password hashing
+- [Nodemailer](https://nodemailer.com/) : Email sending (OTP verification, password reset)
+- [cors](https://github.com/expressjs/cors) : CORS middleware
+- [reflect-metadata](https://github.com/rbuckton/reflect-metadata) : Decorator metadata for TypeORM
+
+### DevOps
+- [Docker](https://docs.docker.com/) : Containerization
+- [Docker Compose](https://docs.docker.com/compose/) : Multi-container orchestration
+- [Nginx](https://nginx.org/en/docs/) : Reverse proxy and static file server (production)
+- [PgAdmin 4](https://www.pgadmin.org/docs/) : PostgreSQL administration tool
+- [Harshicop Vault](https://harshicop.com/) : 
+
+### Cybersecurity
+- [ModSecurity](https://github.com/owasp-modsecurity/ModSecurity) : Web Application Firewall (WAF) for Nginx
+
+
+### Testing
+- [Jest](https://jestjs.io/) : Testing framework
+- [Supertest](https://github.com/ladjs/supertest) : HTTP assertion library
+- [ts-jest](https://kulshekhar.github.io/ts-jest/) : TypeScript preprocessor for Jest
+
+### Tutorials & Learning Resources
+- [TypeORM - Getting Started](https://typeorm.io/#quick-start)
+- [Socket.IO - Get Started](https://socket.io/get-started/chat)
+- [React - Quick Start](https://react.dev/learn)
+- [Express.js - Getting Started](https://expressjs.com/en/starter/installing.html)
+- [Docker Compose - Getting Started](https://docs.docker.com/compose/gettingstarted/)
+- [JWT Introduction](https://jwt.io/introduction)
+- [HashiCorp Vault - Secure Introduction](https://developer.hashicorp.com/vault/tutorials/app-integration/secure-introduction) : Secrets management and securing application introduction
+
+### AI Usage
+AI assistant **Claude** (Anthropic) was used during development to:
+- Generate boilerplate code for repetitive backend patterns (controllers, services, routes)
+- Help debug Socket.IO synchronization and reconnection issues
+- Draft unit test templates for API endpoints (Game, Match)
+- Assist with TypeORM entity relationship definitions
+- Help design the chat moderation and blocking architecture
+- Generate CSS styling patterns for Bootstrap components
+- Assist with Jotai state management patterns
+- Help with documentation writing
+- Help with frontend layouts component
+
+All AI-generated content was reviewed, understood, tested, and adapted by team members before integration into the project.
 
 ---
 
 ## Team Information
-- **[login1 / rhanitra]** - *[Role, e.g., Tech Lead & Backend Developer]*
-  - Responsible for the Express API, Socket.io real-time interactions, and TypeORM integrations.
-- **[login2 / tramanan]** - *[Role, e.g., DevSecOps & Frontend Developer]*
-  - Responsible for the HashiCorp Vault infrastructure, Docker configurations, and the React Three Fiber game visualization.
-*(Fill in the actual names and adjust responsibilities)*
+
+```
+   PO: safandri, rhanitra
+   PM: arajaona
+   Tech Lead: erijania
+   Devellopers: tramanan
+```
 
 ## Project Management
-- **Task Distribution:** Tasks were distributed based on module choices (e.g., Security to Dev 1, Game to Dev 2). We held daily stand-ups to sync up.
-- **Organization Tools:** Trello / GitHub Projects were used to track issues and manage the Kanban board.
-- **Communication Channels:** Discord was primarily used for voice calls, debugging sessions, and sharing code snippets.
+
+Team work organisation : task distribution, meetings
+
+Communication channels used : Slack
+
 
 ## Technical Stack
 
-### Frontend
-- **Framework:** React 19 via Vite. Chosen for its component-based architecture and extremely fast HMR (Hot Module Replacement) during development.
-- **Language:** TypeScript for type-safety and better developer experience.
-- **State Management:** Jotai. Chosen for its atomic, minimalistic, and flexible state management approach without the boilerplate of Redux.
-- **Game Engine:** Three.js and `@react-three/fiber` for rendering a smooth 3D Ping-Pong experience on the canvas.
-- **Styling:** Bootstrap and SASS.
+| Layer | Technology | Version | Justification |
+|-------|-----------|---------|---------------|
+| **Frontend Framework** | React | 19.2.0 | Modern component-based UI with hooks, large ecosystem |
+| **Build Tool** | Vite | 7.2.4 | Fast HMR, native ES modules, optimized builds |
+| **State Management** | Jotai | 2.17.1 | Lightweight atomic state, simpler than Redux for our scale |
+| **Styling** | Bootstrap + Sass | 5.3.8 | Rapid responsive design with custom theming |
+| **3D Graphics** | React Three Fiber + Three.js | 9.5.0 / 0.182.0 | Immersive card game rendering |
+| **Charts** | Recharts | 2.12.7 | Declarative React-based data visualization |
+| **Backend Framework** | Express.js | 5.2.1 | Mature, flexible Node.js framework with TypeScript |
+| **ORM** | TypeORM | 0.3.28 | Decorator-based entity definitions, migration support |
+| **Real-time** | Socket.IO | 4.8.1 | Reliable WebSocket with rooms, fallback, and reconnection |
+| **Database** | PostgreSQL | 16 | Robust relational DB with strong data integrity |
+| **Authentication** | JWT + bcrypt | 9.0.2 / 5.1.1 | Stateless auth with secure password hashing |
+| **Email** | Nodemailer | 8.0.4 | OTP verification and password reset emails |
+| **Language** | TypeScript | 5.9.3 | Type safety across frontend and backend |
+| **Runtime** | Node.js | 22 (Alpine) | LTS runtime for backend |
+| **Containerization** | Docker Compose | - | Consistent dev/prod environments |
+| **Reverse Proxy/WAF** | Nginx + ModSecurity | Alpine | SSL termination, static serving, WebSocket proxying |
+| **PDF Export** | jsPDF + AutoTable | 2.5.1 | Client-side PDF generation for reports |
+| **CSV** | PapaParse | 5.4.1 | Data import/export functionality |
 
-### Backend
-- **Framework:** Node.js with Express. Express offers a lightweight and highly configurable base for building REST APIs.
-- **Language:** TypeScript for strict typing and better integration with Frontend contracts.
-- **ORM:** TypeORM. Chosen to easily interface with our PostgreSQL database using decorators and classes.
-- **Real-Time:** Socket.io for handling bilateral event-based communication required for the live chat and game ticks.
-- **Auth:** JWT (JSON Web Tokens) with Bcrypt for secure password hashing.
-
-### Database System
-- **System:** PostgreSQL 16. It is a highly reliable, ACID-compliant relational database management system, perfectly suited to handle relational entities such as Users, Friendships, Matches, and Chat messages.
-
-### DevSecOps & Other Tools
-- **Secrets Management:** HashiCorp Vault. Used to inject database credentials and TLS certificates to avoid hardcoding secrets.
-- **WAF (Web Application Firewall):** ModSecurity over Nginx. Added in production mode to detect and block malicious web requests (e.g., SQLi, XSS).
+---
 
 ## Database Schema
-*(Provide a visual representation or description here)*
-- **Users Table:** Stores `id`, `username`, `email`, `hashed_password`, `avatar_url`, Setup 2FA configuration.
-- **Matches Table:** Stores `id`, `player1_id`, `player2_id`, `score1`, `score2`, `timestamp`.
-- **Chat/Messages Table:** Stores `id`, `sender_id`, `receiver_id/channel_id`, `content`, `timestamp`.
-- **Friendships/Blocks Table:** Represents relationships between users.
+
+### Entities and Relationships
+
+```text
+User ──────────────────────────────────────────────────────────
+ │  id, username (unique), email (unique), avatar,
+ │  password, is_online, is_confirmed, otp_code, otp_expiration
+ │
+ ├──< Invitation (sender_id / receiver_id)
+ │      id, sender_id, receiver_id, status [PENDING/ACCEPTED/DECLINED], created_at
+ │
+ ├──< BlockedUser (blocker_id / blocked_id)
+ │      id, blocker_id, blocked_id, created_at
+ │      UNIQUE(blocker_id, blocked_id)
+ │
+ ├──< ChatMember (user_id)
+ │      id, user_id, chat_id ──> Chat
+ │
+ ├──< ChatModerator (user_id)
+ │      id, user_id, chat_id ──> Chat
+ │      UNIQUE(user_id, chat_id)
+ │
+ ├──< Message (author_id)
+ │      id, type [TEXT/IMAGE], content, author_id, chat_id, deleted, created_at, updated_at
+ │      │
+ │      ├──< MessageRead (message_id)
+ │      │      id, user_id, message_id, read_at
+ │      │      UNIQUE(user_id, message_id)
+ │      │
+ │      └──< UserReaction (message_id)
+ │             id, user_id, message_id, reaction_id ──> Reaction
+ │             UNIQUE(user_id, message_id, reaction_id)
+ │
+ ├──< Match (author_id)
+ │      id (char 4), set, current_set, author_id, game_id, is_open, is_private,
+ │      match_over, has_begun, is_limited, participations_limit, created_at
+ │      │
+ │      └──< Participation (match_id)
+ │             id, user_id, match_id, score
+ │
+ ├──< CardGame (author_id)
+ │      id, mode [SINGLE/MULTI], player_name, final_score, is_win, match_id, created_at
+ │
+ ├──< UserReaction (user_id)
+ │
+ └──< UserOnlineTime (user_id)
+        id, user_id, date (YYYY-MM-DD), minutes, created_at, updated_at
+
+Chat ──────────────────────────────────────────────────────────
+   id, name, channel_id (unique), type [DIRECT/GROUP], created_at
+   ├──< ChatMember
+   ├──< ChatModerator
+   └──< Message
+
+Game ──────────────────────────────────────────────────────────
+   id, name
+   └──< Match (game_id)
+
+Reaction ──────────────────────────────────────────────────────
+   id, code (unique)
+   └──< UserReaction (reaction_id)
+
+KodRound ──────────────────────────────────────────────────────
+   id, match_id (char 4), round_number, average, target, target_rounded,
+   winner_user_id, winner_name, is_exact_hit, choices (jsonb), created_at
+
+KodWinner ─────────────────────────────────────────────────────
+   id, match_id (char 4), winner_user_id, winner_name,
+   remaining_points, total_rounds, created_at
+```
+
+### Summary
+- **17 entities** total
+- Central entity: **User** with relations to all major features
+- **Chat** system: Chat -> ChatMember, ChatModerator, Message -> MessageRead, UserReaction
+- **Game** system: Game -> Match -> Participation, plus CardGame and KodRound/KodWinner
+- **Social** system: Invitation, BlockedUser, UserOnlineTime
+
+---
 
 ## Features List
-- **User Management**: Registration, Login, OAuth (if applied), 2FA setup, and User Profiles displaying match history/stats.
-- **Real-time Chat**: Direct messaging, Public/Private channels, blocking users.
-- **Multiplayer Game (Pong)**: Real-time 3D rendering with live matchmaking and score tracking.
-- **Security Enhancements**: HashiCorp Vault for secrets, ModSecurity for the WAF, hashed passwords.
+
+| # | Feature | Member(s) | Description |
+|---|---------|-----------|-------------|
+| 1 | **Backend foundation** | **erijania** | Express.js setup, TypeORM data source, Docker configuration, entity definitions (Chat, Message, Game, Match, Invitation, Reaction, UserReaction) |
+| 2 | **Socket.IO integration** | **erijania** | Server and client connection setup, room management, event-driven architecture for all real-time features |
+| 3 | **User registration & login** | **erijania** | JWT-based authentication with access/refresh tokens, bcrypt password hashing, LoginForm and RegisterForm components |
+| 4 | **Token refresh** | **erijania** | Automatic token refresh on 401 responses, interceptor-based seamless renewal |
+| 5 | **Email & OTP verification** | **erijania** | Nodemailer integration for account validation and password resets functionality |
+| 6 | **Frontend Architecture** | **tramanan** | React structure setup, Vite configuration, and global state initialization with Jotai |
+| 7 | **UI/UX & Styling** | **tramanan** | Responsive layouts using Bootstrap 5, Sass customization, and global component design |
+| 8 | **DevSecOps & Docker** | **tramanan** | Managing `docker-compose-dev.yml` and `docker-compose-prod.yml`, Nginx reverse proxy, Vault integration |
+| 9 | **Chat System (Direct & Group)** | **arajaona** | Implementing group and direct messaging, sending text and images |
+| 10 | **Chat Moderation & Management** | **arajaona** | Admin roles, kicking out members, sharing invite links, and message reactions/read receipts |
+| 11 | **Card Game Engine** | **safandri** | Implementation of the Card Game algorithms, synchronization, and score processing |
+| 12 | **3D Game Integration** | **safandri** | Rendering Card Game events using React Three Fiber and Three.js |
+| 13 | **King of Diamond Game** | **rinelfi** | Game mechanics implementation, computing averages, targets, logic and matching logic |
+| 14 | **Social & Friend System** | **rinelfi** | Managing friend invitations, blocking relationships, and resolving online status tracking |
+| 15 | **User Profiles & Avatars** | **arajaona, rinelfi** | Avatar upload handling, updating profile configurations, displaying play history |
+| 16 | **Analytics & Dashboard** | **tramanan, rinelfi** | Exporting activity logic (jsPDF, PapaParse) and visual chart mapping (Recharts) |
 
 ## Modules
-Below are the modules chosen for our transcendence architecture:
+## Major (2 pt x 15)
 
-1. **[Major] Web: Framework for frontend and backend**
-   - *Justification:* We used React (Vite) and Node.js (Express) to enable a robust, scalable full-stack application.
-   - *Implementation:* Built a Single Page Application (SPA) communicating with a RESTful API.
-   - *Assignee:* [login]
+### web (4)
 
-2. **[Major] Web: Implement real-time features using WebSockets**
-   - *Justification:* Essential for live multiplayer interactions and chat.
-   - *Implementation:* Utilized `Socket.io` for seamless event broadcasting, state syncing, and handling disconnections gracefully.
-   - *Assignee:* [login]
+* Use a framework for both the frontend and backend.
 
-3. **[Major] Web: Users interactions (Chat & Profile)**
-   - *Justification:* To foster community and provide engaging user experiences.
-   - *Implementation:* Created a real-time chat system allowing private/public messages and interactive user profiles.
-   - *Assignee:* [login]
+* Implement real-time features using WebSockets
 
-4. **[Major] User Management: Standard management and authentication**
-   - *Justification:* Secure user handling and customization is critical.
-   - *Implementation:* Users can upload avatars, add friends, view online statuses, and edit profile information.
-   - *Assignee:* [login]
+* Allow users to interact with other users.
 
-5. **[Major] User Management: Organization system**
-   - *Justification:* Allows users to form guilds, clans, or groups.
-   - *Implementation:* Built CRUD controllers/UI for organizations, allowing the addition, edit, and removal of members.
-   - *Assignee:* [login]
+* public API
 
-6. **[Major] Cybersecurity: Implement WAF/ModSecurity & Vault**
-   - *Justification:* To protect the application from OWASP threats and secure system credentials.
-   - *Implementation:* Deployed a strict ModSecurity Nginx proxy and a standalone HashiCorp Vault container managing database secrets and SSL certificates.
-   - *Assignee:* [login]
+### User Management (2)
 
-7. **[Major] Game: Complete web-based game**
-   - *Justification:* Core requirement of the final project.
-   - *Implementation:* A fully featured real-time Ping-Pong game utilizing `Three.js` (React-Three-Fiber) with clear rules and win/loss conditions.
-   - *Assignee:* [login]
+* Standard user management and authentication.
 
-8. **[Major] Game: Remote players gameplay**
-   - *Justification:* Players must be able to compete across different physical networks.
-   - *Implementation:* Game engine loops are synchronized via Socket.io with latency tolerance and disconnection logic.
-   - *Assignee:* [login]
+* Game statistics and match history
 
-9. **[Major] Game: Multiplayer game (More than two players)**
-   - *Justification:* Enhances gameplay variety and engine complexity.
-   - *Implementation:* Engineered fair synchronization mechanics mapping 3+ clients in the same active real-time game instance.
-   - *Assignee:* [login]
+### Cybersecurity (1)
 
-10. **[Major] Game: Add another game with history and matchmaking**
-    - *Justification:* Provides more competitive content and tracks different player stats.
-    - *Implementation:* A secondary distinct game mode featuring match history, statistics tracking, and an automated matchmaking queue.
-    - *Assignee:* [login]
+* Cybersecurity Implement WAF/ModSecurity (hardened) + HashiCorp Vault for secrets
 
-11. **[Major] Analytics: Advanced analytics dashboard**
-    - *Justification:* Allows users/admins to visualize large amounts of activity data.
-    - *Implementation:* Used `recharts` for interactive charts, `jspdf` and `papaparse` for enabling PDF/CSV structured data exports with custom date filters.
-    - *Assignee:* [login]
+### Gaming (5)
 
-12. **[Minor] Database: Use an ORM for the database**
-    - *Justification:* Streamlines complex database transactions and ensures schema sanity.
-    - *Implementation:* Integrated `TypeORM` to safely map and query PostgreSQL entities.
-    - *Assignee:* [login]
+* Implement a complete web-based game where users can play against each
 
-13. **[Minor] Game: Implement spectator mode**
-    - *Justification:* Allows users to engage directly with competitive matches without playing.
-    - *Implementation:* Implemented read-only real-time WebSockets rooms for viewers of ongoing live games.
-    - *Assignee:* [login]
+other.
 
-## Individual Contributions
-- **[login1]**: 
-  - Overcame challenges related to: [e.g., synchronizing ball movement flawlessly across two clients with latency using Socket.io].
-  - Implemented the entire Backend structure, TypeORM entities, and the Chat logic.
-- **[login2]**: 
-  - Overcame challenges related to: [e.g., configuring Vault to correctly authenticate and dispense secrets seamlessly on boot via AppRole].
-  - Implemented the DevSecOps pipeline, Dockerfiles, ModSecurity, and the UI layout with React.
+* Remote players — Enable two players on separate computers to play the
+
+same game in real-time.
+
+* Multiplayer game (more than two players).
+
+* Add another game with user history and matchmaking.
+
+* `Implement advanced 3D graphics`
+
+### Data and Analytics (2)
+
+* Advanced analytics dashboard with data visualization.
+
+* Data export and import functionality.
+
+### Modules of choice (1)
+
+*  Lobby System: join, create, delete match
+
+
+
+## Minor (11 pt)
+
+### web (4)
+
+* Use an ORM for the database.
+
+* A complete notification system for all creation, update, and deletion actions.
+
+* Allow users to interact with other users.
+
+* public API
+
+### User Management (3)
+
+* Implement a complete 2FA
+
+* User activity analytics and insights dashboard.
+
+* Advanced chat features
+
+### Gaming (2)
+
+* Implement spectator mode for games.
+
+* `Implement a tournament system : Matchmaking system for tournament participants.`
+
+### User Management (1)
+
+* Game statistics and match history
+
+### Data and Analytics (1)
+
+* Data export functionality.
+
+
+
+# total 41 pt
+
+## Individual Contributions:
+
+### safandri
+
+### rhanitra
+
+### erijania
+
+### arajaona
+
+### tramanan
