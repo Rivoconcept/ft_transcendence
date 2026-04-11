@@ -28,7 +28,7 @@ export default function CardScene() {
   const { roomId } = useParams();
 
   /* ================= SOCKET JOIN (FIX PRINCIPAL) ================= */
-    useEffect(() => {
+  useEffect(() => {
     if (!socketStore || !roomId || !playerName || mode !== "MULTI") return;
 
     const socket = socketStore.getSocket();
@@ -44,7 +44,7 @@ export default function CardScene() {
     if (socket.connected) {
       joinRoom();
     } else {
-      socket.once("connect", joinRoom);
+      socket.on("connect", joinRoom);
     }
 
     return () => {
@@ -58,7 +58,7 @@ export default function CardScene() {
       <div className="flex-grow-1">
         <div className="cardsRow">
           {mode === "MULTI" && (
-              <PlayerList />
+            <PlayerList />
           )}
 
           {[0, 1, 2].map(i => (
