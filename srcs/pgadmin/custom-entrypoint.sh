@@ -1,5 +1,9 @@
 #!/bin/sh
 
+set -a
+eval "$(grep -v '^\s*$' /run/secrets/GameHub/pgadmin/pgadmin.env | grep -v '^\s*#')"
+set +a
+
 cat > /tmp/servers.json <<EOF
 {
   "Servers": {
