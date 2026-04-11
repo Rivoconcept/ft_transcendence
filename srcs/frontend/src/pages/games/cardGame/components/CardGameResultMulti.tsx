@@ -79,13 +79,30 @@ export default function CardGameMultiResult() {
 
         <tbody>
           {results.map((r, i) => (
-            <tr key={i} className={r.is_win ? "table-success fw-bold" : ""}>
+            <tr
+              key={i}
+              className={r.is_win ? "table-success fw-bold" : ""}
+            >
               <td>
-                {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                {i === 0
+                  ? "🥇"
+                  : i === 1
+                  ? "🥈"
+                  : i === 2
+                  ? "🥉"
+                  : i + 1}
               </td>
+
               <td>{r.player_name}</td>
               <td>{r.final_score}</td>
-              <td>{r.is_win ? "🏆 Winner" : "❌ Lose"}</td>
+
+              <td>
+                {r.final_score === 0
+                  ? "❌ Lose"
+                  : r.is_win
+                  ? "🏆 Winner"
+                  : "❌ Lose"}
+              </td>
             </tr>
           ))}
         </tbody>

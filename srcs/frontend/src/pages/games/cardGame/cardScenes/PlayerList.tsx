@@ -16,18 +16,28 @@ export default function PlayerList() {
   const { roomId } = useParams();
 
   /* ================= RESET GAME ================= */
+  const matchId = useParams().roomId;
+
   useEffect(() => {
     setScores({});
     setSelectedPlayerId(null);
-  }, [players.length]);
+  }, [matchId]);
 
   /* ================= REMOVE DISCONNECTED PLAYER ================= */
   useEffect(() => {
     if (selectedPlayerId === null) return;
 
     const exists = players.some(p => p.id === selectedPlayerId);
-    if (!exists) setSelectedPlayerId(null);
-  }, [players, selectedPlayerId]);
+
+    if (!exists) {
+      // fallback intelligent au lieu de null
+      if (players.length > 0) {
+        setSelectedPlayerId(players[0].id);
+      } else {
+        setSelectedPlayerId(null);
+      }
+    }
+  }, [players]);
 
   /* ================= SOCKET LISTEN ================= */
   useEffect(() => {
@@ -43,8 +53,6 @@ export default function PlayerList() {
       socketStore.off("match:player-selected", handleSelectPlayer);
     };
   }, []);
-
-  if (mode !== "MULTI") return null;
 
   useEffect(() => {
     const handleScoreUpdate = ({
@@ -84,6 +92,9 @@ export default function PlayerList() {
 
   const selectedScores =
     selectedPlayerId !== null ? scores[selectedPlayerId] || [] : [];
+
+  
+  if (mode !== "MULTI") return null;
 
   return (
     <div className="dashboard">

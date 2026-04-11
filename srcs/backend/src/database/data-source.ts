@@ -1,5 +1,3 @@
-// /home/hrv/Pictures/ft_transcendence/srcs/backend/src/database/data-source.ts
-
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { DataSourceOptions } from "typeorm/browser";
@@ -19,6 +17,7 @@ import { KodWinner, KodRound } from "./entities/KodRound.js";
 import { UserOnlineTime } from "./entities/user-online-time.js";
 import { MessageRead } from "./entities/message-read.js";
 import { ChatModerator } from "./entities/chat-moderator.js";
+import { MatchTimer } from "./entities/match-timer.js";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -36,6 +35,7 @@ export const AppDataSource = new DataSource({
     CardGame,
     Game,
     Match,
+    MatchTimer,
     Invitation,
     Participation,
     Chat,

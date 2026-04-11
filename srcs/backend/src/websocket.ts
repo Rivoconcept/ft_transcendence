@@ -8,6 +8,8 @@ import { ChatMember } from "./database/entities/chat-member.js";
 import { matchService } from "./services/match.service.js";
 import { kodService } from "./services/Kod.service.js";
 import { kodGameManager } from "./game/KodGameManager.js";
+import { MatchTimer } from "./database/entities/match-timer.js";
+import { Match } from "./database/entities/match.js";
 
 export interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -23,8 +25,12 @@ class SocketService {
   private io: Server | null = null;
   private matchResults: Map<string, { playerName: string; finalScore: number }[]> = new Map();
   private matchTimers: Map<string, number> = new Map();
+  private matchTimerRepository = AppDataSource.getRepository(MatchTimer);
+  private matchRepository = AppDataSource.getRepository(Match);
+  
   private constructor() { }
 
+  
   static getInstance(): SocketService {
     if (!SocketService.instance) {
       SocketService.instance = new SocketService();
@@ -77,37 +83,61 @@ class SocketService {
       });
 
       socket.on("disconnect", async (reason) => {
-        console.log(`Socket ${socket.id} disconnect reason: ${reason}`);
-        if (socket.userId) {
-          try {
-            await userService.setOnlineStatus(socket.userId, false);
+        const matchId = socket.matchId;
+        const userId = socket.userId;
 
-            // gracefull disconnection
-            const currentMatch = await matchService.getMatchById(socket.matchId || "")
-            if (currentMatch && currentMatch.gameId === 1 && !currentMatch.match_over && socket.userId && socket.matchId) {
-              const participants: { id: number; name: string; ready: boolean }[] = [];
-              const seen = new Set<number>();
-              const roomSockets = await this.io?.in(socket.matchId).fetchSockets();
-              roomSockets?.forEach((s: any) => {
-                if (s.userId && !seen.has(s.userId)) {
-                  participants.push({ id: s.userId, name: s.playerName || s.username, ready: false });
-                  seen.add(s.userId);
-                }
-              });
-              this.io?.to(socket.matchId).emit("match:player-left", {
-                userId: socket.userId,
-                playerName: socket.playerName || socket.username,
-                participants,
-              });
-              await kodService.eliminatePlayer(socket.userId, socket.matchId);
-            }
+        if (matchId) {
+          this.io?.to(`match.${matchId}`).emit("match:player-left", {
+            userId,
+          });
+        }
 
-            console.log(`User ${socket.username} set offline successfully`);
-          } catch (error) {
-            console.error(`Failed to set user ${socket.username} offline:`, error);
-          }
-        } else {
+        if (!userId) {
           console.log("Unauthenticated client disconnected:", socket.id);
+          return;
+        }
+
+        try {
+          await userService.setOnlineStatus(userId, false);
+
+          const currentMatch = await matchService.getMatchById(matchId || "");
+
+          if (
+            currentMatch &&
+            currentMatch.gameId === 1 &&
+            !currentMatch.match_over &&
+            matchId
+          ) {
+            const room = `match.${matchId}`;
+
+            const roomSockets = await this.io?.in(room).fetchSockets();
+
+            const participants: { id: number; name: string; ready: boolean }[] = [];
+            const seen = new Set<number>();
+
+            roomSockets?.forEach((s: any) => {
+              if (s.userId && !seen.has(s.userId)) {
+                participants.push({
+                  id: s.userId,
+                  name: s.playerName || s.username,
+                  ready: false,
+                });
+                seen.add(s.userId);
+              }
+            });
+
+            this.io?.to(room).emit("match:player-left", {
+              userId,
+              playerName: socket.playerName || socket.username,
+              participants,
+            });
+
+            await kodService.eliminatePlayer(userId, matchId);
+          }
+
+          console.log(`User ${socket.username} set offline successfully`);
+        } catch (error) {
+          console.error(`Failed to set user offline:`, error);
         }
       });
 
@@ -205,42 +235,43 @@ class SocketService {
         console.log(`${socket.playerName || socket.username} left ${room}`);
       });
 
-      socket.on("startMatch", async (data: { matchId: string, gameSlug: string }) => {
+      socket.on("startMatch", async (data: { matchId: string; gameSlug: string }) => {
         if (!socket.userId) return socket.emit("error", { error: "Not authenticated" });
 
-        console.log("-------------------- game ", data.matchId, " started --------------------");
-        // mettre à jour le statut du match et vérifier les conditions de démarrage
         try {
           await matchService.startMatch(socket.userId, data.matchId);
-          console.log("matchService inited : ", data.matchId);
+
+          await this.matchTimerRepository.save({
+            match_id: data.matchId,
+            start_time: Date.now(),
+          });
+
         } catch (err: any) {
-          socket.emit("error", { error: err.message });
+          return socket.emit("error", { error: err.message });
         }
 
         const room = `match.${data.matchId}`;
 
-        // récupérer les sockets dans la room
-        const sockets = await this.io?.in(room).fetchSockets();
-        if (!sockets || sockets.length === 0) return;
-
-        // récupérer les joueurs uniques
-        const users = new Map<number, string>();
-        sockets.forEach((s: any) => {
-          if (!users.has(s.userId))
-            users.set(s.userId, s.username);
+        const timer = await this.matchTimerRepository.findOne({
+          where: { match_id: data.matchId },
         });
 
-        // Start the match
-        
-        const participants = Array.from(users.keys());
-        if (participants.length < 2) {
-          socket.emit("error", { error: "Not enough players" });
-          return;
-        }
-        console.log(`Match ${data.matchId} started with players:`, participants);
         this.io?.to(room).emit("match:started", {
           matchId: data.matchId,
-          players: participants,
+          startTime: timer?.start_time ?? Date.now(),
+
+        });
+      });
+
+      socket.on("match:get-timer", async ({ matchId }) => {
+        const timer = await this.matchTimerRepository.findOne({
+          where: { match_id: matchId },
+        });
+
+        if (!timer) return;
+
+        socket.emit("match:timer-sync", {
+          startTime: timer.start_time,
         });
       });
 
@@ -268,12 +299,14 @@ class SocketService {
 
             const maxScore = Math.max(...results.map(r => r.finalScore));
 
+            const hasPositiveScore = maxScore > 0;
+
             const finalResults = results.map(r => ({
               playerName: r.playerName,
               finalScore: r.finalScore,
               isWin: isSinglePlayer
                 ? r.finalScore > 0
-                : r.finalScore === maxScore
+                : hasPositiveScore && r.finalScore === maxScore
             }));
 
             this.io?.to(room).emit("match:result", finalResults);
@@ -391,7 +424,23 @@ class SocketService {
         console.log(`${socket.playerName || socket.username} left ${room}`);
       });
 
+      socket.on("logout", async ({ matchId }) => {
+        const room = `match.${matchId}`;
+
+        if (socket.userId && matchId) {
+          socket.to(room).emit("match:player-left", {
+            userId: socket.userId,
+            playerName: socket.playerName || socket.username,
+          });
+        }
+
+        await socket.leave(room);
+        socket.disconnect(true);
+      });
+
     });
+
+
 
     return this.io;
   }
