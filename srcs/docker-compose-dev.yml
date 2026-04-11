@@ -111,7 +111,7 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
-      - vault-secrets:/run/secrets/GameHub/backend:ro
+      - vault-secrets:/run/secrets/GameHub:ro
     ports:
       - "${BACKEND_PORT}:3000"
     environment:
