@@ -1,0 +1,4 @@
+{{- with secret "pki/issue/web-external" "common_name=waf.external" "ttl=720h" -}}
+{{ .Data.certificate }}
+{{ .Data.issuing_ca }}
+{{- end }}

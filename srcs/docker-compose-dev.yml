@@ -1,8 +1,98 @@
 services:
+  vault:
+    build:
+      context: ./vault/server
+      dockerfile: Dockerfile
+    container_name: vault-dev
+    hostname: vault
+    cap_add:
+      - IPC_LOCK
+    entrypoint: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    volumes:
+      - ./vault/server/vault.hcl:/vault/config/vault.hcl:ro
+      - vault-data:/vault/data 
+    ports:
+      - 8200:8200
+    networks:
+      - transcendence-network
+    secrets:
+      - source: vault_crt
+        target: vault.crt
+      - source: vault_key
+        target: vault.key
+      - source: init_json
+        target: init.json
+    healthcheck:
+      test: ["CMD", "sh", "-c", "vault status -address=${VAULT_ADDR} -tls-skip-verify; [ $? -ne 1 ]"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  vault-init:
+    build:
+      context: ./vault/init
+      dockerfile: Dockerfile
+    container_name: vault-init
+    user: "0:1000"
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR}
+      VAULT_CACERT: /run/secrets/vault.crt
+    volumes:
+      - ./vault/init/init.sh:/vault/init.sh:ro
+      - vault-approle:/run/secrets/vault
+      - vault-secrets:/run/secrets/GameHub
+    command: ["sh", "/vault/init.sh"]
+    depends_on:
+      vault:
+        condition: service_healthy
+    networks:
+      - transcendence-network
+    secrets:
+      - source: vault_crt
+        target: vault.crt
+      - source: vault_key
+        target: vault.key
+      - source: init_json
+        target: init.json
+
+  vault-agent:
+    build:
+      context: ./vault/agent
+      dockerfile: Dockerfile
+    container_name: vault-agent
+    user: "1000:1000"
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR}
+      VAULT_CACERT: /run/secrets/vault.crt
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./vault/agent/config.hcl:/vault/config/agent.hcl:ro
+      - ./vault/agent/templates:/vault/templates:ro
+      - vault-approle:/run/secrets/vault
+      - vault-secrets:/run/secrets/GameHub
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    secrets:
+      - source: vault_crt
+        target: vault.crt
+      - source: vault_key
+        target: vault.key
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /run/secrets/GameHub/certs/backend/backend.key && (echo 'OK' || exit 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     container_name: frontend-dev
     volumes:
       - ./frontend:/app
@@ -21,70 +111,72 @@ services:
     container_name: backend-dev
     volumes:
       - ./backend:/app
+      - vault-secrets:/run/secrets/GameHub/backend:ro
     ports:
       - "${BACKEND_PORT}:3000"
-    env_file:
-      - ./backend/.env
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      VAULT_ADDR: ${VAULT_ADDR}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      vault-agent:
+        condition: service_healthy      
     networks:
       - transcendence-network
 
   postgres:
     image: postgres:16
     container_name: postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
+      - vault-secrets:/run/secrets/GameHub:ro
       - ${DATA_PATH}/db_data:/var/lib/postgresql/data
-    # secrets:
-    #   - POSTGRES_PASSWORD
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/GameHub/postgres/POSTGRES_USER
+      POSTGRES_PASSWORD_FILE: /run/secrets/GameHub/postgres/POSTGRES_PASSWORD
+      POSTGRES_DB_FILE: /run/secrets/GameHub/postgres/POSTGRES_DB
+    depends_on:
+      vault-agent:
+        condition: service_healthy
+    networks:
+      - transcendence-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/GameHub/postgres/POSTGRES_USER)"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - transcendence-network
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
     entrypoint: /custom-entrypoint.sh
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_SERVER_JSON_FILE: /tmp/servers.json
       PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True"
-      PGADMIN_SERVER_NAME: ${PGADMIN_SERVER_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
     volumes:
       - ./pgadmin/custom-entrypoint.sh:/custom-entrypoint.sh:ro
+      - vault-secrets:/run/secrets/GameHub:ro
     ports:
       - "${PGADMIN_PORT}:80"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - transcendence-network
 
-
-# secrets:
-#   POSTGRES_PASSWORD:
-#     file: ../secrets/POSTGRES_PASSWORD.txt
+volumes:
+  vault-secrets:
+  vault-approle:
+  vault-data:
 
 networks:
   transcendence-network:
     driver: bridge
+
+secrets:
+  vault_crt:
+    file: ../secrets/certs/vault.crt
+  vault_key:
+    file: ../secrets/certs/vault.key
+  init_json:
+    file: ../secrets/init.json
+

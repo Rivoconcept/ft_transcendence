@@ -1,0 +1,4 @@
+{{- with secret "pki/issue/web-internal" "common_name=backend.internal" "ttl=720h" -}}
+{{ .Data.certificate }}
+{{ .Data.issuing_ca }}
+{{- end }}

@@ -3,7 +3,7 @@ import { blockService } from '../services/block.service';
 import { friendRelationsAtom } from './friend.provider';
 
 // Set of blocked user IDs
-export const blockedUserIdsAtom = atom<Set<number>>(new Set());
+export const blockedUserIdsAtom = atom<Set<number>>(new Set<number>());
 export const blockedUsersLoadingAtom = atom<boolean>(false);
 
 // Fetch blocked users list
