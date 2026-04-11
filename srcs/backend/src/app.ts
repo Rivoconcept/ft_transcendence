@@ -22,26 +22,6 @@ app.use(
   })
 );
 
-
-// // allow * cors from 10.11.x.x network
-// function isInNetworkRange(origin: string | undefined): boolean {
-//   const regex = /^https?:\/\/10\.11\.\d+\.\d+/;
-//   return regex.test(origin || '');
-// }
-
-// app.use(
-//   cors({
-//     origin: (origin, callback) => {
-//       if (!origin)
-//         return callback(null, true);
-//       if (isInNetworkRange(origin))
-//         return callback(null, true);
-//       return callback(new Error("Not allowed by CORS"));
-//     },
-//     credentials: true,
-//   })
-// );
-
 app.use(express.json({ limit: '2mb' }));
 
 app.get("/api/health", (_req, res) => {
