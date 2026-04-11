@@ -1,9 +1,9 @@
-// /home/rivoinfo/Videos/ft_transcendence/srcs/backend/src/services/match.service.ts
 import { AppDataSource } from "../database/data-source.js";
 import { Match } from "../database/entities/match.js";
 import { Participation } from "../database/entities/participation.js";
 import { socketService } from "../websocket.js";
 import { User } from "../database/entities/user.js";
+import { MatchTimer } from "../database/entities/match-timer.js";
 
 interface CreateMatchDTO {
   is_private?: boolean;
@@ -45,6 +45,7 @@ class MatchService {
   private matchRepository = AppDataSource.getRepository(Match);
   private participationRepository = AppDataSource.getRepository(Participation);
   private userRepository = AppDataSource.getRepository(User);
+  private matchTimerRepository = AppDataSource.getRepository(MatchTimer);
 
   private async generateUniqueId(): Promise<string> {
     const maxAttempts = 10;
@@ -531,6 +532,16 @@ class MatchService {
     if (!match)
       throw new Error("Match not found");
     return match.has_begun;
+  }
+
+  async setStartTime(matchId: string, startTime: number) {
+    await this.matchTimerRepository.upsert(
+      {
+        match_id: matchId,
+        start_time: startTime,
+      },
+      ["match_id"]
+    );
   }
 
 }

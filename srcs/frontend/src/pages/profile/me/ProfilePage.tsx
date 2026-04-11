@@ -7,6 +7,9 @@ import AvatarUtil from '../../../components/AvatarUtil';
 import AvatarSelector from '../../../components/AvatarSelector';
 import { LogOut } from 'lucide-react';
 import ChangePassword from './ChangePassword';
+import { socketStore } from '../../../websocket';
+import { currentMatchAtom } from '../../games/multiplayer/matchAtoms';
+
 
 function ProfileStats(): React.JSX.Element {
 	const gameHistory = useAtomValue(gameHistoryAtom);
@@ -53,10 +56,27 @@ export default function ProfilePage({ onLogout }: ProfileProps): React.JSX.Eleme
 	const [avatar, setAvatar] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const matchId = useAtomValue(currentMatchAtom);
 
 	const handleLogout = () => {
+	const socket = socketStore.getSocket();
+
+	if (socket && matchId) {
+		socket.emit("leaveMatchRoom", { matchId });
+
+		socket.once("disconnect", () => {
 		onLogout();
 		navigate('/');
+		});
+
+		setTimeout(() => {
+		socketStore.disconnect();
+		}, 100);
+	} else {
+		socketStore.disconnect();
+		onLogout();
+		navigate('/');
+	}
 	};
 
 	if (!user) {

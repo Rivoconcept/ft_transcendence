@@ -1,4 +1,3 @@
-// /home/rhanitra/GITHUB/transcendence/ft_transcendence/srcs/frontend/src/cardScenes/CardScene.tsx
 import { Canvas } from "@react-three/fiber";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -36,7 +35,6 @@ export default function CardScene() {
     if (!socket) return;
 
     const joinRoom = () => {
-      console.log("🎮 Joining match room from GAME...");
       socket.emit("joinMatchRoom", {
         matchId: roomId,
         playerName,
