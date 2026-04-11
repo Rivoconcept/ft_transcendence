@@ -91,31 +91,33 @@ class CardGameService {
   }
 
   async finishMatch(matchId: string) {
-      await this.repo.query(`
+    await this.repo.query(`
         UPDATE card_game
         SET is_win = false
         WHERE match_id = $1
       `, [matchId]);
 
-      await this.repo.query(`
-          WITH stats AS (
-            SELECT 
-              match_id,
-              COUNT(*) AS cnt,
-              MAX(final_score) AS max_score
-            FROM card_game
-            WHERE match_id = $1
-            GROUP BY match_id
-          )
-          UPDATE card_game cg
-          SET is_win = CASE
-            WHEN stats.cnt = 1 THEN (cg.final_score > 0)
-            WHEN cg.final_score = stats.max_score THEN true
-            ELSE false
-          END
-          FROM stats
-          WHERE cg.match_id = stats.match_id
-            AND cg.match_id = $1;
+    await this.repo.query(`
+      WITH stats AS (
+      SELECT 
+        match_id,
+        COUNT(*) AS cnt,
+        MAX(final_score) AS max_score
+      FROM card_game
+      WHERE match_id = $1
+      GROUP BY match_id
+    )
+
+    UPDATE card_game cg
+    SET is_win = CASE
+      WHEN stats.cnt = 1 THEN (cg.final_score > 0)
+      WHEN stats.max_score = 0 THEN false
+      WHEN cg.final_score = stats.max_score THEN true
+      ELSE false
+    END
+    FROM stats
+    WHERE cg.match_id = stats.match_id
+      AND cg.match_id = $1;
       `, [matchId]);
 
     const match = await this.matchRepository.findOne({
@@ -154,7 +156,7 @@ class CardGameService {
       socketService.leaveMatchRoom(id, matchId);
     });
   }
-  
+
 }
 
 export const cardGameService = new CardGameService();
