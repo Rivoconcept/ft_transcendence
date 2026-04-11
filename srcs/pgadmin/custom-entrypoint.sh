@@ -1,8 +1,12 @@
 #!/bin/sh
 
-set -a
-eval "$(grep -v '^\s*$' /run/secrets/GameHub/pgadmin/pgadmin.env | grep -v '^\s*#')"
-set +a
+# set -a
+# eval "$(grep -v '^\s*$' /run/secrets/GameHub/pgadmin/pgadmin.env | grep -v '^\s*#')"
+# set +a
+while IFS='=' read -r key value; do
+  export "$key=$value"
+done < /run/secrets/GameHub/pgadmin/pgadmin.env
+
 
 cat > /tmp/servers.json <<EOF
 {
