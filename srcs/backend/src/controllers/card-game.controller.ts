@@ -93,7 +93,6 @@ export const getMatchResults = async (req: Request, res: Response) => {
 
     res.status(200).json(results);
   } catch (error) {
-    console.error("Error fetching match results:", error);
     res.status(500).json({ error: "Failed to fetch match results" });
   }
 };
@@ -113,7 +112,6 @@ export async function getLastSingleResult(
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching last result:", error);
     res.status(500).json({ error: "Failed to fetch last result" });
   }
 }
@@ -125,7 +123,6 @@ export async function finishMatch(req: Request, res: Response) {
     await cardGameService.finishMatch(matchId);
     res.json({ success: true });
   } catch (err) {
-    console.error("Finish match error:", err);
     res.status(500).json({ error: "Failed to finish match" });
   }
 }

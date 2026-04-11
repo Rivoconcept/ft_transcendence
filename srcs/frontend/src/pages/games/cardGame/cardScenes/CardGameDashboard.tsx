@@ -172,8 +172,7 @@ export default function CardGameDashboard({ phase, setPhase }: CardGameDashboard
       try {
         hasCalledFinishMatchRef.current = true;
         await apiService.post(`card-games/match/${roomId}/finish`, {});
-      } catch (error) {
-        console.error("❌ Error finishing match:", error);
+      } catch {
       }
     };
 

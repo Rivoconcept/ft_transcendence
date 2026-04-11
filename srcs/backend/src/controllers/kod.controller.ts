@@ -7,8 +7,7 @@ export async function getKodGames(req: AuthRequest, res: Response): Promise<void
     const userId: number = req.user!.userId;
     const games = await kodService.getKodGames(userId);
     res.json(games);
-  } catch (err) {
-    console.error('[KodGamesController] getKodGames error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to fetch KOD game history' });
   }
 }
@@ -29,8 +28,7 @@ export async function getKodMatchParticipants(req: AuthRequest, res: Response): 
 
     const participants = await kodService.getKodMatchParticipants(match_id);
     res.json(participants);
-  } catch (err) {
-    console.error('[KodGamesController] getKodMatchParticipants error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to fetch match participants' });
   }
 }

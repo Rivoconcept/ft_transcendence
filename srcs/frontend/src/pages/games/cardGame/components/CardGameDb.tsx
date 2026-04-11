@@ -32,12 +32,10 @@ useEffect(() => {
   if (!isGameOver || hasPushedRef.current) return;
 
   if (!currentUser) {
-    console.error("User not ready, abort save");
     return;
   }
 
   if (finalScore === null || finalScore === undefined) {
-    console.error("Final score not ready");
     return;
   }
 
@@ -45,7 +43,6 @@ useEffect(() => {
 
   const saveGame = async () => {
     if (mode === "MULTI" && !matchId) {
-      console.error("Cannot save multiplayer game: matchId is missing");
       return;
     }
 
@@ -69,8 +66,7 @@ useEffect(() => {
       refreshGameHistory();
 
       onSaved();
-    } catch (error) {
-      console.error("Error saving game:", error);
+    } catch {
       hasPushedRef.current = false;
     }
   };

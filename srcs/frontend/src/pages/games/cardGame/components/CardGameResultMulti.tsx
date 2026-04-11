@@ -51,8 +51,7 @@ export default function CardGameMultiResult() {
         if (isCreator && socket) {
           socket.emit("match:publish");
         }
-      } catch (err) {
-        console.error("Error fetching results", err);
+      } catch {
       }
     };
 

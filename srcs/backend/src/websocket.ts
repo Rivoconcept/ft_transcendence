@@ -58,8 +58,6 @@ class SocketService {
     });
 
     this.io.on("connection", async (socket: AuthenticatedSocket) => {
-      console.log("Client connected:", socket.id);
-
       //----------------- Auth specific logic -----------------
 
       socket.on("auth", async (token: string) => {
@@ -75,7 +73,6 @@ class SocketService {
           await userService.setOnlineStatus(payload.userId, true);
 
           socket.emit("auth:success", { userId: payload.userId, username: payload.username });
-          console.log(`User ${payload.username} authenticated and joined room user.${payload.userId}`);
         } catch {
           socket.emit("auth:error", { error: "Invalid token" });
         }
@@ -92,7 +89,6 @@ class SocketService {
         }
 
         if (!userId) {
-          console.log("Unauthenticated client disconnected:", socket.id);
           return;
         }
 
@@ -134,9 +130,7 @@ class SocketService {
             await kodService.eliminatePlayer(userId, matchId);
           }
 
-          console.log(`User ${socket.username} set offline successfully`);
-        } catch (error) {
-          console.error(`Failed to set user offline:`, error);
+        } catch {
         }
       });
 
@@ -147,12 +141,10 @@ class SocketService {
           return;
         }
         socket.join(`chat.${channelId}`);
-        console.log(`User ${socket.username} joined chat room chat.${channelId}`);
       });
 
       socket.on("chat:leave", (channelId: string) => {
         socket.leave(`chat.${channelId}`);
-        console.log(`User ${socket.username} left chat room chat.${channelId}`);
       });
 
       //----------------- match specific logic -----------------
@@ -201,7 +193,6 @@ class SocketService {
           this.io?.to(`match.${matchId}`).emit("match:cancelled", {});
           this.io?.in(`match.${matchId}`).socketsLeave(`match.${matchId}`);
         } catch (err: any) {
-          console.error("Error cancelling match:", err);
           socket.emit("error", { error: err.message });
         }
       });
@@ -236,11 +227,8 @@ class SocketService {
               participants,
             });
           }
-        } catch (err: any) {
-          console.error("Error leaving match:", err);
+        } catch {
         }
-
-        console.log(`${socket.playerName || socket.username} left ${room}`);
       });
 
       socket.on("startMatch", async (data: { matchId: string; gameSlug: string }) => {
@@ -379,7 +367,6 @@ class SocketService {
             matchId: matchId,
             players: kodPlayers
           });
-          console.log("KOD game inited: ", kodPlayers);
 
         } catch (err: any) {
           socket.emit("error", { error: err.message });
@@ -428,8 +415,6 @@ class SocketService {
           playerName: socket.playerName || socket.username,
           participants,
         });
-
-        console.log(`${socket.playerName || socket.username} left ${room}`);
       });
 
       socket.on("logout", async ({ matchId }) => {
@@ -463,10 +448,7 @@ class SocketService {
 
       for (const membership of memberships)
         socket.join(`chat.${membership.chat.channel_id}`);
-
-      console.log(`User joined ${memberships.length} chat rooms`);
-    } catch (error) {
-      console.error("Error joining chat rooms:", error);
+    } catch {
     }
   }
 

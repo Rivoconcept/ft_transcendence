@@ -18,8 +18,7 @@ export default function CardGameResultSingle() {
       try {
         const data: GameResult = await apiService.get("card-games/last");
         setResult(data);
-      } catch (err) {
-        console.error("Error fetching result", err);
+      } catch {
       }
     };
 

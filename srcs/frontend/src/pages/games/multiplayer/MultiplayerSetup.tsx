@@ -86,7 +86,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
       setPlayerName(playerName);
       navigate(`/games/${gameSlug}/multiplayer/lobby/${data.id}`);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Failed to create room");
     } finally {
       setLoading(false);
@@ -103,7 +102,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
       setPlayerName(playerName);
       navigate(`/games/${gameSlug}/multiplayer/lobby/${match.id}`);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Failed to find a match");
     } finally {
       setMatchmakingLoading(false);
@@ -124,7 +122,6 @@ export default function MultiplayerSetup(): React.JSX.Element {
       setPlayerName(playerName);
       navigate(`/games/${gameSlug}/multiplayer/lobby/${code}`);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Failed to join room");
     } finally {
       setLoading(false);

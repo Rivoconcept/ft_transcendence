@@ -110,7 +110,6 @@ export default function MultiplayerLobby(): React.JSX.Element {
     };
 
     const handleError = ({ error }: { error: string }) => {
-      console.error("Socket error:", error);
     };
 
     if (socket.connected) joinRoom();

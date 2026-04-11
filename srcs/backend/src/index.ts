@@ -28,37 +28,24 @@ async function seedGames() {
       { name: "Card Game" },
     ]);
     await gameRepo.save(games);
-    console.log("Game seed data inserted");
   }
 }
 
 AppDataSource.initialize()
   .then(async () => {
-    console.log("Database connected");
     await seedGames();
     // socketService.init(httpsServer);
     // httpsServer.listen(PORT, () => {
     socketService.init(httpsServer);
     httpsServer.listen(PORT, () => {
-      console.log(`Backend running on port ${PORT}`);
     });
 
     // Cleanup cron: every 30 minutes, remove unconfirmed users older than 1 day
     const THIRTY_MINUTES = 30 * 60 * 1000;
     setInterval(() => {
-      cleanupService.removeUnconfirmedUsers().catch((err) => {
-        console.error("[Cleanup cron] Error:", err.message);
-      });
+      cleanupService.removeUnconfirmedUsers().catch(() => {});
     }, THIRTY_MINUTES);
-    console.log("Cleanup cron scheduled (every 30 minutes)");
   })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-    if (error instanceof Error) {
-      console.error("Message:", error.message);
-      console.error("Stack:", error.stack);
-    } else {
-      console.error("Raw error:", JSON.stringify(error, null, 2));
-    }
+  .catch(() => {
     process.exit(1);
   });

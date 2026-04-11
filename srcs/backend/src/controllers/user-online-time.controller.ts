@@ -11,8 +11,7 @@ export async function getUserOnlineTime(req: AuthRequest, res: Response): Promis
     const userId = req.user!.userId;
     const records = await userOnlineTimeService.getUserOnlineTime(userId);
     res.json(records);
-  } catch (err) {
-    console.error('[UserOnlineTimeController] getUserOnlineTime error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to fetch online time' });
   }
 }
@@ -34,8 +33,7 @@ export async function recordOnlineTime(req: AuthRequest, res: Response): Promise
 
     const result = await userOnlineTimeService.recordDailyOnlineTime(userId, date, minutes);
     res.json(result);
-  } catch (err) {
-    console.error('[UserOnlineTimeController] recordOnlineTime error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to record online time' });
   }
 }
@@ -57,8 +55,7 @@ export async function addToOnlineTime(req: AuthRequest, res: Response): Promise<
 
     const result = await userOnlineTimeService.addToOnlineTime(userId, date, minutes);
     res.json(result);
-  } catch (err) {
-    console.error('[UserOnlineTimeController] addToOnlineTime error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to add online time' });
   }
 }
@@ -72,8 +69,7 @@ export async function getTotalPlaytime(req: AuthRequest, res: Response): Promise
     const userId = req.user!.userId;
     const totalMinutes = await userOnlineTimeService.getTotalPlaytime(userId);
     res.json({ totalMinutes });
-  } catch (err) {
-    console.error('[UserOnlineTimeController] getTotalPlaytime error:', err);
+  } catch {
     res.status(500).json({ message: 'Failed to fetch total playtime' });
   }
 }

@@ -62,8 +62,7 @@ const _remoteOnlineTimeAtom = atom(async (get) => {
 	try {
 		const rows = await apiService.get<DailyOnlineTime[]>('user-online-time');
 		return rows;
-	} catch (err) {
-		console.error('Failed to fetch remote online time:', err);
+	} catch {
 		return [] as DailyOnlineTime[];
 	}
 });
@@ -99,9 +98,7 @@ export const flushOnlineSessionAtom = atom(null, (get, set) => {
 	set(_sessionStartMsAtom, startedAt + (minutes * 60000));
 
 	// Sync to backend
-	apiService.post('user-online-time/add', { date: today, minutes }).catch((err) => {
-		console.error('Failed to sync online time to backend:', err);
-	});
+	apiService.post('user-online-time/add', { date: today, minutes }).catch(() => {});
 
 	set(onlineTimeRefreshTriggerAtom, get(onlineTimeRefreshTriggerAtom) + 1);
 	set(onlineTimeLiveTickAtom, get(onlineTimeLiveTickAtom) + 1);
@@ -127,8 +124,7 @@ export const onlineTimeAtom = atom(async (get) => {
 		if (remoteTime && remoteTime.length > 0) {
 			return remoteTime;
 		}
-	} catch (err) {
-		console.warn('Failed to fetch remote online time, falling back to localStorage:', err);
+	} catch {
 	}
 
 	// Fall back to localStorage data
@@ -219,8 +215,7 @@ const _remoteCardGamesAtom = atom(async (get) => {
 						.filter(p => p.player_name !== r.player_name)
 						.map(p => p.player_name);
 					opponents = opponents.length > 0 ? opponents : ['John Doe'];
-				} catch (err) {
-					console.error(`Failed to fetch opponents for match ${r.match_id}:`, err);
+				} catch {
 					opponents = ['Multiplayer match'];
 				}
 			}
@@ -247,8 +242,7 @@ export const remoteCardGamesAtom = atom(async (get) => {
 	if (!currentUser) return [] as GameHistoryEntry[];
 	try {
 		return await get(_remoteCardGamesAtom);
-	} catch (err) {
-		console.error('Failed to fetch remote card games:', err);
+	} catch {
 		return [] as GameHistoryEntry[];
 	}
 });
@@ -284,11 +278,7 @@ const _remoteKodGamesAtom = atom(async (get) => {
 						.filter((p) => p.player_name !== r.player_name)
 						.map((p) => p.player_name);
 					opponents = opponents.length > 0 ? opponents : ['John Doe'];
-				} catch (err) {
-					console.error(
-						`Failed to fetch KOD opponents for match ${r.match_id}:`,
-						err
-					);
+				} catch {
 					opponents = ['Multiplayer match'];
 				}
 			}
@@ -316,8 +306,7 @@ export const remoteKodGamesAtom = atom(async (get) => {
 	if (!currentUser) return [] as GameHistoryEntry[];
 	try {
 		return await get(_remoteKodGamesAtom);
-	} catch (err) {
-		console.error('Failed to fetch remote KOD games:', err);
+	} catch {
 		return [] as GameHistoryEntry[];
 	}
 });
@@ -333,14 +322,12 @@ export const gameHistoryAtom = atom(async (get) => {
 
 	try {
 		remoteCard = await get(remoteCardGamesAtom);
-	} catch (err) {
-		console.error('Failed to get remote card games:', err);
+	} catch {
 	}
 
 	try {
 		remoteKod = await get(remoteKodGamesAtom);
-	} catch (err) {
-		console.error('Failed to get remote KOD games:', err);
+	} catch {
 	}
 
 	// Merge and dedupe by id — remote takes precedence over local

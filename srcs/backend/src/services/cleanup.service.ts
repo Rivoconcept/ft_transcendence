@@ -19,7 +19,6 @@ class CleanupService {
     if (users.length === 0) return 0;
 
     await this.userRepository.remove(users);
-    console.log(`[Cleanup] Removed ${users.length} unconfirmed user(s)`);
     return users.length;
   }
 }

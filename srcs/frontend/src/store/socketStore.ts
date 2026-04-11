@@ -46,18 +46,15 @@ class SocketStore {
     });
 
     this.socket.on("connect", () => {
-      console.log("Socket.IO connected:", this.socket?.id);
       this.statusUpdateCallback?.(true);
     });
 
     this.socket.on("disconnect", (reason: string) => {
-      console.log("Socket.IO disconnected:", reason);
       this.statusUpdateCallback?.(false);
       this.authenticated = false;
     });
 
-    this.socket.on("connect_error", (err: Error) => {
-      console.error("Socket.IO error:", err.message);
+    this.socket.on("connect_error", () => {
     });
 
     return this.socket;
@@ -74,7 +71,6 @@ class SocketStore {
     socket.emit("auth", token);
 
     socket.once("auth:success", () => {
-      console.log("Socket authenticated");
       this.authenticated = true;
     });
   }

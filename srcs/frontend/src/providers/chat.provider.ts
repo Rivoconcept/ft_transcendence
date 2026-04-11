@@ -86,10 +86,6 @@ export const loadChatMessagesAtom = atom(
 
 		try {
 			const result: PaginatedMessages = await chatService.getMessages(chatId, 1, 50);
-			console.log(`[loadChatMessages] chatId=${chatId} loaded ${result.messages.length} messages`);
-			result.messages.forEach(m => {
-				console.log(`  msg#${m.id} author=${m.authorId} readBy=[${m.readBy.join(',')}]`);
-			});
 			set(chatMessagesMapAtom, {
 				...get(chatMessagesMapAtom),
 				[chatId]: {
@@ -358,7 +354,6 @@ export const onMessageDeletedAtom = atom(
 export const onMessageReadAtom = atom(
 	null,
 	(get, set, { chatId, messageId, userId }: { chatId: number; messageId: number; userId: number }) => {
-		console.log(`[onMessageRead] chatId=${chatId} messageId=${messageId} userId=${userId}`);
 		const map = get(chatMessagesMapAtom);
 		const state = map[chatId];
 
